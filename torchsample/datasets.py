@@ -4,7 +4,6 @@ from __future__ import absolute_import
 from .dataset_iter import default_collate, DatasetIter
 from .samplers import RandomSampler, SequentialSampler
 
-
 import os
 import os.path
 import warnings
@@ -20,7 +19,7 @@ except:
 try:
     from PIL import Image
 except:
-    warnings.warn('Cant import PIL.. Cant load images')
+    warnings.warn('Cant import PIL.. Cant load PIL images')
 
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
@@ -95,11 +94,11 @@ class Dataset(object):
 
     def one_epoch(self):
         """Return an iterator that will loop through all the samples one time"""
-        return DataLoaderIter(self)
+        return DatasetIter(self)
 
     def __iter__(self):
         """Return an iterator that will loop through all the samples one time"""
-        return DataLoaderIter(self)
+        return DatasetIter(self)
 
     def __next__(self):
         """Return the next batch in the data. If this batch is the last
@@ -109,8 +108,8 @@ class Dataset(object):
         new_batch = next(self._iter)
         self.batches_seen += 1
         if self.batches_seen % self.nb_batches == 0:
-            #print('Last Batch of Epoch')
-            self._iter = DataLoaderIter(self)
+            #print('Last Batch of Current Epoch')
+            self._iter = DatasetIter(self)
         return new_batch
 
     next = __next__
@@ -227,7 +226,7 @@ class FolderDataset(Dataset):
 
         self.batches_seen = 0
         self.nb_batches = int(math.ceil(len(self.sampler) / float(self.batch_size)))
-        self._iter = DataLoaderIter(self)      
+        self._iter = DatasetIter(self)      
 
     def __getitem__(self, index):
         # get paths
@@ -259,7 +258,7 @@ class TensorDataset(Dataset):
                  target_tensor=None,
                  transform=None, 
                  target_transform=None,
-                 co_transform=None, 
+                 co_transform=None,
                  batch_size=1,
                  shuffle=False,
                  sampler=None,

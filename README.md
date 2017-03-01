@@ -113,7 +113,7 @@ for i in range(5):
 
 Now, we can create a `TensorDataset` for the training images. We wont have any transforms, but we will have a batch size of 3.
 ```python
-from ptsample import TensorDataset
+from torchsample import TensorDataset
 train_data = TensorDataset(input_tensor=x_train, target_tensor=y_train,
                 batch_size=3)
 ```
@@ -129,9 +129,9 @@ print(x_batch.type())
 We see that the images are still of size `28x28` and the tensors are still from range `0 - 255`, and the tensor is of type `ByteTensor`. Let's use three standard torch transforms -- `AddChannel()`, `RangeNormalize()`, and `TypeConvert()` --  wrapped in a `Compose()` transform to change this:
 
 ```python
-from ptsample.transforms import AddChannel, RangeNormalize, Compose
+from torchsample.transforms import TypeCast, AddChannel, RangeNormalize, Compose
 
-tform = Compose([TypeConvert('float'), AddChannel(), RangeNormalize(0,1)])
+tform = Compose([TypeCast('float'), AddChannel(), RangeNormalize(0,1)])
 train_data = TensorDataset(x_train, y_train, transform=tform, batch_size=3)
 x_batch, y_batch = train_data.next()
 print(x_batch.size())
@@ -144,25 +144,31 @@ Very nice! Now let's add some simple augmentation transforms like `RandomCrop()`
 `RandomCrop()` takes a crop size and `RandomFlip()` takes two booleans (whether to flip horizontal, and whether to flip vertical) and a probability with which to apply those flips.
 
 ```python
-from ptsample.transforms import RandomCrop, RandomFlip
+from torchsample.transforms import RandomCrop, RandomFlip
 
-process = Compose([TypeConvert('float'), AddChannel(), RangeNormalize(0,1)])
+process = Compose([TypeCast('float'), AddChannel(), RangeNormalize(0,1)])
 augment = Compose([RandomFlip(h=True, v=False, p=0.5), RandomCrop((20,20))])
 tform = Compose([process, augment])
 
 train_data = TensorDataset(x_train, y_train, transform=tform, batch_size=3)
-x_batch, y_batch = train_data.next()
+x_batch, y_batch = next(train_data)
 
+import matplotlib.pyplot as plt
+%matplotlib inline
 for i in range(3):
+    plt.imshow(x_train.numpy()[i])
+    plt.title('ORIGINAL')
+    plt.show()
     plt.imshow(x_batch.numpy()[i][0])
+    plt.title('TRANSFORMED')
     plt.show()
 ```
 
 Awesome! Now, let's take it one step further and apply some Affine transforms. We provide a few common affine transforms which can be individually used as transforms. For instance, let's randomly rotate the image using the `Rotate()` transform.
 
 ```python
-from ptsample.transforms import Rotation
-process = Compose([TypeConvert('float'), AddChannel(), RangeNormalize(0,1)])
+from torchsample.transforms import Rotation
+process = Compose([TypeCast('float'), AddChannel(), RangeNormalize(0,1)])
 augment = Rotation(30) # randomly rotate between (-30, 30) degrees
 tform = Compose([process, augment])
 train_data = TensorDataset(x_train, y_train, transform=tform, batch_size=3)
@@ -184,8 +190,10 @@ What if we wanted to string together multiple affine transforms? Well, affine tr
 Here, we will use both rotation and translation. The `Translate()` transform takes in a tuple `(x,y)` which provide lower and upper bounds, respectively, on the zoom in the image. `1.0` means no zoom, anything greater than `1.0` means zoom out, and less means zoom in.
 
 ```python
-from ptsample.transforms import Rotation, Zoom, AffineCompose
-process = Compose([TypeConvert('float'), AddChannel(), RangeNormalize(0,1)])
+x_train = x_train.float() # convert data to float so we stop type casting each sample
+x_train = x_train.view(60000,1,28,28) # add channel so we stop adding to each sample
+from torchsample.transforms import Rotation, Zoom, AffineCompose
+process = Compose([RangeNormalize(0,1)])
 r_tform = Rotation(30) # randomly rotate between (-30, 30) degrees
 z_tform = Zoom((1.0, 1.4)) # randomly zoom out btwn 100% and 140% of image size
 affine_tform = AffineCompose([r_tform, z_tform]) # string affine tforms together
@@ -194,11 +202,11 @@ train_data = TensorDataset(x_train, y_train, transform=tform, batch_size=3)
 x_batch, y_batch = train_data.next()
 
 for i in range(3):
-    plt.imshow(x_train.numpy()[i])
+    plt.imshow(x_train.numpy()[i][0])
     plt.title('ORIGINAL')
     plt.show()
     plt.imshow(x_batch.numpy()[i][0])
-    plt.title('ROTATED AND ZOOMED')
+    plt.title('ROTATED AND ZOOMED OUT')
     plt.show()
 ```
 
@@ -216,13 +224,17 @@ We provide the option to save to the following formats:
     - not currently supported
 
 ```python
-#from ptsample.transforms import ToFile
-process = Compose([TypeConvert('float'), AddChannel(), RangeNormalize(0,1)])
+from torchsample.transforms import ToFile
+process = Compose([RangeNormalize(0,1)])
 r_tform = Rotation(30) # randomly rotate between (-30, 30) degrees
 z_tform = Zoom((1.0, 1.4)) # randomly zoom out btwn 100% and 140% of image size
 affine_tform = AffineCompose([r_tform, z_tform]) # string affine tforms together
-#save = ToFile(path='/users/ncullen/desktop/transformed_images/', save_format='npy')
-tform = Compose([process, affine_tform])
+save = ToFile(root='/users/ncullen/desktop/transformed_images/', save_format='npy')
+tform = Compose([process, affine_tform, save])
 train_data = TensorDataset(x_train, transform=tform, batch_size=3)
 x_batch = train_data.next()
 ```
+
+#### `TensorDatset` Image -> Image Sampling
+
+Finally, there is the case where your input tensor is a set of images, and your target tensor is also a set of images. In this case, you probably want to perform the same set of transforms on the target images as you do the input images. This is easy with the `TensorDataset` class.

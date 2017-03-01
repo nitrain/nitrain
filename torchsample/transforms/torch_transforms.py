@@ -33,27 +33,52 @@ class Compose(object):
 
 
 class ToTensor(object):
-    """Converts a numpy array to torch.FloatTensor"""
+    """Converts a numpy array or PIL Image to torch.FloatTensor"""
 
     def __init__(self, cuda=False, device=0):
         self.cuda = cuda
         self.device = device
+
+    def load_image(self, x):         
+        # handle PIL Image
+        x = torch.ByteTensor(torch.ByteStorage.from_buffer(x.tobytes()))
+        # PIL image mode: 1, L, P, I, F, RGB, YCbCr, RGBA, CMYK
+        if x.mode == 'YCbCr':
+            nchannel = 3
+        else:
+            nchannel = len(x.mode)
+        x = x.view(x.size[1], x.size[0], nchannel)
+        # put it from HWC to CHW format
+        # yikes, this transpose takes 80% of the loading time/CPU
+        x = x.transpose(0, 1).transpose(0, 2).contiguous() 
+        return x.float()
     
     def __call__(self, x, y=None):
-        if y is not None:
+        if isinstance(x, np.ndarray):
             x = torch.from_numpy(x)
-            y = torch.from_numpy(y)
-            if self.cuda:
-                x = x.cuda(self.device)
-                y = y.cuda(self.device)
-
-            return x, y
+            if y is None:
+                if self.cuda:
+                    x = x.cuda(self.device)
+                return x.float()
+            else:
+                y = torch.from_numpy(y)
+                if self.cuda:
+                    x = x.cuda(self.device)
+                    y = y.cuda(self.device)
+                return x.float(), y.float()
         else:
-            x = torch.from_numpy(x)
-            if self.cuda:
-                x = x.cuda(self.device)
-            return x
-
+            x = self.load_image(x)
+            if y is None:
+                if self.cuda:
+                    x = x.cuda(self.device)
+                return x.float()
+            else:
+                y = self.load_image(y)
+                if self.cuda:
+                    x = x.cuda(self.device)
+                    y = y.cuda(self.device)     
+                return x.float(), y.float()
+         
 
 class ToFile(object):
     """Saves an image to file. Useful as the last transform
@@ -77,15 +102,18 @@ class ToFile(object):
         self.counter = 0
 
     def __call__(self, x, y=None):
+        print('saving')
         np.save(os.path.join(self.root,'x_img-%i.npy'%self.counter), x.numpy())
         if y is not None:
             np.save(os.path.join(self.root,'y_img-%i.npy'%self.counter), y.numpy())
+            self.counter += 1
             return x, y
         else:
+            self.counter += 1
             return x
 
 
-class TypeConvert(object):
+class TypeCast(object):
 
     def __init__(self, dtype='float'):
         self.dtype = dtype

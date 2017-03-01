@@ -1,8 +1,8 @@
 
 
-from ptsample.transforms import ToTensor, Compose, RangeNormalize, Slice2D
-from ptsample import DataLoader
-from ptsample import FolderDataset
+from torchsample.transforms import ToTensor, Compose, RangeNormalize, Slice2D
+from torchsample import DataLoader
+from torchsample import FolderDataset
 
 def example_RangeNormalize():
 	tform = Compose([ToTensor(), RangeNormalize(-1,1)])

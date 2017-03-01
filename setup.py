@@ -2,7 +2,7 @@
 
 from setuptools import setup, find_packages
 
-setup(name='ptsample',
+setup(name='torchsample',
       version='0.0.1',
       description='Sampling for Pytorch',
       author='NC Cullen',
