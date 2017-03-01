@@ -51,7 +51,7 @@ We provide the following datasets which provide general structure and iterators 
 
 ## Examples & Tutorial
 
-### TensorDataset Examples
+### `TensorDataset`
 The `TensorDatset` provides a class structure for sampling from data that is already loaded into memory as torch tensors.
 
 #### `TensorDataset` Explained
@@ -232,7 +232,7 @@ That was a good overview of the functionality of the `transforms` on torch tenso
 I want to demonstrate another useful feature, which is sampling without any target tensor. This functionality can be nice if you just want to randomly transform some images to create an augmented dataset, but you don't want to do include a target tensor. Even more, we provide a `ToFile()` transform that will save all of the transformed images to file. This is good for inspecting what the sampling and augmentation is doing before actually using it. 
 
 We provide the option to save to the following formats:
-- `.npy' (numpy format - no intensity rescaling will take place)
+- `.npy` (numpy format - no intensity rescaling will take place)
 - `.png` or `.jpg` (will automatically rescale intensity to 0 - 255)
     - not currently supported
 
