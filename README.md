@@ -2,7 +2,7 @@
 
 This package provides a set of transforms and data structures for sampling from in-memory or out-of-memory data. I'm actively  taking requests for new transforms or new features to the samplers. 
 
-NOTE: <b>This package is in no way endorsed by, affiliated with, or otherwise associated with the official <i>Pytorch</i> ecosystem or core team.</b>
+<b>NOTE: This package is in no way endorsed by, affiliated with, or otherwise associated with the official <i>Pytorch</i> ecosystem or core team.</b>
 
 ## Transforms
 
@@ -24,8 +24,8 @@ These transforms work directly on torch tensors
 ### Affine Transforms
 The following transforms perform affine (or affine-like) transforms on torch tensors. 
 
-- `Rotation()` : randomly rotate an image between given degree bounds
-- `Translation()` : randomly translate an image horizontally and/or vertically between given bounds
+- `Rotate()` : randomly rotate an image between given degree bounds
+- `Translate()` : randomly translate an image horizontally and/or vertically between given bounds
 - `Shear()` : randomly shear an image between given radian bounds
 - `Zoom()` : randomly zoom in or out on an image between given percentage bounds
 
@@ -169,9 +169,9 @@ for i in range(3):
 Awesome! Now, let's take it one step further and apply some Affine transforms. We provide a few common affine transforms which can be individually used as transforms. For instance, let's randomly rotate the image using the `Rotate()` transform.
 
 ```python
-from torchsample.transforms import Rotation
+from torchsample.transforms import Rotate
 process = Compose([TypeCast('float'), AddChannel(), RangeNormalize(0,1)])
-augment = Rotation(30) # randomly rotate between (-30, 30) degrees
+augment = Rotate(30) # randomly rotate between (-30, 30) degrees
 tform = Compose([process, augment])
 train_data = TensorDataset(x_train, y_train, transform=tform, batch_size=3)
 x_batch, y_batch = train_data.next()
@@ -194,9 +194,9 @@ Here, we will use both rotation and translation. The `Translate()` transform tak
 ```python
 x_train = x_train.float() # convert data to float so we stop type casting each sample
 x_train = x_train.view(60000,1,28,28) # add channel so we stop adding to each sample
-from torchsample.transforms import Rotation, Zoom, AffineCompose
+from torchsample.transforms import Rotate, Zoom, AffineCompose
 process = Compose([RangeNormalize(0,1)])
-r_tform = Rotation(30) # randomly rotate between (-30, 30) degrees
+r_tform = Rotate(30) # randomly rotate between (-30, 30) degrees
 z_tform = Zoom((1.0, 1.4)) # randomly zoom out btwn 100% and 140% of image size
 affine_tform = AffineCompose([r_tform, z_tform]) # string affine tforms together
 tform = Compose([process, affine_tform])
@@ -228,7 +228,7 @@ We provide the option to save to the following formats:
 ```python
 from torchsample.transforms import ToFile
 process = Compose([RangeNormalize(0,1)])
-r_tform = Rotation(30) # randomly rotate between (-30, 30) degrees
+r_tform = Rotate(30) # randomly rotate between (-30, 30) degrees
 z_tform = Zoom((1.0, 1.4)) # randomly zoom out btwn 100% and 140% of image size
 affine_tform = AffineCompose([r_tform, z_tform]) # string affine tforms together
 save = ToFile(root='/users/ncullen/desktop/transformed_images/', save_format='npy')
@@ -246,7 +246,7 @@ Basically, all of the previous example transforms and augmentations are valid, b
 Here's a simple demonstation with the `Affine()` transform:
 
 ```python
-r_tform = Rotation(30) # randomly rotate between (-30, 30) degrees
+r_tform = Rotate(30) # randomly rotate between (-30, 30) degrees
 z_tform = Zoom((1.0, 1.4)) # randomly zoom out btwn 100% and 140% of image size
 affine_tform = AffineCompose([r_tform, z_tform]) # string affine tforms together
 tform = Compose([process, affine_tform])
@@ -267,7 +267,7 @@ Sweet, the transforms applied to both images!
 We can easily use separate transforms for both, but they should not be transforms that involve any randomness or the transform will not reliably apply to both input and target samples. Who knows, maybe this is something you want. Anyways, this is an example:
 
 ```python
-r_tform = Rotation(30) # randomly rotate between (-30, 30) degrees
+r_tform = Rotate(30) # randomly rotate between (-30, 30) degrees
 z_tform = Zoom((1.0, 1.4)) # randomly zoom out btwn 100% and 140% of image size
 affine_tform = AffineCompose([r_tform, z_tform]) # string affine tforms together
 tform = Compose([process, affine_tform])

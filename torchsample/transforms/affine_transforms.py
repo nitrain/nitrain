@@ -5,8 +5,8 @@ only requiring one interpolation
 Included:
 - Affine()
 - AffineCompose()
-- Rotation()
-- Translation()
+- Rotate()
+- Translate()
 - Shear()
 - Zoom()
 - Flip()
@@ -124,11 +124,11 @@ class Affine(object):
         """
         self.transforms = []
         if rotation_range:
-            rotation_tform = Rotation(rotation_range, lazy=True)
+            rotation_tform = Rotate(rotation_range, lazy=True)
             self.transforms.append(rotation_tform)
 
         if translation_range:
-            translation_tform = Translation(translation_range, lazy=True)
+            translation_tform = Translate(translation_range, lazy=True)
             self.transforms.append(translation_tform)
 
         if shear_range:
@@ -136,7 +136,7 @@ class Affine(object):
             self.transforms.append(shear_tform) 
 
         if zoom_range:
-            zoom_tform = Translation(zoom_range, lazy=True)
+            zoom_tform = Translate(zoom_range, lazy=True)
             self.transforms.append(zoom_tform)
 
         self.fill_mode = fill_mode
@@ -177,8 +177,8 @@ class AffineCompose(object):
         transforms : list or tuple
             each element in the list/tuple should be an affine transform.
             currently supported transforms:
-                - Rotation()
-                - Translation()
+                - Rotate()
+                - Translate()
                 - Shear()
                 - Zoom()
 
@@ -215,7 +215,7 @@ class AffineCompose(object):
             return x
 
 
-class Rotation(object):
+class Rotate(object):
 
     def __init__(self, 
                  rotation_range, 
@@ -268,7 +268,7 @@ class Rotation(object):
                 return x_transformed
 
 
-class Translation(object):
+class Translate(object):
 
     def __init__(self, 
                  translation_range, 
