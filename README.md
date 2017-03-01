@@ -316,5 +316,54 @@ class FolderDataset(Dataset):
                  pin_memory=False)
 ```
 
+Here, we have the `root` argument, which is the path to the main directory holding the images. If using a classification dataset, the images should be arranged by class label as follows:
 
+```
+main_dir/
+    class_1/   
+        img1.jpg
+        img2.jpg
+        ...
+        whatever_name_you_want.jpg
+    class_2/
+        img3.jpg
+        ...
+    ...
+    class_n/
+        whatever_name_you_want.jpg
+        ...
+```
+The above data structure and problem corresponds to setting `class_mode='label'` in the class. This means that the target tensor is going to be the class label of the image.
+
+If using a segmentation dataset or otherwise want another image (or arbitrary data) as the target tensor, we will set `class_mode='image'`. In this case, the images should be arranged in separate sub-directories for each pair of input image/data and target image/data. 
+
+The folders can be named whatever you want, but the image names should share at least some common phrase to distinguish between the input and target data. That is because we use regular expressions to pick up which data is input and which data is target. 
+
+```
+main_dir/
+    img1/
+        my_img1.jpg
+        my_segmentation1.jpg
+    img2/
+        my_img2.jpg
+        my_segmentation2.jpg
+    ...
+    whatever_folder_name_you_want/
+        my_img3.jpg
+        my_segmentation3.jpg
+```
+
+For the above data structure and naming, we would set `input_regex='*img*'` and `target_regex='*segmentation*'`. This will ensure we pick up the right input and target tensors.
+
+Finally, we have the `loader` argument, which determines how to load the data into memory. We provide two defaults: `loader='npy'` to load in numpy's `npy` files, and `loader='pil'` to load in images. 
+
+You can also supply your own function for the `loader` argument to read arbitrary data formats. That function should take in a path as input, and output the loaded image. For instance, to load MRI brain images in the `nifti` format, you might do the following:
+
+```python
+import nibabel
+def nifti_loader(path):
+    return nibabel.load(path)
+```
+
+Using the `FolderDataset` class is otherwise the same as using the `TensorDataset` class, so I won't go into those details. 
 
