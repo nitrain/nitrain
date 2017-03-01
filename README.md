@@ -1,6 +1,8 @@
-# pytorch-sample : data augmentation for pytorch
+# torch-sample : data augmentation and sampling for pytorch
 
-This package provides a set of transforms and data structures for sampling from in-memory or out-of-memory data. I'm openly taking requests for new transforms or new features to the samplers. 
+This package provides a set of transforms and data structures for sampling from in-memory or out-of-memory data. I'm actively  taking requests for new transforms or new features to the samplers. 
+
+NOTE: <b>This package is in no way endorsed by, affiliated with, or otherwise associated with the official <i>Pytorch</i> ecosystem or core team.</b>
 
 ## Transforms
 
@@ -288,6 +290,8 @@ That's all for `TensorDataset`, let's move onto the real gem: the `FolderDataset
 
 ### `FolderDataset` class
 
+#### `FolderDataset` explained
+
 The `FolderDataset` class is used for out-of-memory sampling of images or arbitrary data. The same features apply as found in the `TensorDataset` class and examples, but with an added step for actually loading the data into memory.
 
 Let's look at the `TensorDataset` class signature. It may appear quite verbose, but it's really easy to pick up.
@@ -312,4 +316,5 @@ class FolderDataset(Dataset):
                  pin_memory=False)
 ```
 
- 
+
+
