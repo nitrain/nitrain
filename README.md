@@ -85,9 +85,9 @@ There is a `batch_size` argument, which determines how many samples to take for 
 
 Finally, there are a few arguments which relate to the multi-processing nature of the samping, which I wont get into but will refer interested readers to the official pytorch docs.
 
-#### `TensorDataset` Image -> Class Label Sampling
+#### `TensorDataset` Image -> Label Sampling
 
-Having an input tensor be a collection of images and the target tensor be a vector of class labels is perhaps the most common scenario. We'll start by loading the mnist dataset from `torchvision`:
+Having the input tensor be a collection of images and the target tensor be a vector of class labels is perhaps the most common scenario. We'll use this as the first demonstration and start by loading the mnist dataset from `torchvision`:
 
 ```python
 from torchvision.datasets import MNIST
@@ -238,3 +238,78 @@ x_batch = train_data.next()
 #### `TensorDatset` Image -> Image Sampling
 
 Finally, there is the case where your input tensor is a set of images, and your target tensor is also a set of images. In this case, you probably want to perform the same set of transforms on the target images as you do the input images. This is easy with the `TensorDataset` class.
+
+Basically, all of the previous example transforms and augmentations are valid, but you should use the `co_transform` argument for any transforms that you want to apply to both input and target tensors.
+
+Here's a simple demonstation with the `Affine()` transform:
+
+```python
+r_tform = Rotation(30) # randomly rotate between (-30, 30) degrees
+z_tform = Zoom((1.0, 1.4)) # randomly zoom out btwn 100% and 140% of image size
+affine_tform = AffineCompose([r_tform, z_tform]) # string affine tforms together
+tform = Compose([process, affine_tform])
+train_data = TensorDataset(x_train, x_train, co_transform=tform, batch_size=3)
+x_batch, y_batch = train_data.next()
+
+for i in range(3):
+    plt.imshow(x_batch.numpy()[i][0])
+    plt.title('INPUT IMAGE')
+    plt.show()
+    plt.imshow(y_batch.numpy()[i][0])
+    plt.title('TARGET IMAGE')
+    plt.show()
+```
+
+Sweet, the transforms applied to both images!
+
+We can easily use separate transforms for both, but they should not be transforms that involve any randomness or the transform will not reliably apply to both input and target samples. Who knows, maybe this is something you want. Anyways, this is an example:
+
+```python
+r_tform = Rotation(30) # randomly rotate between (-30, 30) degrees
+z_tform = Zoom((1.0, 1.4)) # randomly zoom out btwn 100% and 140% of image size
+affine_tform = AffineCompose([r_tform, z_tform]) # string affine tforms together
+tform = Compose([process, affine_tform])
+train_data = TensorDataset(x_train, x_train, transform=tform, 
+                    target_transform=tform, batch_size=3)
+x_batch, y_batch = train_data.next()
+
+for i in range(3):
+    plt.imshow(x_batch.numpy()[i][0])
+    plt.title('INPUT IMAGE')
+    plt.show()
+    plt.imshow(y_batch.numpy()[i][0])
+    plt.title('TARGET IMAGE')
+    plt.show()
+```
+Now, you see the input and target images are <b>not</b> the same, because the randomness of the transforms did not carry over since we didn't specify them in the `co_transform` property.
+
+That's all for `TensorDataset`, let's move onto the real gem: the `FolderDataset` class.
+
+
+### `FolderDataset` class
+
+The `FolderDataset` class is used for out-of-memory sampling of images or arbitrary data. The same features apply as found in the `TensorDataset` class and examples, but with an added step for actually loading the data into memory.
+
+Let's look at the `TensorDataset` class signature. It may appear quite verbose, but it's really easy to pick up.
+
+```python
+class FolderDataset(Dataset):
+
+    def __init__(self, 
+                 root,
+                 class_mode='label',
+                 input_regex='*',
+                 target_regex=None,
+                 transform=None, 
+                 target_transform=None,
+                 co_transform=None, 
+                 loader='npy',
+                 batch_size=1,
+                 shuffle=False,
+                 sampler=None,
+                 num_workers=0,
+                 collate_fn=default_collate, 
+                 pin_memory=False)
+```
+
+ 

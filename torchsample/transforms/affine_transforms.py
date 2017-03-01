@@ -153,7 +153,7 @@ class Affine(object):
         x = torch.from_numpy(apply_transform(x.numpy(), tform_matrix,
             fill_mode=self.fill_mode, fill_value=self.fill_value))
 
-        if y:
+        if y is not None:
             y = torch.from_numpy(apply_transform(y.numpy(), tform_matrix,
                 fill_mode=self.target_fill_mode, fill_value=self.target_fill_value))
             return x, y
@@ -207,7 +207,7 @@ class AffineCompose(object):
         x = torch.from_numpy(apply_transform(x.numpy(), tform_matrix,
             fill_mode=self.fill_mode, fill_value=self.fill_value))
 
-        if y:
+        if y is not None:
             y = torch.from_numpy(apply_transform(y.numpy(), tform_matrix,
                 fill_mode=self.target_fill_mode, fill_value=self.target_fill_value))
             return x, y
@@ -260,7 +260,7 @@ class Rotation(object):
         else:
             x_transformed = torch.from_numpy(apply_transform(x.numpy(), rotation_matrix,
                 fill_mode=self.fill_mode, fill_value=self.fill_value))
-            if y:
+            if y is not None:
                 y_transformed = torch.from_numpy(apply_transform(y.numpy(), rotation_matrix,
                 fill_mode=self.target_fill_mode, fill_value=self.target_fill_value))
                 return x_transformed, y_transformed
@@ -333,7 +333,7 @@ class Translation(object):
         else:
             x_transformed = torch.from_numpy(apply_transform(x.numpy(), 
                 translation_matrix, fill_mode=self.fill_mode, fill_value=self.fill_value))
-            if y:
+            if y is not None:
                 y_transformed = torch.from_numpy(apply_transform(y.numpy(), translation_matrix,
                 fill_mode=self.target_fill_mode, fill_value=self.target_fill_value))
                 return x_transformed, y_transformed
@@ -384,7 +384,7 @@ class Shear(object):
         else:
             x_transformed = torch.from_numpy(apply_transform(x.numpy(), 
                 shear_matrix, fill_mode=self.fill_mode, fill_value=self.fill_value))
-            if y:
+            if y is not None:
                 y_transformed = torch.from_numpy(apply_transform(y.numpy(), shear_matrix,
                 fill_mode=self.target_fill_mode, fill_value=self.target_fill_value))
                 return x_transformed, y_transformed
@@ -443,7 +443,7 @@ class Zoom(object):
         else:
             x_transformed = torch.from_numpy(apply_transform(x.numpy(), 
                 zoom_matrix, fill_mode=self.fill_mode, fill_value=self.fill_value))
-            if y:
+            if y is not None:
                 y_transformed = torch.from_numpy(apply_transform(y.numpy(), zoom_matrix,
                 fill_mode=self.target_fill_mode, fill_value=self.target_fill_value))
                 return x_transformed, y_transformed
