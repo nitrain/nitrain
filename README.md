@@ -89,7 +89,7 @@ Finally, there are a few arguments which relate to the multi-processing nature o
 
 Having an input tensor be a collection of images and the target tensor be a vector of class labels is perhaps the most common scenario. We'll start by loading the mnist dataset from `torchvision`:
 
-```
+```python
 from torchvision.datasets import MNIST
 train = MNIST(root='/users/ncullen/desktop/data/', train=True, download=True)
 x_train = train.train_data
