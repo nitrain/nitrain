@@ -1,4 +1,5 @@
 
+import os
 import random
 import math
 import numpy as np
@@ -51,6 +52,36 @@ class ToTensor(object):
             x = torch.from_numpy(x)
             if self.cuda:
                 x = x.cuda(self.device)
+            return x
+
+
+class ToFile(object):
+    """Saves an image to file. Useful as the last transform
+    when wanting to observe how augmentation/affine transforms
+    are affecting the data
+    """
+    def __init__(self, root, save_format='npy'):
+        """Save image to file
+
+        Arguments
+        ---------
+        root : string
+            path to main directory in which images will be saved
+
+        save_format : string in `{'npy', 'jpg', 'png'}
+            file format in which to save the sample. Right now, only
+            numpy's `npy` format is supported
+        """
+        self.root = root
+        self.save_format = save_format
+        self.counter = 0
+
+    def __call__(self, x, y=None):
+        np.save(os.path.join(self.root,'x_img-%i.npy'%self.counter), x.numpy())
+        if y is not None:
+            np.save(os.path.join(self.root,'y_img-%i.npy'%self.counter), y.numpy())
+            return x, y
+        else:
             return x
 
 

@@ -85,7 +85,7 @@ There is a `batch_size` argument, which determines how many samples to take for 
 
 Finally, there are a few arguments which relate to the multi-processing nature of the samping, which I wont get into but will refer interested readers to the official pytorch docs.
 
-#### `TensorDataset` Image -> Class Label
+#### `TensorDataset` Image -> Class Label Sampling
 
 Having an input tensor be a collection of images and the target tensor be a vector of class labels is perhaps the most common scenario. We'll start by loading the mnist dataset from `torchvision`:
 
@@ -206,11 +206,14 @@ Amazing!
 
 That was a good overview of the functionality of the `transforms` on torch tensors and the `TensorDataset` class for sampling from input and target tensors. 
 
-I want to demonstrate one more useful feature, which is sampling without any target tensor. This functionality can be nice if you just want to randomly transform some images without any target tensor. Even more, we provide a `ToFile()` transform that will save all of the transformed images to file. This is good for inspecting what the sampling and augmentation is doing before actually using it. 
+#### `TensorDataset` Image Sampling
+
+I want to demonstrate another useful feature, which is sampling without any target tensor. This functionality can be nice if you just want to randomly transform some images to create an augmented dataset, but you don't want to do include a target tensor. Even more, we provide a `ToFile()` transform that will save all of the transformed images to file. This is good for inspecting what the sampling and augmentation is doing before actually using it. 
 
 We provide the option to save to the following formats:
 - `.npy' (numpy format - no intensity rescaling will take place)
 - `.png` or `.jpg` (will automatically rescale intensity to 0 - 255)
+    - not currently supported
 
 ```python
 #from ptsample.transforms import ToFile
