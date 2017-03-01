@@ -333,7 +333,7 @@ main_dir/
         whatever_name_you_want.jpg
         ...
 ```
-The above data structure and problem corresponds to setting `class_mode='label'` in the class. This means that the target tensor is going to be the class label of the image.
+Here, you would set `root=/path/to/main_dir/`. The above data structure and problem also corresponds to setting `class_mode='label'` in the class. This means that the target tensor is going to be the class label of the image.
 
 If using a segmentation dataset or otherwise want another image (or arbitrary data) as the target tensor, we will set `class_mode='image'`. In this case, the images should be arranged in separate sub-directories for each pair of input image/data and target image/data. 
 
@@ -364,6 +364,8 @@ import nibabel
 def nifti_loader(path):
     return nibabel.load(path)
 ```
+
+Finally, you can also simply set `class_mode=None`, in which case you will only have input tensors loaded into memory. Using this feature in combination with transforms is another good way to augment your data separately.
 
 Using the `FolderDataset` class is otherwise the same as using the `TensorDataset` class, so I won't go into those details. 
 

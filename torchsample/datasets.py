@@ -50,33 +50,31 @@ def nifti_loader(path):
 def make_dataset(directory, class_mode, class_to_idx=None, 
             input_regex=None, target_regex=None, ):
     """Map a dataset from a root folder"""
-    if class_mode == 'label':
-        if not class_to_idx:
-            raise ValueError('must give class_to_idx if class_mode==label')
-    elif class_mode == 'image':
+    if class_mode == 'image':
         if not input_regex and not target_regex:
             raise ValueError('must give input_regex and target_regex if'+
                 ' class_mode==image')
     inputs = []
     targets = []
-    for target in sorted(os.listdir(directory)):
-        d = os.path.join(directory, target)
+    for subdir in sorted(os.listdir(directory)):
+        d = os.path.join(directory, subdir)
         if not os.path.isdir(d):
             continue
 
         for root, _, fnames in sorted(os.walk(d)):
             for fname in fnames:
-                if is_image_file(fname):
-                    if fnmatch.fnmatch(fname, input_regex):
-                        path = os.path.join(root, fname)
-                        inputs.append(path)
-                        if class_mode == 'label':
-                            targets.append(class_to_idx[target])
-                    if class_mode == 'image' and fnmatch.fnmatch(fname, target_regex):
-                        path = os.path.join(root, fname)
-                        targets.append(path)
-
-    return inputs, targets
+                if fnmatch.fnmatch(fname, input_regex):
+                    path = os.path.join(root, fname)
+                    inputs.append(path)
+                    if class_mode == 'label':
+                        targets.append(class_to_idx[subdir])
+                if class_mode == 'image' and fnmatch.fnmatch(fname, target_regex):
+                    path = os.path.join(root, fname)
+                    targets.append(path)
+    if class_mode is None:
+        return inputs
+    else:
+        return inputs
 
 class Dataset(object):
     """An abstract class representing a Dataset.
