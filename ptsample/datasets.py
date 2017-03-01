@@ -335,7 +335,10 @@ class TensorDataset(Dataset):
         if self.has_target and self.co_transform is not None:
             input_sample, target_sample = self.co_transform(input_sample, target_sample)
 
-        return input_sample, target_sample
+        if self.has_target:
+            return input_sample, target_sample
+        else:
+            return input_sample
 
     def __len__(self):
         """Number of samples"""

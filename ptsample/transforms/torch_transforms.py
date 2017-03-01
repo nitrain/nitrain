@@ -54,6 +54,55 @@ class ToTensor(object):
             return x
 
 
+class TypeConvert(object):
+
+    def __init__(self, dtype='float'):
+        self.dtype = dtype
+
+    def __call__(self, x, y=None):
+        if self.dtype == 'float':
+            x = x.float()
+            if y is not None:
+                y = y.float()
+        if self.dtype == 'long':
+            x = x.long()
+            if y is not None:
+                y = y.long()
+
+        if y is None:
+            return x
+        else:
+            return x, y
+
+
+class AddChannel(object):
+    """Adds a dummy channel to an image. 
+    This will make an image of size (28, 28) to now be
+    of size (1, 28, 28), for example.
+    """
+    def __call__(self, x, y=None):
+        x = torch.from_numpy(x.numpy().reshape(1,x.size(0), x.size(1)))
+        if y is not None:
+            y = torch.from_numpy(y.numpy().reshape(1,y.size(0), y.size(1)))
+            return x, y
+        else:
+            return x
+
+
+class SwapDims(object):
+
+    def __init__(self, order):
+        self.order = order
+
+    def __call__(self, x, y=None):
+        x = torch.from_numpy(x.numpy().transpose(self.order))
+        if y is not None:
+            y = torch.from_numpy(y.numpy().transpose(self.order))
+            return x, y
+        else:
+            return x
+
+
 class RangeNormalize(object):
     """Given min_val: (R, G, B) and max_val: (R,G,B),
     will normalize each channel of the torch.*Tensor to
@@ -86,7 +135,15 @@ class RangeNormalize(object):
         self.max_val = max_val
 
     def __call__(self, x, y=None):
-        if y is not None:
+        if y is None:
+            for t, min_, max_ in zip(x, self.min_val, self.max_val):
+                _max_val = torch.max(t)
+                _min_val = torch.min(t)
+                a = (max_-min_)/float(_max_val-_min_val)
+                b = max_ - a * _max_val
+                t.mul_(a).add_(b)
+                return x
+        else:
             for t, u, min_, max_ in zip(x, y, self.min_val, self.max_val):
                 _max_val = torch.max(t)
                 _min_val = torch.min(t)
@@ -98,15 +155,7 @@ class RangeNormalize(object):
                 a = (max_ - min_) / float(_max_val-_min_val)
                 b = max_ - a * _max_val
                 u.mul_(a).add_(b)
-            return x, y           
-        else:
-            for t, min_, max_ in zip(x, self.min_val, self.max_val):
-                _max_val = torch.max(t)
-                _min_val = torch.min(t)
-                a = (max_-min_)/float(_max_val-_min_val)
-                b = max_ - a * _max_val
-                t.mul_(a).add_(b)
-            return x
+            return x, y
 
 
 class StdNormalize(object):
@@ -274,26 +323,26 @@ class Pad(object):
             return torch.from_numpy(x)
 
 
-class Flip(object):
+class RandomFlip(object):
 
-    def __init__(self, horizontal=True, vertical=False, p=0.5):
+    def __init__(self, h=True, v=False, p=0.5):
         """
         Randomly flip an image horizontally and/or vertically with
         some probability.
 
         Arguments
         ---------
-        horizontal : boolean
+        h : boolean
             whether to horizontally flip w/ probability p
 
-        vertical : boolean
+        v : boolean
             whether to vertically flip w/ probability p
 
         p : float between [0,1]
             probability with which to apply allowed flipping operations
         """
-        self.horizontal = horizontal
-        self.vertical = vertical
+        self.horizontal = h
+        self.vertical = v
         self.p = p
 
     def __call__(self, x, y=None):
