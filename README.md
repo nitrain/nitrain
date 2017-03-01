@@ -139,7 +139,7 @@ for x_batch, y_batch in train_data:
         break # breaking so we dont loop through 60k images
 ```
 
-We see that the images are still of size `28x28` and the tensors are still from range `0 - 255`, and the tensor is of type `ByteTensor`. Let's use three standard torch transforms -- `AddChannel()`, `RangeNormalize()`, and `TypeConvert()` --  wrapped in a `Compose()` transform to change this:
+We see that the images are still of size `28x28` and the tensors are still from range `0 - 255`, and the tensor is of type `ByteTensor`. Let's use three standard torch transforms -- `AddChannel()`, `RangeNormalize()`, and `TypeCast()` --  wrapped in a `Compose()` transform to change this:
 
 ```python
 from torchsample.transforms import TypeCast, AddChannel, RangeNormalize, Compose
