@@ -1,0 +1,22 @@
+
+sandbox/
+production_models/
+tests/_data/
+
+*.DS_Store
+*.pyc
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+*.bkbn
+.spyderworkspace
+.spyderproject
+
+# setup.py working directory
+build
+# sphinx build directory
+doc/_build
+# setup.py dist directory
+dist
+# Egg metadata
+*.egg-info
+.eggs

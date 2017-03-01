@@ -1,6 +1,8 @@
+
+from __future__ import absolute_import
+
 import torch
 import torch.multiprocessing as multiprocessing
-from .sampler import SequentialSampler, RandomSampler
 import collections
 import math
 import sys
@@ -92,17 +94,16 @@ def pin_memory_batch(batch):
     else:
         return batch
 
+class DatasetIter(object):
+    """Iterates once over the Dataset's dataset, as specified by the sampler"""
 
-class DataLoaderIter(object):
-    "Iterates once over the DataLoader's dataset, as specified by the sampler"
-
-    def __init__(self, loader):
-        self.dataset = loader.dataset
-        self.batch_size = loader.batch_size
-        self.collate_fn = loader.collate_fn
-        self.sampler = loader.sampler
-        self.num_workers = loader.num_workers
-        self.pin_memory = loader.pin_memory
+    def __init__(self, dataset):
+        self.dataset = dataset
+        self.batch_size = self.dataset.batch_size
+        self.collate_fn = self.dataset.collate_fn
+        self.sampler = self.dataset.sampler
+        self.num_workers = self.dataset.num_workers
+        self.pin_memory = self.dataset.pin_memory
         self.done_event = threading.Event()
 
         self.samples_remaining = len(self.sampler)
@@ -204,7 +205,7 @@ class DataLoaderIter(object):
         # Probably the best way to do this is by moving the sample pushing
         # to a separate thread and then just sharing the data queue
         # but signalling the end is tricky without a non-blocking API
-        raise NotImplementedError("DataLoaderIterator cannot be pickled")
+        raise NotImplementedError("DatasetIterator cannot be pickled")
 
     def _shutdown_workers(self):
         if not self.shutdown:
@@ -217,44 +218,3 @@ class DataLoaderIter(object):
         if self.num_workers > 0:
             self._shutdown_workers()
 
-
-class DataLoader(object):
-    """
-    Data loader. Combines a dataset and a sampler, and provides
-    single- or multi-process iterators over the dataset.
-
-    Arguments:
-        dataset (Dataset): dataset from which to load the data.
-        batch_size (int, optional): how many samples per batch to load
-            (default: 1).
-        shuffle (bool, optional): set to ``True`` to have the data reshuffled
-            at every epoch (default: False).
-        sampler (Sampler, optional): defines the strategy to draw samples from
-            the dataset. If specified, the ``shuffle`` argument is ignored.
-        num_workers (int, optional): how many subprocesses to use for data
-            loading. 0 means that the data will be loaded in the main process
-            (default: 0)
-        collate_fn (callable, optional)
-        pin_memory (bool, optional)
-    """
-
-    def __init__(self, dataset, batch_size=1, shuffle=False, sampler=None,
-                 num_workers=0, collate_fn=default_collate, pin_memory=False):
-        self.dataset = dataset
-        self.batch_size = batch_size
-        self.num_workers = num_workers
-        self.collate_fn = collate_fn
-        self.pin_memory = pin_memory
-
-        if sampler is not None:
-            self.sampler = sampler
-        elif shuffle:
-            self.sampler = RandomSampler(dataset)
-        elif not shuffle:
-            self.sampler = SequentialSampler(dataset)
-
-    def __iter__(self):
-        return DataLoaderIter(self)
-
-    def __len__(self):
-        return int(math.ceil(len(self.sampler) / float(self.batch_size)))

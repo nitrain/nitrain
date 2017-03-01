@@ -1,1 +1,1 @@
-# pytorch-sample
+# pytorch-sample : data augmentation for pytorch

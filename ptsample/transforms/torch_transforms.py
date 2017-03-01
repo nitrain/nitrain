@@ -4,6 +4,56 @@ import math
 import numpy as np
 import torch
 
+
+class Compose(object):
+    """Composes several transforms together.
+
+    Args:
+        transforms (List[Transform]): list of transforms to compose.
+
+    Example:
+        >>> transforms.Compose([
+        >>>     transforms.CenterCrop(10),
+        >>>     transforms.ToTensor(),
+        >>> ])
+    """
+    def __init__(self, transforms):
+        self.transforms = transforms
+
+    def __call__(self, x, y=None):
+        if y is not None:
+            for t in self.transforms:
+                x, y = t(x, y)
+            return x, y
+        else:
+            for t in self.transforms:
+                x = t(x)
+            return x
+
+
+class ToTensor(object):
+    """Converts a numpy array to torch.FloatTensor"""
+
+    def __init__(self, cuda=False, device=0):
+        self.cuda = cuda
+        self.device = device
+    
+    def __call__(self, x, y=None):
+        if y is not None:
+            x = torch.from_numpy(x)
+            y = torch.from_numpy(y)
+            if self.cuda:
+                x = x.cuda(self.device)
+                y = y.cuda(self.device)
+
+            return x, y
+        else:
+            x = torch.from_numpy(x)
+            if self.cuda:
+                x = x.cuda(self.device)
+            return x
+
+
 class RangeNormalize(object):
     """Given min_val: (R, G, B) and max_val: (R,G,B),
     will normalize each channel of the torch.*Tensor to
@@ -35,14 +85,28 @@ class RangeNormalize(object):
         self.min_val = min_val
         self.max_val = max_val
 
-    def __call__(self, tensor):
-        for t, min_, max_ in zip(tensor, self.min_val, self.max_val):
-            _max_val = torch.max(t)
-            _min_val = torch.min(t)
-            a = (max_-min_)/float(_max_val-_min_val)
-            b = max_ - a * _max_val
-            t.mul_(a).add_(b)
-        return tensor
+    def __call__(self, x, y=None):
+        if y is not None:
+            for t, u, min_, max_ in zip(x, y, self.min_val, self.max_val):
+                _max_val = torch.max(t)
+                _min_val = torch.min(t)
+                a = (max_ - min_) / float(_max_val-_min_val)
+                b = max_ - a * _max_val
+                t.mul_(a).add_(b)
+                _max_val = torch.max(u)
+                _min_val = torch.min(u)
+                a = (max_ - min_) / float(_max_val-_min_val)
+                b = max_ - a * _max_val
+                u.mul_(a).add_(b)
+            return x, y           
+        else:
+            for t, min_, max_ in zip(x, self.min_val, self.max_val):
+                _max_val = torch.max(t)
+                _min_val = torch.min(t)
+                a = (max_-min_)/float(_max_val-_min_val)
+                b = max_ - a * _max_val
+                t.mul_(a).add_(b)
+            return x
 
 class StdNormalize(object):
     """Normalize torch tensor to have zero mean and unit std deviation"""
@@ -50,10 +114,16 @@ class StdNormalize(object):
     def __init__(self):
         pass
 
-    def __call__(self, tensor):
-        for t in tensor:
-            t.sub_(torch.mean(t)).div_(torch.std(t))
-        return tensor
+    def __call__(self, x, y=None):
+        if y is not None:
+            for t, u in zip(x, y):
+                t.sub_(torch.mean(t)).div_(torch.std(t))
+                u.sub_(torch.mean(u)).div_(torch.std(u))
+            return x, y
+        else:
+            for t in x:
+                t.sub_(torch.mean(t)).div_(torch.std(t))
+            return x         
 
 class Slice2D(object):
 
@@ -74,7 +144,7 @@ class Slice2D(object):
 
     def __call__(self, x, y=None):
         while True:
-            keep_slice  = random.randint(0,x.size(self.axis+1))
+            keep_slice  = random.randint(0,x.size(self.axis))
             if self.axis == 0:
                 slice_x = x[keep_slice,:,:]
                 if y is not None:
@@ -91,11 +161,11 @@ class Slice2D(object):
             if not self.reject_zeros:
                 break
             else:
-                if y and torch.sum(slice_y) > 0:
+                if y is not None and torch.sum(slice_y) > 0:
                         break
                 elif torch.sum(slice_x) > 0:
                         break
-        if y:
+        if y is not None:
             return slice_x, slice_y
         else:
             return slice_x
