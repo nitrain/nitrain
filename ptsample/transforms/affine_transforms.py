@@ -68,6 +68,7 @@ def apply_transform(x, transform, fill_mode='nearest', fill_value=0.):
     x = np.stack(channel_images, axis=0)
     return x
 
+
 class Affine(object):
 
     def __init__(self, 
@@ -158,6 +159,7 @@ class Affine(object):
             return x, y
         else:
             return x
+
 
 class AffineCompose(object):
 
