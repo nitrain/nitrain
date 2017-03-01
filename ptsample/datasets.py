@@ -256,7 +256,7 @@ class TensorDataset(Dataset):
 
     def __init__(self, 
                  input_tensor,
-                 target_tensor,
+                 target_tensor=None,
                  transform=None, 
                  target_transform=None,
                  co_transform=None, 
@@ -298,6 +298,10 @@ class TensorDataset(Dataset):
         """
         self.inputs = input_tensor
         self.targets = target_tensor
+        if target_tensor is None:
+            self.has_target = False
+        else:
+            self.has_target = True
         self.transform = transform
         self.target_transform = target_transform
         self.co_transform = co_transform
@@ -320,14 +324,15 @@ class TensorDataset(Dataset):
         """Return a (transformed) input and target sample from an integer index"""
         # get paths
         input_sample = self.inputs[index]
-        target_sample = self.targets[index]
+        if self.has_target:
+            target_sample = self.targets[index]
 
         # apply transforms
         if self.transform is not None:
             input_sample = self.transform(input_sample)
-        if self.target_transform is not None:
+        if self.has_target and self.target_transform is not None:
             target_sample = self.target_transform(target_sample)
-        if self.co_transform is not None:
+        if self.has_target and self.co_transform is not None:
             input_sample, target_sample = self.co_transform(input_sample, target_sample)
 
         return input_sample, target_sample

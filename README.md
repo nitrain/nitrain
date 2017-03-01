@@ -55,7 +55,7 @@ class TensorDataset(Dataset):
 
     def __init__(self, 
                  input_tensor,
-                 target_tensor,
+                 target_tensor=None,
                  transform=None, 
                  target_transform=None,
                  co_transform=None, 
@@ -66,5 +66,19 @@ class TensorDataset(Dataset):
                  collate_fn=default_collate, 
                  pin_memory=False)
 ```
+
+#### `TensorDataset` Explained
+You can see the most obvious argument - `input_tensor`, which would be your input images/data. This can be of arbitrary size, but the first dimension should always be the number of samples and if the input represents an image then the channel dimension should be before the other dimensions (e.g. `(Channels, Height, Width)`).
+
+There is also an <b>optional</b> target tensor, which might be a vector of integer classifications, continous values, or even another set of images or arbitrary data.
+
+Next, there is the `transform`, which takes in the input tensor, performs some operation on it, and returns the modified version. The `target_transform` does the same thing with the `target_tensor`. 
+
+There is also a `co_transform` argument to perform transforms on the `input_tensor` and `target_tensor` together. This is particularly useful for segmentation tasks, where we may want to perform the same affine transform on both the input image and the segmented image. Note that the `co_transform` will occur <b>after</b> the individual transforms.
+
+There is a `batch_size` argument, which determines how many samples to take for each batch. There is also the boolean `shuffle` argument, which determines whether we will take samples sequentially as given or in a random order. 
+
+Finally, there are a few arguments which relate to the multi-processing nature of the samping, which I wont get into but will refer interested readers to the official pytorch docs.
+
 
 

@@ -108,6 +108,7 @@ class RangeNormalize(object):
                 t.mul_(a).add_(b)
             return x
 
+
 class StdNormalize(object):
     """Normalize torch tensor to have zero mean and unit std deviation"""
 
@@ -124,6 +125,7 @@ class StdNormalize(object):
             for t in x:
                 t.sub_(torch.mean(t)).div_(torch.std(t))
             return x         
+
 
 class Slice2D(object):
 
@@ -170,6 +172,7 @@ class Slice2D(object):
         else:
             return slice_x
 
+
 class RandomCrop(object):
 
     def __init__(self, crop_size):
@@ -192,6 +195,7 @@ class RandomCrop(object):
             return x, y
         else:
             return x
+
 
 class SpecialCrop(object):
 
