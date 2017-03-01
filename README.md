@@ -1,5 +1,7 @@
 # pytorch-sample : data augmentation for pytorch
 
+This package provides a set of transforms and data structures for sampling from in-memory or out-of-memory data. I'm openly taking requests for new transforms or new features to the samplers. 
+
 ## Transforms
 
 ### Torch Transforms
@@ -40,3 +42,29 @@ We provide the following datasets which provide general structure and iterators 
 - use a regular expression to find or filter out certain images
 - Load input and target images from the same folder and identify them using regular expressions
 - Apply the same augmentation/affine transforms to input and target images
+
+## Examples & Tutorial
+
+### TensorDataset Examples
+The `TensorDatset` provides a class structure for sampling from data that is already loaded into memory as torch tensors.
+
+Here is the class signature:
+
+```python
+class TensorDataset(Dataset):
+
+    def __init__(self, 
+                 input_tensor,
+                 target_tensor,
+                 transform=None, 
+                 target_transform=None,
+                 co_transform=None, 
+                 batch_size=1,
+                 shuffle=False,
+                 sampler=None,
+                 num_workers=0,
+                 collate_fn=default_collate, 
+                 pin_memory=False)
+```
+
+
