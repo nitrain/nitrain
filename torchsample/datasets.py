@@ -251,7 +251,7 @@ class FolderDataset(Dataset):
 
 class TensorDataset(Dataset):
 
-    def __init__(self, 
+    def __init__(self,
                  input_tensor,
                  target_tensor=None,
                  transform=None, 
