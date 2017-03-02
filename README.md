@@ -47,7 +47,7 @@ We provide the following datasets which provide general structure and iterators 
 ### Sampling Features
 - sample/augmentation without any target tensor
 - use a regular expression to find or filter out certain images
-- Load input and target images from the same folder and identify them using regular expressions
+- Sample datasets with both input and target images
 - Apply the same augmentation/affine transforms to input and target images
 - save transformed/augmented images to file
 
