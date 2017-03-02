@@ -211,9 +211,9 @@ class FolderDataset(Dataset):
         if sampler is not None:
             self.sampler = sampler
         elif shuffle:
-            self.sampler = RandomSampler(self)
+            self.sampler = RandomSampler(nb_samples=len(self.inputs))
         elif not shuffle:
-            self.sampler = SequentialSampler(self)
+            self.sampler = SequentialSampler(nb_samples=len(self.inputs))
 
         if class_mode == 'image':
             print('Found %i input images and %i target images' %
@@ -308,10 +308,13 @@ class TensorDataset(Dataset):
         self.collate_fn = collate_fn
         self.pin_memory = pin_memory
 
-        if shuffle:
-            self.sampler = RandomSampler(self)
-        elif not shuffle:
-            self.sampler = SequentialSampler(self)
+        if sampler is not None:
+            self.sampler = sampler
+        else:
+            if shuffle:
+                self.sampler = RandomSampler(nb_samples=len(self.inputs))
+            elif not shuffle:
+                self.sampler = SequentialSampler(nb_samples=len(self.inputs))
 
         self.batches_seen = 0
         self.nb_batches = int(math.ceil(len(self.sampler) / float(self.batch_size)))

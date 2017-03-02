@@ -27,7 +27,7 @@ class MultiSampler(Sampler):
     of samples itself, which can be useful when training on 2D slices taken
     from 3D images, for instance.
     """
-    def __init__(self, data_source, desired_samples, shuffle=False):
+    def __init__(self, nb_samples, desired_samples, shuffle=False):
         """Initialize MultiSampler
 
         Arguments
@@ -44,7 +44,7 @@ class MultiSampler(Sampler):
         shuffle : boolean
             whether to shuffle the indices or not
         """
-        data_samples = len(data_source)
+        data_samples = nb_samples
 
         n_repeats = desired_samples / data_samples
 
@@ -61,6 +61,9 @@ class MultiSampler(Sampler):
     def __iter__(self):
         return iter(self.sample_idx_array)
 
+    def __len__(self):
+        return len(self.sample_idx_array)
+
 
 class SequentialSampler(Sampler):
     """Samples elements sequentially, always in the same order.
@@ -69,8 +72,8 @@ class SequentialSampler(Sampler):
         data_source (Dataset): dataset to sample from
     """
 
-    def __init__(self, data_source):
-        self.num_samples = len(data_source)
+    def __init__(self, nb_samples):
+        self.num_samples = nb_samples
 
     def __iter__(self):
         return iter(range(self.num_samples))
@@ -86,8 +89,8 @@ class RandomSampler(Sampler):
         data_source (Dataset): dataset to sample from
     """
 
-    def __init__(self, data_source):
-        self.num_samples = len(data_source)
+    def __init__(self, nb_samples):
+        self.num_samples = nb_samples
 
     def __iter__(self):
         return iter(torch.randperm(self.num_samples).long())
