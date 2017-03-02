@@ -74,7 +74,7 @@ def make_dataset(directory, class_mode, class_to_idx=None,
     if class_mode is None:
         return inputs
     else:
-        return inputs
+        return inputs, targets
 
 class Dataset(object):
     """An abstract class representing a Dataset.

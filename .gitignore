@@ -1,7 +1,4 @@
-
-sandbox/
-production_models/
-tests/_data/
+.git/
 
 *.DS_Store
 *.pyc
