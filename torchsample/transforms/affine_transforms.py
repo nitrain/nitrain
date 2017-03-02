@@ -136,7 +136,7 @@ class Affine(object):
             self.transforms.append(shear_tform) 
 
         if zoom_range:
-            zoom_tform = Translate(zoom_range, lazy=True)
+            zoom_tform = Zoom(zoom_range, lazy=True)
             self.transforms.append(zoom_tform)
 
         self.fill_mode = fill_mode

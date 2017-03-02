@@ -239,7 +239,7 @@ class Slice2D(object):
 
     def __init__(self, axis=0, reject_zeros=True):
         """Take a random 2D slice from a 3D image along 
-        a given axis
+        a given axis. This image should not have a 4th channel dim.
 
         Arguments
         ---------
@@ -254,7 +254,7 @@ class Slice2D(object):
 
     def __call__(self, x, y=None):
         while True:
-            keep_slice  = random.randint(0,x.size(self.axis))
+            keep_slice  = random.randint(0,x.size(self.axis)-1)
             if self.axis == 0:
                 slice_x = x[keep_slice,:,:]
                 if y is not None:

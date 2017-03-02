@@ -4,6 +4,8 @@ from __future__ import absolute_import
 from .dataset_iter import default_collate, DatasetIter
 from .samplers import RandomSampler, SequentialSampler
 
+import torch
+
 import os
 import os.path
 import warnings
@@ -31,7 +33,6 @@ IMG_EXTENSIONS = [
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
 
-
 def find_classes(dir):
     classes = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
     classes.sort()
@@ -42,7 +43,7 @@ def pil_loader(path):
     return Image.open(path).convert('RGB')
 
 def npy_loader(path):
-    return np.load(path).astype('float32')
+    return torch.from_numpy(np.load(path).astype('float32'))
 
 def nifti_loader(path):
     return nibabel.load(path)
@@ -75,6 +76,7 @@ def make_dataset(directory, class_mode, class_to_idx=None,
         return inputs
     else:
         return inputs, targets
+
 
 class Dataset(object):
     """An abstract class representing a Dataset.
@@ -184,6 +186,8 @@ class FolderDataset(Dataset):
         elif loader == 'nifti':
             loader = nifti_loader
 
+        root = os.path.expanduser(root)
+
         classes, class_to_idx = find_classes(root)
         inputs, targets = make_dataset(root, class_mode,
             class_to_idx, input_regex, target_regex)
@@ -248,6 +252,7 @@ class FolderDataset(Dataset):
     
     def __len__(self):
         return len(self.inputs)
+
 
 class TensorDataset(Dataset):
 

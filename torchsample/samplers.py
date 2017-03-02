@@ -55,7 +55,7 @@ class MultiSampler(Sampler):
             cat_list.append(np.arange(self.data_samples))
         # add the left over samples
         left_over = self.desired_samples % self.data_samples
-        cat_list.append(np.random.choice(self.data_samples,left_over))
+        cat_list.append(np.random.choice(self.data_samples, left_over))
         self.sample_idx_array = np.concatenate(tuple(cat_list))
         if self.shuffle:
             self.sample_idx_array = np.random.permutation(self.sample_idx_array)
