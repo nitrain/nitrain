@@ -50,6 +50,7 @@ We provide the following datasets which provide general structure and iterators 
 - save transformed/augmented images to file
 
 ## Examples & Tutorial
+NOTE: All of the code below is available in an IPython notebook in the `tutorials` folder.
 
 ### `TensorDataset`
 The `TensorDatset` provides a class structure for sampling from data that is already loaded into memory as torch tensors.
