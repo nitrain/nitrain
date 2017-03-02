@@ -44,25 +44,28 @@ class MultiSampler(Sampler):
         shuffle : boolean
             whether to shuffle the indices or not
         """
-        data_samples = nb_samples
+        self.data_samples = nb_samples
+        self.desired_samples = desired_samples
+        self.shuffle = shuffle
 
-        n_repeats = desired_samples / data_samples
-
+    def gen_sample_array(self):
+        n_repeats = self.desired_samples / self.data_samples
         cat_list = []
         for i in range(math.floor(n_repeats)):
-            cat_list.append(np.arange(data_samples))
+            cat_list.append(np.arange(self.data_samples))
         # add the left over samples
-        left_over = desired_samples % data_samples
-        cat_list.append(np.random.choice(data_samples,left_over))
+        left_over = self.desired_samples % self.data_samples
+        cat_list.append(np.random.choice(self.data_samples,left_over))
         self.sample_idx_array = np.concatenate(tuple(cat_list))
-        if shuffle:
+        if self.shuffle:
             self.sample_idx_array = np.random.permutation(self.sample_idx_array)
+        return self.sample_idx_array
 
     def __iter__(self):
-        return iter(self.sample_idx_array)
+        return iter(self.gen_sample_array())
 
     def __len__(self):
-        return len(self.sample_idx_array)
+        return self.desired_samples
 
 
 class SequentialSampler(Sampler):
