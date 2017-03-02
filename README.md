@@ -1,5 +1,9 @@
 # torch-sample : data augmentation and sampling for pytorch
 
+![alt text](https://github.com/ncullen93/torchsample/tutorials/imgs/orig1.png "Original")
+
+![alt text](https://github.com/ncullen93/torchsample/tutorials/imgs/tform1.png "Original")
+
 This package provides a set of transforms and data structures for sampling from in-memory or out-of-memory data. I'm actively  taking requests for new transforms or new features to the samplers. 
 
 <b>NOTE: This package is in no way endorsed by, affiliated with, or otherwise associated with the official <i>Pytorch</i> ecosystem or core team.</b>
@@ -225,6 +229,27 @@ for i in range(3):
 ```
 
 Amazing! 
+
+However, having to create a separate transform for each affine variant is annoying. For that reason, we provide a single `Affine()` transform that takes as arguments the union of all the other individual affine transforms. This allows you to specify all of them in one place, while still preserving the one-interpolation rule:
+
+```python
+from torchsample.transforms import Affine
+process = Compose([RangeNormalize(0,1)])
+affine_tform = Affine(rotation_range=30, zoom_range=(1.0,1.4), shear_range=0.1,
+    translation_range=(0.2,0.2))
+tform = Compose([process, affine_tform])
+train_data = TensorDataset(x_train, y_train, transform=tform, batch_size=3)
+x_batch, y_batch = train_data.next()
+
+for i in range(3):
+    plt.imshow(x_train.numpy()[i][0])
+    plt.title('ORIGINAL')
+    plt.show()
+    plt.imshow(x_batch.numpy()[i][0])
+    plt.title('AFFINE TRANSFORMED')
+    plt.show()
+```
+
 
 That was a good overview of the functionality of the `transforms` on torch tensors and the `TensorDataset` class for sampling from input and target tensors. 
 
