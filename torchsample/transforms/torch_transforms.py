@@ -333,7 +333,7 @@ class SpecialCrop(object):
             ct_x    = [int(math.ceil(x_diff)),x.size(1)-int(math.floor(x_diff))]
             ct_y    = [int(math.ceil(y_diff)),x.size(2)-int(math.floor(y_diff))]
             indices = [ct_x,ct_y]        
-        if self.crop_type == 1:
+        elif self.crop_type == 1:
             # top left crop
             tl_x = [0, self.crop_size[0]]
             tl_y = [0, self.crop_size[1]]
