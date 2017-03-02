@@ -2,6 +2,10 @@
 
 ![Original](https://github.com/ncullen93/torchsample/blob/master/tutorials/imgs/orig1.png "Original") ![Transformed](https://github.com/ncullen93/torchsample/blob/master/tutorials/imgs/tform1.png "Transformed")
 
+![Original](https://github.com/ncullen93/torchsample/blob/master/tutorials/imgs/orig2.png "Original") ![Transformed](https://github.com/ncullen93/torchsample/blob/master/tutorials/imgs/tform2.png "Transformed")
+
+![Original](https://github.com/ncullen93/torchsample/blob/master/tutorials/imgs/orig3.png "Original") ![Transformed](https://github.com/ncullen93/torchsample/blob/master/tutorials/imgs/tform3.png "Transformed")
+
 This package provides a set of transforms and data structures for sampling from in-memory or out-of-memory data. I'm actively  taking requests for new transforms or new features to the samplers. 
 
 <b>NOTE: This package is in no way endorsed by, affiliated with, or otherwise associated with the official <i>Pytorch</i> ecosystem or core team.</b>
