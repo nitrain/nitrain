@@ -186,6 +186,8 @@ class RangeNormalize(object):
     def __init__(self, min_val, max_val, n_channels=1):
         if not isinstance(min_val, list) and not isinstance(min_val, tuple):
             min_val = [float(min_val)]*n_channels
+        else:
+            n_channels = len(min_val)
         if not isinstance(max_val, list) and not isinstance(max_val, tuple):
             max_val = [float(max_val)]*n_channels
 
