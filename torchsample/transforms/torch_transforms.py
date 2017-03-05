@@ -5,7 +5,6 @@ import math
 import numpy as np
 import torch
 
-
 class Compose(object):
     """Composes several transforms together.
 
@@ -186,9 +185,9 @@ class RangeNormalize(object):
     """
     def __init__(self, min_val, max_val, n_channels=1):
         if not isinstance(min_val, list) and not isinstance(min_val, tuple):
-            min_val = [min_val]*n_channels
+            min_val = [float(min_val)]*n_channels
         if not isinstance(max_val, list) and not isinstance(max_val, tuple):
-            max_val = [max_val]*n_channels
+            max_val = [float(max_val)]*n_channels
 
         self.min_val = min_val
         self.max_val = max_val
@@ -201,7 +200,8 @@ class RangeNormalize(object):
                 a = (max_-min_)/float(_max_val-_min_val)
                 b = max_ - a * _max_val
                 t.mul_(a).add_(b)
-                return x
+                t.clamp_(min_,max_)
+            return x
         else:
             for t, u, min_, max_ in zip(x, y, self.min_val, self.max_val):
                 _max_val = torch.max(t)
@@ -295,8 +295,8 @@ class RandomCrop(object):
         self.crop_size = crop_size
 
     def __call__(self, x, y=None):
-        h_idx = random.randint(0,x.size(1)-self.crop_size[0]+1)
-        w_idx = random.randint(0,x.size(2)-self.crop_size[1]+1)
+        h_idx = np.random.randint(0,x.size(1)-self.crop_size[0]+1)
+        w_idx = np.random.randint(0,x.size(2)-self.crop_size[1]+1)
         x = x[:,h_idx:(h_idx+self.crop_size[0]),w_idx:(w_idx+self.crop_size[1])]
         if y is not None:
             y = y[:,h_idx:(h_idx+self.crop_size[0]),w_idx:(w_idx+self.crop_size[1])] 
