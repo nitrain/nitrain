@@ -24,7 +24,7 @@ I'm actively  taking requests for new transforms or new features to the samplers
 - [variable batch size](https://github.com/ncullen93/torchsample/blob/master/examples/variable_batchsize.py)
 
 ## Example
-Perform transforms on datasets where both inputs and targets are images:
+Perform transforms on datasets where both inputs and targets are images in-memory:
 
 ```python
 from torchvision.datasets import MNIST
@@ -40,6 +40,18 @@ train_loader = TensorDataset(x_train, x_train, co_transform=tform, batch_size=3)
 x_batch, y_batch = train_loader.next_batch()
 
 ```
+
+Load data out-of-memory using regular expressions:
+
+```python
+from torchsample import FolderDataset
+train_loader = FolderDataset(root='/users/ncullen/desktop/my_data/', 
+    input_regex='*img*', target_regex='*mask*',
+    batch_size=32, co_transform=tform, batch_size=3)
+
+x_batch, y_batch = train_loader.next_batch()
+```
+
 
 ## Transforms
 
