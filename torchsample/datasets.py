@@ -327,11 +327,15 @@ class TensorDataset(Dataset):
         self.collate_fn = collate_fn
         self.pin_memory = pin_memory
 
-        if sampler is not None:
-            self.sampler = sampler
-        elif sampler == 'stratified':
-            self.sampler = StratifiedSampler(class_vecter=self.targets, 
+        if sampler == 'stratified':
+            self.sampler = StratifiedSampler(class_vector=self.targets, 
                 batch_size=self.batch_size)
+        elif sampler == 'random':
+            self.sampler = RandomSampler(nb_samples=len(self.inputs))
+        elif sampler == 'sequential':
+            self.sampler = SequentialSampler(nb_samples=len(self.inputs))
+        elif sampler is not None and not isinstance(sampler, str):
+            self.sampler = sampler
         else:
             if shuffle:
                 self.sampler = RandomSampler(nb_samples=len(self.inputs))

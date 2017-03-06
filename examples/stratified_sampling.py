@@ -26,12 +26,16 @@ for i, batch_idx in enumerate(sampler):
 
 #You can see that it evenly samples each batch from 
 #the 0 and 1 classes. To use it in a sampler:
+import torch
+import numpy as np
 from torchsample import TensorDataset
 x = torch.randn(8,2)
 y = torch.from_numpy(np.array([0, 0, 1, 1, 0, 0, 1, 1]))
 
 loader = TensorDataset(x, y, batch_size=2, sampler='stratified')
 
+for xbatch, ybatch in loader:
+    print(ybatch)
 # OR:
 
 x = torch.randn(8,2)
