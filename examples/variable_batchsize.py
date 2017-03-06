@@ -24,3 +24,12 @@ for i in range(1000):
 # MAKE ONLY ONE PASS THROUGH THE DATA
 for xbatch, ybatch in loader:
     pass
+
+# DEMONSTRATE THAT THE DATA WILL STILL BE SHUFFLE IF YOU USE NEXT_BATCH()
+loader = TensorDataset(x, y, batch_size=2, shuffle=True)
+# 10 loops = 2 epochs (n=10 / batch_size = 2 --> 5 loops per "epoch")
+for i in range(10):
+    if i == 5:
+        print('\n')
+    xbatch, ybatch = loader.next_batch()
+    print(ybatch.numpy())
