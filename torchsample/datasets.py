@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 
 from .dataset_iter import default_collate, DatasetIter
-from .samplers import RandomSampler, SequentialSampler
+from .samplers import RandomSampler, SequentialSampler, StratifiedSampler
 
 import torch
 
@@ -329,6 +329,9 @@ class TensorDataset(Dataset):
 
         if sampler is not None:
             self.sampler = sampler
+        elif sampler == 'stratified':
+            self.sampler = StratifiedSampler(class_vecter=self.targets, 
+                batch_size=self.batch_size)
         else:
             if shuffle:
                 self.sampler = RandomSampler(nb_samples=len(self.inputs))
