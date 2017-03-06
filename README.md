@@ -12,7 +12,8 @@ I'm actively  taking requests for new transforms or new features to the samplers
     - equal representation of each target class in each batch
 - variable batch size
     - have a default batch size, but also variable size e.g. `loader.next_batch(10)`
-- sample for a fixed number of batches without using an `epoch` loop:
+- sample for a fixed number of batches without using an `epoch` loop
+
 
 
 ## Transforms
