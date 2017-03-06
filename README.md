@@ -14,45 +14,60 @@ I'm actively  taking requests for new transforms or new features to the samplers
     - have a default batch size, but also variable size e.g. `loader.next_batch(10)`
 - sample for a fixed number of batches without using an `epoch` loop
 
+## Example
+Perform transforms on datasets where both inputs and targets are images:
 
+```python
+from torchvision.datasets import MNIST
+train = MNIST(root='/users/ncullen/desktop/data/', train=True, download=True)
+x_train = train.train_data
+
+process = Compose([TypeCast('float'), AddChannel(), RangeNormalize(0,1)])
+affine = Affine(rotation_range=30, zoom_range=(1.0,1.4), shear_range=0.1,
+    translation_range=(0.2,0.2))
+tform = Compose([process, affine])
+train_loader = TensorDataset(x_train, x_train, co_transform=tform, batch_size=3)
+
+x_batch, y_batch = train_loader.next_batch()
+
+```
 
 ## Transforms
 
 ### Torch Transforms
 These transforms work directly on torch tensors
 
-- `Compose()` : string together multiple transforms
-- `AddChannel()` : add a dummy channel dimension to a tensor (useful if your images are of size `28x28` for example, and you need them to be size `1x28x28`)
-- `SwapDims()` : swap the axes of the image to the given tuple order (numpy syntax). For example, to switch from CHW to HWC ordering, you can use `Transpose((1,2,0))`.
-- `RangeNormalize()` : normalize a tensor between a `min` and `max` value (e.g. between (-1,1), (0,1), etc.)
-- `StdNormalize()` : normalize a tensor to have zero mean and unit variance
-- `Slice2D()` : take a random 2D slice from a 3D image (or video) along a given axis
-- `RandomCrop()` : take a random crop of a given size from a 2D images
-- `SpecialCrop()` : take a crop of a given size from one of the four corners of an image or the center of an image
-- `Pad()` : pad an image by a given size
-- `RandomFlip()` : randomly flip a given image horizontally and/or vertical with a given probability
-- `ToTensor()` : convert numpy array or pil image to torch tensor
+- `Compose()` 
+- `AddChannel()`
+- `SwapDims()` 
+- `RangeNormalize()` 
+- `StdNormalize()` 
+- `Slice2D()` 
+- `RandomCrop()` 
+- `SpecialCrop()` 
+- `Pad()` 
+- `RandomFlip()` 
+- `ToTensor()` 
 
 ### Affine Transforms
 The following transforms perform affine (or affine-like) transforms on torch tensors. 
 
-- `Rotate()` : randomly rotate an image between given degree bounds
-- `Translate()` : randomly translate an image horizontally and/or vertically between given bounds
-- `Shear()` : randomly shear an image between given radian bounds
-- `Zoom()` : randomly zoom in or out on an image between given percentage bounds
+- `Rotate()` 
+- `Translate()` 
+- `Shear()` 
+- `Zoom()` 
 
 We also provide a class for stringing multiple affine transformations together so that only one interpolation takes place:
 
-- `Affine()` : perform an affine transform with all of the above options available as arguments to this function, with the benefit of using only one interpolation
-
-- `AffineCompose()` : perform a string of explicitly-provided affine transforms, with the benefit of using only one interpolation.
+- `Affine()` 
+- `AffineCompose()` 
 
 ## Sampling
 We provide the following datasets which provide general structure and iterators for sampling from and using transforms on in-memory or out-of-memory data:
 
-- `TensorDataset()` : sample from and/or iterate through an input and target tensor, while providing transforms and a sampling procedure.
+- `TensorDataset()` 
 
-- `FolderDataset()` : sample from and/or iterate images or arbitrary data types existing in directories, which will only be loaded into memory as needed.
+- `FolderDataset()` 
 
 ### Sampling Features
 - Stratified Sampling
