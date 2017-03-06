@@ -16,8 +16,12 @@ I'm actively  taking requests for new transforms or new features to the samplers
 - variable batch size (e.g. `loader.next_batch(10)`)
 - sample for a fixed number of batches without using an `epoch` loop
 
-## Tutorials
-
+## Tutorials and examples
+- [torchsample overview](https://github.com/ncullen93/torchsample/blob/master/tutorials/torchsample%20tutorial.ipynb) 
+- [samplers overview](https://github.com/ncullen93/torchsample/blob/master/tutorials/Samplers.ipynb)
+- [cifar in-memory](https://github.com/ncullen93/torchsample/blob/master/examples/cifar_TensorDataset.py)
+- [stratified sampling](https://github.com/ncullen93/torchsample/blob/master/examples/stratified_sampling.py)
+- [variable batch size](https://github.com/ncullen93/torchsample/blob/master/examples/variable_batchsize.py)
 
 ## Example
 Perform transforms on datasets where both inputs and targets are images:
