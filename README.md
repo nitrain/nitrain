@@ -1,5 +1,10 @@
 # torch-sample : data augmentation and sampling for pytorch
 
+
+![Original](https://github.com/ncullen93/torchsample/blob/master/tutorials/imgs/orig1.png "Original") ![Transformed](https://github.com/ncullen93/torchsample/blob/master/tutorials/imgs/tform1.png "Transformed")
+
+This package provides a set of transforms and data structures for sampling from in-memory or out-of-memory data. I'm actively  taking requests for new transforms or new features to the samplers. 
+
 ## NEW:
 - stratified sampling
     - equal representation of each target class in each batch
@@ -7,11 +12,6 @@
     - have a default batch size, but also variable size e.g. `loader.next_batch(10)`
 - sample for a fixed number of batches without using an `epoch` loop:
 
-![Original](https://github.com/ncullen93/torchsample/blob/master/tutorials/imgs/orig1.png "Original") ![Transformed](https://github.com/ncullen93/torchsample/blob/master/tutorials/imgs/tform1.png "Transformed")
-
-This package provides a set of transforms and data structures for sampling from in-memory or out-of-memory data. I'm actively  taking requests for new transforms or new features to the samplers. 
-
-<b>NOTE: This package is in no way endorsed by, affiliated with, or otherwise associated with the official <i>Pytorch</i> ecosystem or core team.</b>
 
 ## Transforms
 
