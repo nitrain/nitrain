@@ -7,10 +7,12 @@ This package provides a set of transforms and data structures for sampling from 
 I'm actively  taking requests for new transforms or new features to the samplers. 
 (see [for example](https://github.com/ncullen93/torchsample/issues/1))
 
-## UNIQUE FEATURES
+## Unique Features
 - affine transforms
 - transforms directly on arbitrary torch tensors (rather than just PIL images)
 - perform transforms on data where both input and target are images
+- sample and transform images with no target
+- save transformed/augmented images to file
 - sample arbitrary data directly from folders with speed
 - stratified sampling
 - variable batch size (e.g. `loader.next_batch(10)`)
@@ -89,12 +91,3 @@ We provide the following datasets which provide general structure and iterators 
 - `TensorDataset()` 
 
 - `FolderDataset()` 
-
-### Sampling Features
-- Stratified Sampling
-- sample a fixed number of batches without an `epoch` loop
-- sample/augmentation without any target tensor
-- use a regular expression to find or filter out certain images
-- Sample datasets with both input and target images
-- Apply the same augmentation/affine transforms to input and target images
-- save transformed/augmented images to file
