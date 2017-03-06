@@ -112,6 +112,20 @@ class Dataset(object):
             self._iter = DatasetIter(self)
         return new_batch
 
+    def next_batch(self, batch_size=None):
+        _old_batch_size = self._iter.batch_size
+        if batch_size is not None:
+            self._iter.batch_size = batch_size
+        new_batch = next(self._iter)
+        self.batches_seen += 1
+        if self.batches_seen % self.nb_batches == 0:
+            #print('Last Batch of Current Epoch')
+            self._iter = DatasetIter(self)
+        # go back to default batch size
+        self._iter.batch_size = _old_batch_size
+        return new_batch     
+
+
     next = __next__
 
 
