@@ -32,10 +32,23 @@ from torchsample import TensorDataset
 x = torch.randn(8,2)
 y = torch.from_numpy(np.array([0, 0, 1, 1, 0, 0, 1, 1]))
 
-loader = TensorDataset(x, y, batch_size=2, sampler='stratified')
+loader = TensorDataset(x, y, batch_size=4, sampler='stratified')
 
 for xbatch, ybatch in loader:
-    print(ybatch)
+    print(ybatch.numpy())
+
+# AND IT WORKS FOR MORE THAN 2 CLASSES
+import torch
+import numpy as np
+from torchsample import TensorDataset
+x = torch.randn(8,2)
+y = torch.from_numpy(np.array([0, 0, 1, 1, 2, 2, 3, 3]))
+
+loader = TensorDataset(x, y, batch_size=4, sampler='stratified')
+
+for xbatch, ybatch in loader:
+    print(ybatch.numpy())
+
 # OR:
 
 x = torch.randn(8,2)
