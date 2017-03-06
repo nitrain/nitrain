@@ -3,7 +3,9 @@
 
 ![Original](https://github.com/ncullen93/torchsample/blob/master/tutorials/imgs/orig1.png "Original") ![Transformed](https://github.com/ncullen93/torchsample/blob/master/tutorials/imgs/tform1.png "Transformed")
 
-This package provides a set of transforms and data structures for sampling from in-memory or out-of-memory data. I'm actively  taking requests for new transforms or new features to the samplers. 
+This package provides a set of transforms and data structures for sampling from in-memory or out-of-memory data. 
+I'm actively  taking requests for new transforms or new features to the samplers. 
+(see [for example](https://github.com/ncullen93/torchsample/issues/1))
 
 ## NEW:
 - stratified sampling
