@@ -45,6 +45,7 @@ We provide the following datasets which provide general structure and iterators 
 - `FolderDataset()` : sample from and/or iterate images or arbitrary data types existing in directories, which will only be loaded into memory as needed.
 
 ### Sampling Features
+- Stratified Sampling
 - sample a fixed number of batches without an `epoch` loop
 - sample/augmentation without any target tensor
 - use a regular expression to find or filter out certain images
