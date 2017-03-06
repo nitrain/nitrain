@@ -20,7 +20,19 @@ class Sampler(object):
         raise NotImplementedError
 
 class StratifiedSampler(Sampler):
+    """Stratified Sampling
+
+    Provides equal representation of target classes in each batch
+    """
     def __init__(self, class_vector, batch_size):
+        """
+        Arguments
+        ---------
+        class_vector : torch tensor
+            a vector of class labels
+        batch_size : integer
+            batch_size
+        """
         self.n_splits = int(class_vector.size(0) / batch_size)
         self.class_vector = class_vector
 
