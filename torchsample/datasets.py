@@ -64,14 +64,16 @@ def make_dataset(directory, class_mode, class_to_idx=None,
 
         for root, _, fnames in sorted(os.walk(d)):
             for fname in fnames:
-                if fnmatch.fnmatch(fname, input_regex):
-                    path = os.path.join(root, fname)
-                    inputs.append(path)
-                    if class_mode == 'label':
-                        targets.append(class_to_idx[subdir])
-                if class_mode == 'image' and fnmatch.fnmatch(fname, target_regex):
-                    path = os.path.join(root, fname)
-                    targets.append(path)
+                if is_image_file(fname):
+                    if fnmatch.fnmatch(fname, input_regex):
+                        path = os.path.join(root, fname)
+                        inputs.append(path)
+                        if class_mode == 'label':
+                            targets.append(class_to_idx[subdir])
+                    if class_mode == 'image' and \
+                            fnmatch.fnmatch(fname, target_regex):
+                        path = os.path.join(root, fname)
+                        targets.append(path)
     if class_mode is None:
         return inputs
     else:
@@ -250,9 +252,9 @@ class FolderDataset(Dataset):
         target_sample = self.targets[index]
 
         # load samples into memory
-        input_sample = self.loader(os.path.join(self.root, input_sample))
+        input_sample = self.loader(input_sample)
         if self.class_mode == 'image':
-            target_sample = self.loader(os.path.join(self.root, target_sample))
+            target_sample = self.loader(target_sample)
         
         # apply transforms
         if self.transform is not None:
