@@ -32,52 +32,29 @@ class Compose(object):
 
 
 class ToTensor(object):
-    """Converts a numpy array or PIL Image to torch.FloatTensor"""
-
-    def __init__(self, cuda=False, device=0):
-        self.cuda = cuda
-        self.device = device
-
-    def load_image(self, x):         
-        # handle PIL Image
-        x = torch.ByteTensor(torch.ByteStorage.from_buffer(x.tobytes()))
-        # PIL image mode: 1, L, P, I, F, RGB, YCbCr, RGBA, CMYK
-        if x.mode == 'YCbCr':
-            nchannel = 3
-        else:
-            nchannel = len(x.mode)
-        x = x.view(x.size[1], x.size[0], nchannel)
-        # put it from HWC to CHW format
-        # yikes, this transpose takes 80% of the loading time/CPU
-        x = x.transpose(0, 1).transpose(0, 2).contiguous() 
-        return x.float()
+    """Converts a numpy array to torch.Tensor"""
     
     def __call__(self, x, y=None):
-        if isinstance(x, np.ndarray):
-            x = torch.from_numpy(x)
-            if y is None:
-                if self.cuda:
-                    x = x.cuda(self.device)
-                return x.float()
-            else:
-                y = torch.from_numpy(y)
-                if self.cuda:
-                    x = x.cuda(self.device)
-                    y = y.cuda(self.device)
-                return x.float(), y.float()
+        x = torch.from_numpy(x)
+        if y is not None:
+            y = torch.from_numpy(y)
+            return x, y
+        return x
+
+
+class ToCuda(object):
+
+    def __init__(self, device=0):
+        self.device = device
+
+    def __call__(self, x, y):
+        x = x.cuda(self.device)
+        if y is not None:
+            y = y.cuda(self.device)
+            return x, y
         else:
-            x = self.load_image(x)
-            if y is None:
-                if self.cuda:
-                    x = x.cuda(self.device)
-                return x.float()
-            else:
-                y = self.load_image(y)
-                if self.cuda:
-                    x = x.cuda(self.device)
-                    y = y.cuda(self.device)     
-                return x.float(), y.float()
-         
+            return x
+
 
 class ToFile(object):
     """Saves an image to file. Useful as the last transform
@@ -101,7 +78,6 @@ class ToFile(object):
         self.counter = 0
 
     def __call__(self, x, y=None):
-        print('saving')
         np.save(os.path.join(self.root,'x_img-%i.npy'%self.counter), x.numpy())
         if y is not None:
             np.save(os.path.join(self.root,'y_img-%i.npy'%self.counter), y.numpy())
@@ -117,20 +93,24 @@ class TypeCast(object):
     def __init__(self, dtype='float'):
         self.dtype = dtype
 
-    def __call__(self, x, y=None):
-        if self.dtype == 'float':
+    def __call__(self, x):
+        if self.dtype == torch.ByteTensor:
+            x = x.byte()
+        elif self.dtype == torch.CharTensor:
+            x = x.char()
+        elif self.dtype == torch.DoubleTensor:
+            x = x.double()
+        elif self.dtype == torch.FloatTensor:
             x = x.float()
-            if y is not None:
-                y = y.float()
-        if self.dtype == 'long':
+        elif self.dtype == torch.IntTensor:
+            x = x.int()
+        elif self.dtype == torch.LongTensor:
             x = x.long()
-            if y is not None:
-                y = y.long()
-
-        if y is None:
-            return x
+        elif self.dtype == torch.ShortTensor:
+            x = x.short()
         else:
-            return x, y
+            raise Exception('Not a valid Tensor Type')
+        return x
 
 
 class AddChannel(object):
@@ -139,23 +119,23 @@ class AddChannel(object):
     of size (1, 28, 28), for example.
     """
     def __call__(self, x, y=None):
-        x = torch.from_numpy(x.numpy().reshape(1,x.size(0), x.size(1)))
+        x = x.unsqueeze(2)
         if y is not None:
-            y = torch.from_numpy(y.numpy().reshape(1,y.size(0), y.size(1)))
-            return x, y
-        else:
-            return x
+            y = y.unsqueeze(2)
+            return x,y
+        return x
 
 
-class SwapDims(object):
+class Transpose(object):
 
-    def __init__(self, order):
-        self.order = order
+    def __init__(self, dim1, dim2):
+        self.dim1 = dim1
+        self.dim2 = dim2
 
     def __call__(self, x, y=None):
-        x = torch.from_numpy(x.numpy().transpose(self.order))
+        x = torch.tranpose(x, self.dim1, self.dim2)
         if y is not None:
-            y = torch.from_numpy(y.numpy().transpose(self.order))
+            y = torch.tranpose(y, self.dim1, self.dim2)
             return x, y
         else:
             return x
@@ -183,39 +163,38 @@ class RangeNormalize(object):
         >>> rn = RangeNormalize(0,1)
         >>> x_norm = rn(x)
     """
-    def __init__(self, min_val, max_val, n_channels=1):
-        if not isinstance(min_val, list) and not isinstance(min_val, tuple):
-            min_val = [float(min_val)]*n_channels
-        else:
-            n_channels = len(min_val)
-        if not isinstance(max_val, list) and not isinstance(max_val, tuple):
-            max_val = [float(max_val)]*n_channels
-
-        self.min_val = min_val
-        self.max_val = max_val
+    def __init__(self, min_range, max_range, 
+        fixed_min=None, fixed_max=None):
+        self.min_range = min_range
+        self.max_range = max_range
+        self.fixed_min = fixed_min
+        self.fixed_max = fixed_max
 
     def __call__(self, x, y=None):
+        if self.fixed_min is not None:
+            min_val = self.fixed_min
+        else:
+            min_val = torch.min(x)
+        if self.fixed_max is not None:
+            max_val = self.fixed_max
+        else:
+            max_val = torch.max(x)
+        if min_val == max_val:
+            min_val += 1e-07
+        
+        a = (self.max_range - self.min_range) / (max_val - min_val)
+        b = self.max_range - a * max_val
+        x.mul_(a).add_(b)
+        #x.clamp_(self.min_range, self.max_range)
         if y is None:
-            for t, min_, max_ in zip(x, self.min_val, self.max_val):
-                _max_val = torch.max(t)
-                _min_val = torch.min(t)
-                a = (max_-min_)/float(_max_val-_min_val)
-                b = max_ - a * _max_val
-                t.mul_(a).add_(b)
-                t.clamp_(min_,max_)
             return x
         else:
-            for t, u, min_, max_ in zip(x, y, self.min_val, self.max_val):
-                _max_val = torch.max(t)
-                _min_val = torch.min(t)
-                a = (max_ - min_) / float(_max_val-_min_val)
-                b = max_ - a * _max_val
-                t.mul_(a).add_(b)
-                _max_val = torch.max(u)
-                _min_val = torch.min(u)
-                a = (max_ - min_) / float(_max_val-_min_val)
-                b = max_ - a * _max_val
-                u.mul_(a).add_(b)
+            min_val = torch.min(y)
+            max_val = torch.max(y)
+            a = (self.max_range - self.min_range) / (max_val - min_val)
+            b = self.max_range - a * max_val
+            y.mul_(a).add_(b)
+            #y.clamp_(self.min_range, self.max_range)
             return x, y
 
 
@@ -239,7 +218,7 @@ class StdNormalize(object):
 
 class Slice2D(object):
 
-    def __init__(self, axis=0, reject_zeros=True):
+    def __init__(self, axis=0, reject_zeros=False):
         """Take a random 2D slice from a 3D image along 
         a given axis. This image should not have a 4th channel dim.
 
@@ -297,11 +276,11 @@ class RandomCrop(object):
         self.crop_size = crop_size
 
     def __call__(self, x, y=None):
-        h_idx = np.random.randint(0,x.size(1)-self.crop_size[0]+1)
-        w_idx = np.random.randint(0,x.size(2)-self.crop_size[1]+1)
-        x = x[:,h_idx:(h_idx+self.crop_size[0]),w_idx:(w_idx+self.crop_size[1])]
+        h_idx = random.randint(0,x.size(1)-self.crop_size[0]+1)
+        w_idx = random.randint(0,x.size(2)-self.crop_size[1]+1)
+        x = x[h_idx:(h_idx+self.crop_size[0]),w_idx:(w_idx+self.crop_size[1]),:]
         if y is not None:
-            y = y[:,h_idx:(h_idx+self.crop_size[0]),w_idx:(w_idx+self.crop_size[1])] 
+            y = y[h_idx:(h_idx+self.crop_size[0]),w_idx:(w_idx+self.crop_size[1]),:] 
             return x, y
         else:
             return x

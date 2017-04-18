@@ -1,16 +1,13 @@
 
 from __future__ import absolute_import
 
-from .dataset_iter import default_collate, DatasetIter
-from .samplers import RandomSampler, SequentialSampler, StratifiedSampler
-
 import torch
+import torch.utils.data
 
 import os
 import os.path
 import warnings
 import fnmatch
-import math
 
 import numpy as np
 try:
@@ -23,34 +20,35 @@ try:
 except:
     warnings.warn('Cant import PIL.. Cant load PIL images')
 
-IMG_EXTENSIONS = [
-    '.jpg', '.JPG', '.jpeg', '.JPEG',
-    '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP',
-    '.nii.gz', '.npy'
-]
-
-
-def is_image_file(filename):
-    return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
-
-def find_classes(dir):
-    classes = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
-    classes.sort()
-    class_to_idx = {classes[i]: i for i in range(len(classes))}
-    return classes, class_to_idx
 
 def pil_loader(path):
     return Image.open(path).convert('RGB')
 
 def npy_loader(path):
-    return torch.from_numpy(np.load(path).astype('float32'))
+    return np.load(path)
 
 def nifti_loader(path):
     return nibabel.load(path)
 
-def make_dataset(directory, class_mode, class_to_idx=None, 
+def _find_classes(dir):
+    classes = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
+    classes.sort()
+    class_to_idx = {classes[i]: i for i in range(len(classes))}
+    return classes, class_to_idx
+
+def _is_image_file(filename):
+    IMG_EXTENSIONS = [
+        '.jpg', '.JPG', '.jpeg', '.JPEG',
+        '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP',
+        '.nii.gz', '.npy'
+    ]
+    return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
+
+def _finds_inputs_and_targets(directory, class_mode, class_to_idx=None, 
             input_regex=None, target_regex=None, ):
-    """Map a dataset from a root folder"""
+    """
+    Map a dataset from a root folder
+    """
     if class_mode == 'image':
         if not input_regex and not target_regex:
             raise ValueError('must give input_regex and target_regex if'+
@@ -64,7 +62,7 @@ def make_dataset(directory, class_mode, class_to_idx=None,
 
         for root, _, fnames in sorted(os.walk(d)):
             for fname in fnames:
-                if is_image_file(fname):
+                if _is_image_file(fname):
                     if fnmatch.fnmatch(fname, input_regex):
                         path = os.path.join(root, fname)
                         inputs.append(path)
@@ -80,58 +78,7 @@ def make_dataset(directory, class_mode, class_to_idx=None,
         return inputs, targets
 
 
-class Dataset(object):
-    """An abstract class representing a Dataset.
-
-    All other datasets should subclass it. All subclasses should override
-    ``__len__``, that provides the size of the dataset, and ``__getitem__``,
-    supporting integer indexing in range from 0 to len(self) exclusive.
-    """
-
-    def __getitem__(self, index):
-        raise NotImplementedError
-
-    def __len__(self):
-        raise NotImplementedError
-
-    def one_epoch(self):
-        """Return an iterator that will loop through all the samples one time"""
-        return DatasetIter(self)
-
-    def __iter__(self):
-        """Return an iterator that will loop through all the samples one time"""
-        return DatasetIter(self)
-
-    def __next__(self):
-        """Return the next batch in the data. If this batch is the last
-        batch in the data, the iterator will be reset -- allowing you
-        to loop through the data ad infinitum
-        """
-        new_batch = next(self._iter)
-        self.batches_seen += 1
-        if self.batches_seen % self.nb_batches == 0:
-            #print('Last Batch of Current Epoch')
-            self._iter = DatasetIter(self)
-        return new_batch
-
-    def next_batch(self, batch_size=None):
-        _old_batch_size = self._iter.batch_size
-        if batch_size is not None:
-            self._iter.batch_size = batch_size
-        new_batch = next(self._iter)
-        self.batches_seen += 1
-        if self.batches_seen % self.nb_batches == 0:
-            #print('Last Batch of Current Epoch')
-            self._iter = DatasetIter(self)
-        # go back to default batch size
-        self._iter.batch_size = _old_batch_size
-        return new_batch     
-
-
-    next = __next__
-
-
-class FolderDataset(Dataset):
+class FolderDataset(torch.utils.data.Dataset):
 
     def __init__(self, 
                  root,
@@ -141,14 +88,9 @@ class FolderDataset(Dataset):
                  transform=None, 
                  target_transform=None,
                  co_transform=None, 
-                 loader='npy',
-                 batch_size=1,
-                 shuffle=False,
-                 sampler=None,
-                 num_workers=0,
-                 collate_fn=default_collate, 
-                 pin_memory=False):
-        """Dataset class for loading out-of-memory data.
+                 file_loader='npy'):
+        """
+        Dataset class for loading out-of-memory data.
 
         Arguments
         ---------
@@ -195,22 +137,24 @@ class FolderDataset(Dataset):
             >>> data = FolderDataset(root=/path/to/main/dir,
                     class_mode='label', loader='pil')
         """
-        if loader == 'npy':
-            loader = npy_loader
-        elif loader == 'pil':
-            loader = pil_loader
-        elif loader == 'nifti':
-            loader = nifti_loader
+        if file_loader == 'npy':
+            file_loader = npy_loader
+        elif file_loader == 'pil':
+            file_loader = pil_loader
+        elif file_loader == 'nifti':
+            file_loader = nifti_loader
+        self.file_loader = file_loader
 
         root = os.path.expanduser(root)
 
-        classes, class_to_idx = find_classes(root)
-        inputs, targets = make_dataset(root, class_mode,
+        classes, class_to_idx = _find_classes(root)
+        inputs, targets = _finds_inputs_and_targets(root, class_mode,
             class_to_idx, input_regex, target_regex)
 
         if len(inputs) == 0:
-            raise(RuntimeError("Found 0 images in subfolders of: " + root + "\n"
-                    "Supported image extensions are: " + ",".join(IMG_EXTENSIONS)))
+            raise(RuntimeError('Found 0 images in subfolders of: %s' % root))
+        else:
+            print('Found %i images' % len(inputs))
 
         self.root = os.path.expanduser(root)
         self.inputs = inputs
@@ -220,31 +164,8 @@ class FolderDataset(Dataset):
         self.transform = transform
         self.target_transform = target_transform
         self.co_transform = co_transform
-        self.loader = loader
+        
         self.class_mode = class_mode
-
-        self.batch_size = batch_size
-        self.num_workers = num_workers
-        self.collate_fn = collate_fn
-        self.pin_memory = pin_memory
-
-        if sampler is not None:
-            self.sampler = sampler
-        elif shuffle:
-            self.sampler = RandomSampler(nb_samples=len(self.inputs))
-        elif not shuffle:
-            self.sampler = SequentialSampler(nb_samples=len(self.inputs))
-
-        if class_mode == 'image':
-            print('Found %i input images and %i target images' %
-                (len(self.inputs), len(self.targets)))
-        elif class_mode == 'label':
-            print('Found %i input images across %i classes' %
-                (len(self.inputs), len(self.classes)))  
-
-        self.batches_seen = 0
-        self.nb_batches = int(math.ceil(len(self.sampler) / float(self.batch_size)))
-        self._iter = DatasetIter(self)      
 
     def __getitem__(self, index):
         # get paths
@@ -252,9 +173,9 @@ class FolderDataset(Dataset):
         target_sample = self.targets[index]
 
         # load samples into memory
-        input_sample = self.loader(input_sample)
+        input_sample = torch.from_numpy(self.file_loader(input_sample)).contiguous()
         if self.class_mode == 'image':
-            target_sample = self.loader(target_sample)
+            target_sample = torch.from_numpy(self.file_loader(target_sample)).contiguous()
         
         # apply transforms
         if self.transform is not None:
@@ -270,21 +191,16 @@ class FolderDataset(Dataset):
         return len(self.inputs)
 
 
-class TensorDataset(Dataset):
+class TensorDataset(torch.utils.data.Dataset):
 
     def __init__(self,
                  input_tensor,
                  target_tensor=None,
                  transform=None, 
                  target_transform=None,
-                 co_transform=None,
-                 batch_size=1,
-                 shuffle=False,
-                 sampler=None,
-                 num_workers=0,
-                 collate_fn=default_collate, 
-                 pin_memory=False):
-        """Dataset class for loading in-memory data.
+                 co_transform=None):
+        """
+        Dataset class for loading in-memory data.
 
         Arguments
         ---------
@@ -323,30 +239,6 @@ class TensorDataset(Dataset):
         self.transform = transform
         self.target_transform = target_transform
         self.co_transform = co_transform
-
-        self.batch_size = batch_size
-        self.num_workers = num_workers
-        self.collate_fn = collate_fn
-        self.pin_memory = pin_memory
-
-        if sampler == 'stratified':
-            self.sampler = StratifiedSampler(class_vector=self.targets, 
-                batch_size=self.batch_size)
-        elif sampler == 'random':
-            self.sampler = RandomSampler(nb_samples=len(self.inputs))
-        elif sampler == 'sequential':
-            self.sampler = SequentialSampler(nb_samples=len(self.inputs))
-        elif sampler is not None and not isinstance(sampler, str):
-            self.sampler = sampler
-        else:
-            if shuffle:
-                self.sampler = RandomSampler(nb_samples=len(self.inputs))
-            elif not shuffle:
-                self.sampler = SequentialSampler(nb_samples=len(self.inputs))
-
-        self.batches_seen = 0
-        self.nb_batches = int(math.ceil(len(self.sampler) / float(self.batch_size)))
-        self._iter = DatasetIter(self)      
 
     def __getitem__(self, index):
         """Return a (transformed) input and target sample from an integer index"""

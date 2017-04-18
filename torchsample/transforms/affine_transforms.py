@@ -17,56 +17,85 @@ import math
 import random
 import torch
 
-# necessary now, but should eventually not be
-import scipy.ndimage as ndi
 import numpy as np
 
+def np_generate_grid(h, w):
+    grid = np.meshgrid(range(h), range(w), indexing='ij')
+    grid = np.stack(grid, axis=-1)
+    grid = grid.reshape(-1, 2)
+    return torch.from_numpy(grid).float()
 
-def transform_matrix_offset_center(matrix, x, y):
-    """Apply offset to a transform matrix so that the image is
-    transformed about the center of the image. 
+def _generate_grid(h, w):
+    x = torch.range(0, h-1)
+    y = torch.range(0, w-1)
+    grid = torch.stack([x.repeat(w,1).t().contiguous().view(-1), y.repeat(h)],1)
+    return grid
 
-    NOTE: This is a fairly simple operaion, so can easily be
-    moved to full torch.
-
-    Arguments
-    ---------
-    matrix : 3x3 matrix/array
-
-    x : integer
-        height dimension of image to be transformed
-
-    y : integer
-        width dimension of image to be transformed
+def _apply_transform(x, matrix, coords=None):
     """
-    o_x = float(x) / 2 + 0.5
-    o_y = float(y) / 2 + 0.5
-    offset_matrix = np.array([[1, 0, o_x], [0, 1, o_y], [0, 0, 1]])
-    reset_matrix = np.array([[1, 0, -o_x], [0, 1, -o_y], [0, 0, 1]])
-    transform_matrix = np.dot(np.dot(offset_matrix, matrix), reset_matrix)
-    return transform_matrix
+    Affine transform in pytorch. 
+    Only supports nearest neighbor interpolation at the moment.
 
-def apply_transform(x, transform, fill_mode='nearest', fill_value=0.):
-    """Applies an affine transform to a 2D array, or to each channel of a 3D array.
+    Assumes channel axis is 2nd dim and there is no sample dim
+    e.g. x.size() = (28,28,3)
 
-    NOTE: this can and certainly should be moved to full torch operations.
+    Considerations:
+        - coordinates outside original image should default to self.fill_value
+        - add option for bilinear interpolation
 
-    Arguments
-    ---------
-    x : np.ndarray
-        array to transform. NOTE: array should be ordered CHW
-    
-    transform : 3x3 affine transform matrix
-        matrix to apply
+    >>> x = torch.zeros(20,20,1)
+    >>> x[5:15,5:15,:] = 1
+
     """
-    x = x.astype('float32')
-    transform = transform_matrix_offset_center(transform, x.shape[1], x.shape[2])
-    final_affine_matrix = transform[:2, :2]
-    final_offset = transform[:2, 2]
-    channel_images = [ndi.interpolation.affine_transform(x_channel, final_affine_matrix,
-            final_offset, order=0, mode=fill_mode, cval=fill_value) for x_channel in x]
-    x = np.stack(channel_images, axis=0)
-    return x
+    #if not x.is_contiguous():
+    #    x = x.contiguous()
+
+    # dimensions of image
+    H = x.size(0)
+    W = x.size(1)
+    C = x.size(2)
+
+    # generate coordinate grid if not given
+    # can be passed as arg for speed
+    if coords is None:
+        coords = _generate_grid(H, W)
+
+    # make the center coordinate the origin
+    coords[:,0] -= (H / 2. + 0.5)
+    coords[:,1] -= (W / 2. + 0.5)
+
+    # get affine and bias values
+    A = matrix[:2,:2].float()
+    b = matrix[:2,2].float()
+
+    # perform coordinate transform
+    t_coords = coords.mm(A.t().contiguous()) + b.expand_as(coords)
+
+    # move origin coord back to the center
+    t_coords[:,0] += (H / 2. + 0.5)
+    t_coords[:,1] += (W / 2. + 0.5)
+
+    # round to nearest neighbor
+    t_coords = t_coords.round()
+
+    # convert to integer
+    t_coords = t_coords.long()
+
+    # clamp any coords outside the original image
+    t_coords[:,0] = torch.clamp(t_coords[:,0], 0, H-1)
+    t_coords[:,1] = torch.clamp(t_coords[:,1], 0, W-1)
+
+    # flatten image for easier indexing
+    x_flat = x.view(-1, C)
+
+    # flatten coordinates for easier indexing
+    t_coords_flat = t_coords[:,0]*W + t_coords[:,1]
+
+    # map new coordinates for each channel in original image
+    x_mapped = torch.stack([x_flat[:,i][t_coords_flat].view(H,W) 
+                    for i in range(C)], 2)
+
+    return x_mapped
 
 
 class Affine(object):
@@ -75,11 +104,8 @@ class Affine(object):
                  rotation_range=None, 
                  translation_range=None,
                  shear_range=None, 
-                 zoom_range=None, 
-                 fill_mode='constant',
-                 fill_value=0., 
-                 target_fill_mode='nearest', 
-                 target_fill_value=0.):
+                 zoom_range=None,
+                 fixed_size=None):
         """Perform an affine transforms with various sub-transforms, using
         only one interpolation and without having to instantiate each
         sub-transform individually.
@@ -123,39 +149,36 @@ class Affine(object):
 
         """
         self.transforms = []
-        if rotation_range:
+        if rotation_range is not None:
             rotation_tform = Rotate(rotation_range, lazy=True)
             self.transforms.append(rotation_tform)
 
-        if translation_range:
+        if translation_range is not None:
             translation_tform = Translate(translation_range, lazy=True)
             self.transforms.append(translation_tform)
 
-        if shear_range:
+        if shear_range is not None:
             shear_tform = Shear(shear_range, lazy=True)
             self.transforms.append(shear_tform) 
 
-        if zoom_range:
+        if zoom_range is not None:
             zoom_tform = Zoom(zoom_range, lazy=True)
             self.transforms.append(zoom_tform)
 
-        self.fill_mode = fill_mode
-        self.fill_value = fill_value
-        self.target_fill_mode = target_fill_mode
-        self.target_fill_value = target_fill_value
+        self.coords = None
+        if fixed_size is not None:
+            self.coords = _generate_grid(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         # collect all of the lazily returned tform matrices
         tform_matrix = self.transforms[0](x)
         for tform in self.transforms[1:]:
-            tform_matrix = np.dot(tform_matrix, tform(x)) 
+            tform_matrix = torch.mm(tform_matrix, tform(x)) 
 
-        x = torch.from_numpy(apply_transform(x.numpy(), tform_matrix,
-            fill_mode=self.fill_mode, fill_value=self.fill_value))
+        x = _apply_transform(x, tform_matrix, self.coords)
 
         if y is not None:
-            y = torch.from_numpy(apply_transform(y.numpy(), tform_matrix,
-                fill_mode=self.target_fill_mode, fill_value=self.target_fill_value))
+            y = _apply_transform(y, tform_matrix, self.coords)
             return x, y
         else:
             return x
@@ -165,10 +188,7 @@ class AffineCompose(object):
 
     def __init__(self, 
                  transforms, 
-                 fill_mode='constant', 
-                 fill_value=0., 
-                 target_fill_mode='nearest', 
-                 target_fill_value=0.):
+                 fixed_size=None):
         """Apply a collection of explicit affine transforms to an input image,
         and to a target image if necessary
 
@@ -193,23 +213,21 @@ class AffineCompose(object):
         # set transforms to lazy so they only return the tform matrix
         for t in self.transforms:
             t.lazy = True
-        self.fill_mode = fill_mode
-        self.fill_value = fill_value
-        self.target_fill_mode = target_fill_mode
-        self.target_fill_value = target_fill_value
+        
+        self.coords = None
+        if fixed_size is not None:
+            self.coords = _generate_grid(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         # collect all of the lazily returned tform matrices
         tform_matrix = self.transforms[0](x)
         for tform in self.transforms[1:]:
-            tform_matrix = np.dot(tform_matrix, tform(x)) 
+            tform_matrix = torch.mm(tform_matrix, tform(x)) 
 
-        x = torch.from_numpy(apply_transform(x.numpy(), tform_matrix,
-            fill_mode=self.fill_mode, fill_value=self.fill_value))
+        x = _apply_transform(x, tform_matrix, self.coords)
 
         if y is not None:
-            y = torch.from_numpy(apply_transform(y.numpy(), tform_matrix,
-                fill_mode=self.target_fill_mode, fill_value=self.target_fill_value))
+            y = _apply_transform(y, tform_matrix, self.coords)
             return x, y
         else:
             return x
@@ -218,11 +236,8 @@ class AffineCompose(object):
 class Rotate(object):
 
     def __init__(self, 
-                 rotation_range, 
-                 fill_mode='constant', 
-                 fill_value=0., 
-                 target_fill_mode='nearest', 
-                 target_fill_value=0., 
+                 rotation_range,
+                 fixed_size=None, 
                  lazy=False):
         """Randomly rotate an image between (-degrees, degrees). If the image
         has multiple channels, the same rotation will be applied to each channel.
@@ -243,26 +258,24 @@ class Rotate(object):
             if false, only create the affine transform matrix and return that
         """
         self.rotation_range = rotation_range
-        self.fill_mode = fill_mode
-        self.fill_value = fill_value
-        self.target_fill_mode = target_fill_mode
-        self.target_fill_value = target_fill_value
         self.lazy = lazy
+        
+        self.coords = None
+        if not self.lazy and fixed_size is not None:
+            self.coords = _generate_grid(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         degree = random.uniform(-self.rotation_range, self.rotation_range)
         theta = math.pi / 180 * degree
-        rotation_matrix = np.array([[math.cos(theta), -math.sin(theta), 0],
-                                    [math.sin(theta), math.cos(theta), 0],
-                                    [0, 0, 1]])
+        rotation_matrix = torch.FloatTensor([[math.cos(theta), -math.sin(theta), 0],
+                                             [math.sin(theta), math.cos(theta), 0],
+                                             [0, 0, 1]])
         if self.lazy:
             return rotation_matrix
         else:
-            x_transformed = torch.from_numpy(apply_transform(x.numpy(), rotation_matrix,
-                fill_mode=self.fill_mode, fill_value=self.fill_value))
+            x_transformed = _apply_transform(x, rotation_matrix, self.coords)
             if y is not None:
-                y_transformed = torch.from_numpy(apply_transform(y.numpy(), rotation_matrix,
-                fill_mode=self.target_fill_mode, fill_value=self.target_fill_value))
+                y_transformed = _apply_transform(y, rotation_matrix, self.coords)
                 return x_transformed, y_transformed
             else:
                 return x_transformed
@@ -272,10 +285,7 @@ class Translate(object):
 
     def __init__(self, 
                  translation_range, 
-                 fill_mode='constant',
-                 fill_value=0., 
-                 target_fill_mode='nearest', 
-                 target_fill_value=0., 
+                 fixed_size=None,
                  lazy=False):
         """Randomly translate an image some fraction of total height and/or
         some fraction of total width. If the image has multiple channels,
@@ -307,11 +317,11 @@ class Translate(object):
             translation_range = (translation_range, translation_range)
         self.height_range = translation_range[0]
         self.width_range = translation_range[1]
-        self.fill_mode = fill_mode
-        self.fill_value = fill_value
-        self.target_fill_mode = target_fill_mode
-        self.target_fill_value = target_fill_value
         self.lazy = lazy
+        
+        self.coords = None
+        if not self.lazy and fixed_size is not None:
+            self.coords = _generate_grid(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         # height shift
@@ -325,17 +335,15 @@ class Translate(object):
         else:
             ty = 0
 
-        translation_matrix = np.array([[1, 0, tx],
-                                       [0, 1, ty],
-                                       [0, 0, 1]])
+        translation_matrix = torch.FloatTensor([[1, 0, tx],
+                                                [0, 1, ty],
+                                                [0, 0, 1]])
         if self.lazy:
             return translation_matrix
         else:
-            x_transformed = torch.from_numpy(apply_transform(x.numpy(), 
-                translation_matrix, fill_mode=self.fill_mode, fill_value=self.fill_value))
+            x_transformed = _apply_transform(x, translation_matrix, self.coords)
             if y is not None:
-                y_transformed = torch.from_numpy(apply_transform(y.numpy(), translation_matrix,
-                fill_mode=self.target_fill_mode, fill_value=self.target_fill_value))
+                y_transformed = _apply_transform(y, translation_matrix, self.coords)
                 return x_transformed, y_transformed
             else:
                 return x_transformed
@@ -345,10 +353,7 @@ class Shear(object):
 
     def __init__(self, 
                  shear_range, 
-                 fill_mode='constant', 
-                 fill_value=0., 
-                 target_fill_mode='nearest', 
-                 target_fill_value=0., 
+                 fixed_size=None,
                  lazy=False):
         """Randomly shear an image with radians (-shear_range, shear_range)
 
@@ -368,25 +373,23 @@ class Shear(object):
             if false, only create the affine transform matrix and return that
         """
         self.shear_range = shear_range
-        self.fill_mode = fill_mode
-        self.fill_value = fill_value
-        self.target_fill_mode = target_fill_mode
-        self.target_fill_value = target_fill_value
         self.lazy = lazy
+        
+        self.coords = None
+        if not self.lazy and fixed_size is not None:
+            self.coords = _generate_grid(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         shear = random.uniform(-self.shear_range, self.shear_range)
-        shear_matrix = np.array([[1, -math.sin(shear), 0],
-                                 [0, math.cos(shear), 0],
-                                 [0, 0, 1]])
+        shear_matrix = torch.FloatTensor([[1, -math.sin(shear), 0],
+                                          [0, math.cos(shear), 0],
+                                          [0, 0, 1]])
         if self.lazy:
             return shear_matrix
         else:
-            x_transformed = torch.from_numpy(apply_transform(x.numpy(), 
-                shear_matrix, fill_mode=self.fill_mode, fill_value=self.fill_value))
+            x_transformed = _apply_transform(x, shear_matrix, self.coords)
             if y is not None:
-                y_transformed = torch.from_numpy(apply_transform(y.numpy(), shear_matrix,
-                fill_mode=self.target_fill_mode, fill_value=self.target_fill_value))
+                y_transformed = _apply_transform(y, shear_matrix, self.coords)
                 return x_transformed, y_transformed
             else:
                 return x_transformed
@@ -396,10 +399,7 @@ class Zoom(object):
 
     def __init__(self, 
                  zoom_range, 
-                 fill_mode='constant', 
-                 fill_value=0, 
-                 target_fill_mode='nearest', 
-                 target_fill_value=0., 
+                 fixed_size=None,
                  lazy=False):
         """Randomly zoom in and/or out on an image 
 
@@ -426,26 +426,25 @@ class Zoom(object):
         if not isinstance(zoom_range, list) and not isinstance(zoom_range, tuple):
             raise ValueError('zoom_range must be tuple or list with 2 values')
         self.zoom_range = zoom_range
-        self.fill_mode = fill_mode
-        self.fill_value = fill_value
-        self.target_fill_mode = target_fill_mode
-        self.target_fill_value = target_fill_value
         self.lazy = lazy
+
+        self.coords = None
+        if not self.lazy and fixed_size is not None:
+            self.coords = _generate_grid(fixed_size[0], fixed_size[1])
+        
 
     def __call__(self, x, y=None):
         zx = random.uniform(self.zoom_range[0], self.zoom_range[1])
         zy = random.uniform(self.zoom_range[0], self.zoom_range[1])
-        zoom_matrix = np.array([[zx, 0, 0],
-                                [0, zy, 0],
-                                [0, 0, 1]])
+        zoom_matrix = torch.FloatTensor([[zx, 0, 0],
+                                         [0, zy, 0],
+                                         [0, 0, 1]])
         if self.lazy:
             return zoom_matrix
         else:
-            x_transformed = torch.from_numpy(apply_transform(x.numpy(), 
-                zoom_matrix, fill_mode=self.fill_mode, fill_value=self.fill_value))
+            x_transformed = _apply_transform(x, zoom_matrix, self.coords)
             if y is not None:
-                y_transformed = torch.from_numpy(apply_transform(y.numpy(), zoom_matrix,
-                fill_mode=self.target_fill_mode, fill_value=self.target_fill_value))
+                y_transformed = _apply_transform(y, zoom_matrix, self.coords)
                 return x_transformed, y_transformed
             else:
                 return x_transformed
