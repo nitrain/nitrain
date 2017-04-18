@@ -4,7 +4,6 @@ Util functions for torchsample
 
 import pickle
 import torch
-import numpy as np
 
 def save_transform(file, transform):
     """
@@ -22,6 +21,76 @@ def load_transform(file):
     with open(file, 'rb') as input_file:
         transform = pickle.load(input_file)
     return transform
+
+
+def th_random_choice(a, size=None, replace=True, p=None):
+    """
+    Parameters
+    -----------
+    a : 1-D array-like
+        If a torch.Tensor, a random sample is generated from its elements.
+        If an int, the random sample is generated as if a was torch.range(n)
+    size : int, optional
+        Number of samples to draw. Default is None, in which case a
+        single value is returned.
+    replace : boolean, optional
+        Whether the sample is with or without replacement
+    p : 1-D array-like, optional
+        The probabilities associated with each entry in a.
+        If not given the sample assumes a uniform distribution over all
+        entries in a.
+
+    Returns
+    --------
+    samples : 1-D ndarray, shape (size,)
+        The generated random samples
+    
+    Notes
+    -----
+    Handle:
+        - a is 1D tensor, size is None
+
+    Example
+    -------
+    - with size = 100,000:
+        - no probabilities
+            >>> x = torch.range(0,4)
+            >>> xx = th_random_choice(x,size=100000))
+            >>> print('%i - %.03f' % (0, torch.sum(xx==0)/100000))
+            >>> print('%i - %.03f' % (1, torch.sum(xx==1)/100000))
+            >>> print('%i - %.03f' % (2, torch.sum(xx==2)/100000))
+            >>> print('%i - %.03f' % (3, torch.sum(xx==3)/100000))
+            >>> print('%i - %.03f' % (4, torch.sum(xx==4)/100000))
+            >>> print('\n')
+
+        - probabilities
+            >>> x = torch.range(0,4)
+            >>> xx = th_random_choice(x,size=100000, p=[0.1,0.2,0.3,0.05,0.35])
+            >>> print('%.03f - %.03f' % (0.1, torch.sum(xx==0)/100000))
+            >>> print('%.03f - %.03f' % (0.2, torch.sum(xx==1)/100000))
+            >>> print('%.03f - %.03f' % (0.3, torch.sum(xx==2)/100000))
+            >>> print('%.03f - %.03f' % (0.05, torch.sum(xx==3)/100000))
+            >>> print('%.03f - %.03f' % (0.35, torch.sum(xx==4)/100000))
+            >>> print('\n')
+    """
+    if size is None:
+        size = 1
+
+    if p is None:
+        if replace:
+            idx = torch.floor(torch.rand(size)*a.size(0)).long()
+        else:
+            idx = torch.randperm(a.size(0))[:size]
+    else:
+        if abs(1.0-sum(p)) > 1e-3:
+            raise ValueError('p must sum to 1.0')
+        if not replace:
+            raise ValueError('replace must equal true if probabilities given')
+        idx_vec = torch.cat([torch.zeros(round(p[i]*1000))+i for i in range(len(p))])
+        idx = (torch.floor(torch.rand(size)*999.99)).long()
+        idx = idx_vec[idx].long()
+
+    return a[idx]
 
 
 def th_meshgrid(h, w):

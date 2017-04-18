@@ -121,21 +121,11 @@ class FolderDataset(torch.utils.data.Dataset):
         target_transform : torch transform
             transform to apply to target sample individually
 
-        loader : string in `{'npy', 'pil', 'nifti'} or function
+        file_loader : string in `{'npy', 'pil', 'nifti'} or callable
             defines how to load samples from file
             if a function is provided, it should take in a file path
             as input and return the loaded sample.
 
-        Examples
-        --------
-        For loading input images and target images (e.g. image and its segmentation):
-            >>> data = FolderDataset(root=/path/to/main/dir,
-                    class_mode='image', input_regex='*input*',
-                    target_regex='*segment*', loader='pil')
-
-        For loading input images with sub-directory as class label:
-            >>> data = FolderDataset(root=/path/to/main/dir,
-                    class_mode='label', loader='pil')
         """
         if file_loader == 'npy':
             file_loader = npy_loader
@@ -214,21 +204,11 @@ class TensorDataset(torch.utils.data.Dataset):
         target_transform : torch transform
             transform to apply to target sample individually
 
-        loader : string in `{'npy', 'pil', 'nifti'} or function
+        file_loader : string in `{'npy', 'pil', 'nifti'} or callable
             defines how to load samples from file
             if a function is provided, it should take in a file path
             as input and return the loaded sample.
 
-        Examples
-        --------
-        For loading input images and target images (e.g. image and its segmentation):
-            >>> data = FolderDataset(root=/path/to/main/dir,
-                    class_mode='image', input_regex='*input*',
-                    target_regex='*segment*', loader='pil')
-
-        For loading input images with sub-directory as class label:
-            >>> data = FolderDataset(root=/path/to/main/dir,
-                    class_mode='label', loader='pil')
         """
         self.inputs = input_tensor
         self.targets = target_tensor
