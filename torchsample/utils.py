@@ -76,6 +76,9 @@ def th_random_choice(a, size=None, replace=True, p=None):
     if size is None:
         size = 1
 
+    if isinstance(a, int):
+        a = torch.range(0, a-1)
+
     if p is None:
         if replace:
             idx = torch.floor(torch.rand(size)*a.size(0)).long()
@@ -89,7 +92,6 @@ def th_random_choice(a, size=None, replace=True, p=None):
         idx_vec = torch.cat([torch.zeros(round(p[i]*1000))+i for i in range(len(p))])
         idx = (torch.floor(torch.rand(size)*999.99)).long()
         idx = idx_vec[idx].long()
-
     return a[idx]
 
 

@@ -1,6 +1,5 @@
 
 import torch
-import numpy as np
 import math
 
 class Sampler(object):
@@ -38,9 +37,13 @@ class StratifiedSampler(Sampler):
         self.class_vector = class_vector
 
     def gen_sample_array(self):
-        from sklearn.model_selection import StratifiedShuffleSplit
-        s = StratifiedShuffleSplit(n_splits=self.n_splits, 
-            test_size=0.5)
+        try:
+            from sklearn.model_selection import StratifiedShuffleSplit
+        except:
+            print('Need scikit-learn for this functionality')
+        import numpy as np
+        
+        s = StratifiedShuffleSplit(n_splits=self.n_splits, test_size=0.5)
         X = torch.randn(self.class_vector.size(0),2).numpy()
         y = self.class_vector.numpy()
         s.get_n_splits(X, y)
@@ -77,22 +80,27 @@ class MultiSampler(Sampler):
 
         shuffle : boolean
             whether to shuffle the indices or not
+        
+        Example:
+            >>> m = MultiSampler(2, 6)
+            >>> x = m.gen_sample_array()
+            >>> print(x) # [0,1,0,1,0,1]
         """
         self.data_samples = nb_samples
         self.desired_samples = desired_samples
         self.shuffle = shuffle
 
     def gen_sample_array(self):
+        from torchsample.utils import th_random_choice
         n_repeats = self.desired_samples / self.data_samples
         cat_list = []
         for i in range(math.floor(n_repeats)):
-            cat_list.append(np.arange(self.data_samples))
+            cat_list.append(torch.range(0,self.data_samples-1))
         # add the left over samples
         left_over = self.desired_samples % self.data_samples
-        cat_list.append(np.random.choice(self.data_samples, left_over))
-        self.sample_idx_array = np.concatenate(tuple(cat_list))
-        if self.shuffle:
-            self.sample_idx_array = np.random.permutation(self.sample_idx_array)
+        if left_over > 0:
+            cat_list.append(th_random_choice(self.data_samples, left_over))
+        self.sample_idx_array = torch.cat(cat_list).long()
         return self.sample_idx_array
 
     def __iter__(self):
@@ -134,3 +142,5 @@ class RandomSampler(Sampler):
 
     def __len__(self):
         return self.num_samples
+
+
