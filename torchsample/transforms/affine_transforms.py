@@ -17,85 +17,7 @@ import math
 import random
 import torch
 
-import numpy as np
-
-def np_generate_grid(h, w):
-    grid = np.meshgrid(range(h), range(w), indexing='ij')
-    grid = np.stack(grid, axis=-1)
-    grid = grid.reshape(-1, 2)
-    return torch.from_numpy(grid).float()
-
-def _generate_grid(h, w):
-    x = torch.range(0, h-1)
-    y = torch.range(0, w-1)
-    grid = torch.stack([x.repeat(w,1).t().contiguous().view(-1), y.repeat(h)],1)
-    return grid
-
-def _apply_transform(x, matrix, coords=None):
-    """
-    Affine transform in pytorch. 
-    Only supports nearest neighbor interpolation at the moment.
-
-    Assumes channel axis is 2nd dim and there is no sample dim
-    e.g. x.size() = (28,28,3)
-
-    Considerations:
-        - coordinates outside original image should default to self.fill_value
-        - add option for bilinear interpolation
-
-    >>> x = torch.zeros(20,20,1)
-    >>> x[5:15,5:15,:] = 1
-
-    """
-    #if not x.is_contiguous():
-    #    x = x.contiguous()
-
-    # dimensions of image
-    H = x.size(0)
-    W = x.size(1)
-    C = x.size(2)
-
-    # generate coordinate grid if not given
-    # can be passed as arg for speed
-    if coords is None:
-        coords = _generate_grid(H, W)
-
-    # make the center coordinate the origin
-    coords[:,0] -= (H / 2. + 0.5)
-    coords[:,1] -= (W / 2. + 0.5)
-
-    # get affine and bias values
-    A = matrix[:2,:2].float()
-    b = matrix[:2,2].float()
-
-    # perform coordinate transform
-    t_coords = coords.mm(A.t().contiguous()) + b.expand_as(coords)
-
-    # move origin coord back to the center
-    t_coords[:,0] += (H / 2. + 0.5)
-    t_coords[:,1] += (W / 2. + 0.5)
-
-    # round to nearest neighbor
-    t_coords = t_coords.round()
-
-    # convert to integer
-    t_coords = t_coords.long()
-
-    # clamp any coords outside the original image
-    t_coords[:,0] = torch.clamp(t_coords[:,0], 0, H-1)
-    t_coords[:,1] = torch.clamp(t_coords[:,1], 0, W-1)
-
-    # flatten image for easier indexing
-    x_flat = x.view(-1, C)
-
-    # flatten coordinates for easier indexing
-    t_coords_flat = t_coords[:,0]*W + t_coords[:,1]
-
-    # map new coordinates for each channel in original image
-    x_mapped = torch.stack([x_flat[:,i][t_coords_flat].view(H,W) 
-                    for i in range(C)], 2)
-
-    return x_mapped
+from ..utils import th_meshgrid, th_affine_transform
 
 
 class Affine(object):
@@ -167,7 +89,7 @@ class Affine(object):
 
         self.coords = None
         if fixed_size is not None:
-            self.coords = _generate_grid(fixed_size[0], fixed_size[1])
+            self.coords = th_meshgrid(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         # collect all of the lazily returned tform matrices
@@ -175,10 +97,10 @@ class Affine(object):
         for tform in self.transforms[1:]:
             tform_matrix = torch.mm(tform_matrix, tform(x)) 
 
-        x = _apply_transform(x, tform_matrix, self.coords)
+        x = th_affine_transform(x, tform_matrix, self.coords)
 
         if y is not None:
-            y = _apply_transform(y, tform_matrix, self.coords)
+            y = th_affine_transform(y, tform_matrix, self.coords)
             return x, y
         else:
             return x
@@ -213,10 +135,10 @@ class AffineCompose(object):
         # set transforms to lazy so they only return the tform matrix
         for t in self.transforms:
             t.lazy = True
-        
+
         self.coords = None
         if fixed_size is not None:
-            self.coords = _generate_grid(fixed_size[0], fixed_size[1])
+            self.coords = th_meshgrid(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         # collect all of the lazily returned tform matrices
@@ -224,10 +146,10 @@ class AffineCompose(object):
         for tform in self.transforms[1:]:
             tform_matrix = torch.mm(tform_matrix, tform(x)) 
 
-        x = _apply_transform(x, tform_matrix, self.coords)
+        x = th_affine_transform(x, tform_matrix, self.coords)
 
         if y is not None:
-            y = _apply_transform(y, tform_matrix, self.coords)
+            y = th_affine_transform(y, tform_matrix, self.coords)
             return x, y
         else:
             return x
@@ -262,7 +184,7 @@ class Rotate(object):
         
         self.coords = None
         if not self.lazy and fixed_size is not None:
-            self.coords = _generate_grid(fixed_size[0], fixed_size[1])
+            self.coords = th_meshgrid(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         degree = random.uniform(-self.rotation_range, self.rotation_range)
@@ -273,9 +195,9 @@ class Rotate(object):
         if self.lazy:
             return rotation_matrix
         else:
-            x_transformed = _apply_transform(x, rotation_matrix, self.coords)
+            x_transformed = th_affine_transform(x, rotation_matrix, self.coords)
             if y is not None:
-                y_transformed = _apply_transform(y, rotation_matrix, self.coords)
+                y_transformed = th_affine_transform(y, rotation_matrix, self.coords)
                 return x_transformed, y_transformed
             else:
                 return x_transformed
@@ -321,7 +243,7 @@ class Translate(object):
         
         self.coords = None
         if not self.lazy and fixed_size is not None:
-            self.coords = _generate_grid(fixed_size[0], fixed_size[1])
+            self.coords = th_meshgrid(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         # height shift
@@ -341,9 +263,9 @@ class Translate(object):
         if self.lazy:
             return translation_matrix
         else:
-            x_transformed = _apply_transform(x, translation_matrix, self.coords)
+            x_transformed = th_affine_transform(x, translation_matrix, self.coords)
             if y is not None:
-                y_transformed = _apply_transform(y, translation_matrix, self.coords)
+                y_transformed = th_affine_transform(y, translation_matrix, self.coords)
                 return x_transformed, y_transformed
             else:
                 return x_transformed
@@ -377,7 +299,7 @@ class Shear(object):
         
         self.coords = None
         if not self.lazy and fixed_size is not None:
-            self.coords = _generate_grid(fixed_size[0], fixed_size[1])
+            self.coords = th_meshgrid(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         shear = random.uniform(-self.shear_range, self.shear_range)
@@ -387,9 +309,9 @@ class Shear(object):
         if self.lazy:
             return shear_matrix
         else:
-            x_transformed = _apply_transform(x, shear_matrix, self.coords)
+            x_transformed = th_affine_transform(x, shear_matrix, self.coords)
             if y is not None:
-                y_transformed = _apply_transform(y, shear_matrix, self.coords)
+                y_transformed = th_affine_transform(y, shear_matrix, self.coords)
                 return x_transformed, y_transformed
             else:
                 return x_transformed
@@ -430,7 +352,7 @@ class Zoom(object):
 
         self.coords = None
         if not self.lazy and fixed_size is not None:
-            self.coords = _generate_grid(fixed_size[0], fixed_size[1])
+            self.coords = th_meshgrid(fixed_size[0], fixed_size[1])
         
 
     def __call__(self, x, y=None):
@@ -442,9 +364,9 @@ class Zoom(object):
         if self.lazy:
             return zoom_matrix
         else:
-            x_transformed = _apply_transform(x, zoom_matrix, self.coords)
+            x_transformed = th_affine_transform(x, zoom_matrix, self.coords)
             if y is not None:
-                y_transformed = _apply_transform(y, zoom_matrix, self.coords)
+                y_transformed = th_affine_transform(y, zoom_matrix, self.coords)
                 return x_transformed, y_transformed
             else:
                 return x_transformed

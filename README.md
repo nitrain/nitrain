@@ -8,7 +8,7 @@ I'm actively  taking requests for new transforms or new features to the samplers
 (see [for example](https://github.com/ncullen93/torchsample/issues/1))
 
 ## Unique Features
-- affine transforms
+- affine transforms which depend only on pytorch (not numpy)
 - transforms directly on arbitrary torch tensors (rather than just PIL images)
 - perform transforms on data where both input and target are images
 - sample and transform images with no target
@@ -17,6 +17,12 @@ I'm actively  taking requests for new transforms or new features to the samplers
 - stratified sampling
 - variable batch size (e.g. `loader.next_batch(10)`)
 - sample for a fixed number of batches without using an `epoch` loop
+
+## Utility Functions
+- `torch.pearsonr` (mimics scipy.stats.pearsonr)
+- `torch.corrcoef` (mimics np.corrcoef)
+- `torch.meshgrid` (mimics np.meshgrid)
+- `torch.affine_transform` (functional affine transform)
 
 ## Tutorials and examples
 - [torchsample overview](https://github.com/ncullen93/torchsample/blob/master/tutorials/torchsample%20tutorial.ipynb) 

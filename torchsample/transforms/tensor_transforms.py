@@ -5,6 +5,7 @@ import math
 import numpy as np
 import torch
 
+
 class Compose(object):
     """Composes several transforms together.
 
@@ -181,7 +182,7 @@ class RangeNormalize(object):
             max_val = torch.max(x)
         if min_val == max_val:
             min_val += 1e-07
-        
+
         a = (self.max_range - self.min_range) / (max_val - min_val)
         b = self.max_range - a * max_val
         x.mul_(a).add_(b)
