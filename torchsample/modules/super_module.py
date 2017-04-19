@@ -3,7 +3,6 @@ SuperModule for high level training on Pytorch models
 """
 
 import math
-from tqdm import tqdm
 
 import torch
 import torch.nn as nn
@@ -12,73 +11,113 @@ from torch.utils.data import DataLoader
 
 # local imports
 from .. import TensorDataset
-from . import callbacks as cbks
+from .callbacks import CallbackList, History, TQDM
+from .constraints import ConstraintList
+from .regularizers import RegularizerList
 
+
+def load_super_module(file):
+    pass
 
 class SuperModule(nn.Module):
 
     def __init__(self):
         """
-        Properties:
-        - optimizers
-        - losses
-        - callbacks
-        - regularizers
-        - normalizers
+        SuperModule for high-level training of Pytorch models
+
+        TODO:
+            - allow metrics
+                - e.g. for validation accuracy instead of loss
         """
         super(SuperModule, self).__init__()
-        self.history = cbks.History()
+
+        self.history = History()
+        self._callbacks = [self.history]
+        self._constraints = []
+        self._regularizers = []
 
     def forward(self, *input):
-        """Defines the computation performed at every call.
-
+        """
+        Defines the computation performed at every call.
         Should be overriden by all subclasses.
         """
         raise NotImplementedError('Subclass must implement this method')
 
     def set_loss(self, loss):
-        self.loss = loss
+        self._loss = loss
 
-    def set_optimizer(self, optimizer):
-        self.optimizer = optimizer(self.parameters())
+    def set_optimizer(self, optimizer, **kwargs):
+        self._optimizer = optimizer(self.parameters(), **kwargs)
+
+    def set_regularizers(self, regularizers):
+        self._regularizers = regularizers
+
+    def set_constraints(self, constraints):
+        self._constraints = constraints
+
+    def set_callbacks(self, callbacks):
+        self._callbacks = callbacks
 
     def fit(self,
             x, 
-            y, 
-            val_data=None, 
+            y,
+            validation_data=None, 
             nb_epoch=100, 
             batch_size=32, 
-            callbacks=None, 
             verbose=1):
         """
         Fit a model on torch tensors
         """
         train_dataset = TensorDataset(x, y)
         train_loader = DataLoader(train_dataset, batch_size=batch_size)
-        if val_data is not None:
-            test_dataset = TensorDataset(val_data[0], val_data[1])
-            test_loader = DataLoader(test_dataset, batch_size=batch_size)
+        if validation_data is not None:
+            test_dataset = TensorDataset(validation_data[0], validation_data[1])
+            val_loader = DataLoader(test_dataset, batch_size=batch_size)
         else:
-            test_loader = None
-        self.fit_loader(loader=train_loader, test_loader=test_loader,
-                        nb_epoch=nb_epoch, callbacks=callbacks, 
-                        verbose=verbose)
+            val_loader = None
+        self.fit_loader(loader=train_loader, val_loader=val_loader,
+                        nb_epoch=nb_epoch, verbose=verbose)
+
+    def fit_on_batch(self, x, y):
+        inputs = Variable(x)
+        targets = Variable(y)
+
+        # zero the gradients
+        self._optimizer.zero_grad()
+        # make forward pass
+        outputs = self(inputs)
+        # compute model loss
+        loss = self._loss(outputs, targets)
+        reg_loss = self._regularizers.compute_loss()
+        total_loss = loss + reg_loss
+        # make backward pass
+        total_loss.backward()
+        # make optimizer step to update weights
+        self._optimizer.step()
 
     def fit_loader(self, 
                    loader, 
-                   test_loader=None, 
+                   val_loader=None, 
                    nb_epoch=100, 
-                   callbacks=None, 
                    verbose=1):
         """
         Fit a model on a DataLoader
         """
+        ## create regularizers
+        if len(self._regularizers) > 0:
+            regularizers = RegularizerList(self._regularizers)
+            regularizers.set_model(self)
+        else:
+            regularizers = None
+
+        ## create constraints
+        constraints = ConstraintList(self._constraints)
+        constraints.set_model(self)
+
         ## create callbacks
-        #self.history = cbks.History()
-        #callback_list = [cbks.BaseLogger()] + (callbacks or []) + [self.history]
-        #if verbose > 0:
-        callback_list = [self.history,cbks.TQDM()]
-        callbacks = cbks.CallbackList(callback_list)
+        if verbose > 0:
+            self._callbacks += [TQDM()]
+        callbacks = CallbackList(self._callbacks)
         callbacks.set_model(self)
         callbacks.set_params({
             'batch_size': loader.batch_size,
@@ -89,11 +128,11 @@ class SuperModule(nn.Module):
 
         callbacks.on_train_begin()
 
-        for epoch in range(nb_epoch):
+        for epoch_idx in range(nb_epoch):
             epoch_logs = {
-                'epoch_idx': epoch
+                'epoch_idx': epoch_idx
             }
-            callbacks.on_epoch_begin(epoch, epoch_logs)
+            callbacks.on_epoch_begin(epoch_idx, epoch_logs)
 
             for batch_idx,(x_batch, y_batch) in enumerate(loader):
 
@@ -107,52 +146,106 @@ class SuperModule(nn.Module):
                 targets = Variable(y_batch)
 
                 # zero the gradients
-                self.optimizer.zero_grad()
+                self._optimizer.zero_grad()
                 # make forward pass
                 outputs = self(inputs)
                 # compute model loss
-                loss = self.loss(outputs, targets)
+                loss = self._loss(outputs, targets)
+                batch_logs['loss'] = loss.data[0]
+
+                if regularizers is not None:
+                    reg_loss = regularizers.compute_loss()
+                    batch_logs['reg_loss'] = reg_loss
+                    loss += reg_loss
+                    batch_logs['total_loss'] = loss.data[0]
+
                 # make backward pass
                 loss.backward()
                 # make optimizer step to update weights
-                self.optimizer.step()
+                self._optimizer.step()
 
-                batch_logs['loss'] = loss.data[0]
                 callbacks.on_batch_end(batch_idx, batch_logs)
-            
-            if test_loader is not None:
-                test_loss = self.evaluate_loader(test_loader)
+                constraints.on_batch_end(batch_idx)
+
+            if val_loader is not None:
+                test_loss = self.evaluate_loader(val_loader)
                 epoch_logs['val_loss'] = test_loss
 
-            callbacks.on_epoch_end(epoch, epoch_logs)
+            callbacks.on_epoch_end(epoch_idx, epoch_logs)
+            constraints.on_epoch_end(epoch_idx)
 
         callbacks.on_train_end()
 
-    def predict(self, x):
-        x_var = Variable(x)
-        y_pred = self(x_var)
-        return y_pred.data.numpy()
+    def predict(self, 
+                x, 
+                batch_size=32, 
+                verbose=1):
+        dataset = TensorDataset(x)
+        loader = DataLoader(dataset, batch_size=batch_size)
+        preds = self.predict_loader(loader, verbose=verbose)
+        return preds
 
-    def evaluate(self, x, y):
-        x_var = Variable(x)
-        y_var = Variable(y)
+    def predict_on_batch(self, x):
+        x = Variable(x)
+        preds = self(x)
+        return preds
 
-        y_pred = self(x_var)
-        loss = self.loss(y_pred, y_var)
-        return loss.data.numpy()[0]
+    def predict_loader(self,
+                       loader,
+                       verbose=1):
+        preds = []
+        for batch_idx, batch in enumerate(loader):
+            if loader.dataset.has_target:
+                batch = batch[0]
+            x_batch = Variable(batch)
+            batch_pred = self(x_batch)
+            preds.append(batch_pred.data)
+
+        return Variable(torch.cat(preds))
+
+    def evaluate(self, 
+                 x, 
+                 y, 
+                 batch_size=32, 
+                 verbose=1):
+        dataset = TensorDataset(x,y)
+        loader = DataLoader(dataset, batch_size=batch_size)
+        loss = self.evaluate_loader(loader)
+        return loss
+
+    def evaluate_on_batch(self, x, y):
+        x = Variable(x)
+        y = Variable(y)
+        y_pred = self(y)
+        loss = self._loss(y_pred, y)
+        return loss.data[0]
 
     def evaluate_loader(self, loader):
-        losses = []
-        for x_batch, y_batch in loader:
+        nb_batches = int(math.ceil(len(loader.dataset.inputs)/loader.batch_size))
+        losses = torch.FloatTensor(nb_batches)
+        for batch_idx, (x_batch, y_batch) in enumerate(loader):
             x_batch = Variable(x_batch)
             y_batch = Variable(y_batch)
 
             y_pred = self(x_batch)
-            loss = self.loss(y_pred, y_batch)
-            losses.append(loss.data[0])
+            loss = self._loss(y_pred, y_batch)
+            losses[batch_idx] = loss.data[0]
 
-        return torch.mean(torch.FloatTensor(losses))   
+        return torch.mean(losses)
 
+    def save(self, file):
+        """
+        Save a model to disk
+
+        Considerations:
+            - architecture
+            - weights
+            - callbacks
+            - constraints
+            - optimizers
+            - regularizers
+        """
+        pass
 
 
 

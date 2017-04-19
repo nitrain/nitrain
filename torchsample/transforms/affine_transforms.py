@@ -28,7 +28,8 @@ class Affine(object):
                  shear_range=None, 
                  zoom_range=None,
                  fixed_size=None):
-        """Perform an affine transforms with various sub-transforms, using
+        """
+        Perform an affine transforms with various sub-transforms, using
         only one interpolation and without having to instantiate each
         sub-transform individually.
 
@@ -111,7 +112,8 @@ class AffineCompose(object):
     def __init__(self, 
                  transforms, 
                  fixed_size=None):
-        """Apply a collection of explicit affine transforms to an input image,
+        """
+        Apply a collection of explicit affine transforms to an input image,
         and to a target image if necessary
 
         Arguments
@@ -161,7 +163,8 @@ class Rotate(object):
                  rotation_range,
                  fixed_size=None, 
                  lazy=False):
-        """Randomly rotate an image between (-degrees, degrees). If the image
+        """
+        Randomly rotate an image between (-degrees, degrees). If the image
         has multiple channels, the same rotation will be applied to each channel.
 
         Arguments
@@ -209,7 +212,8 @@ class Translate(object):
                  translation_range, 
                  fixed_size=None,
                  lazy=False):
-        """Randomly translate an image some fraction of total height and/or
+        """
+        Randomly translate an image some fraction of total height and/or
         some fraction of total width. If the image has multiple channels,
         the same translation will be applied to each channel.
 
@@ -277,7 +281,8 @@ class Shear(object):
                  shear_range, 
                  fixed_size=None,
                  lazy=False):
-        """Randomly shear an image with radians (-shear_range, shear_range)
+        """
+        Randomly shear an image with radians (-shear_range, shear_range)
 
         Arguments
         ---------
@@ -323,7 +328,8 @@ class Zoom(object):
                  zoom_range, 
                  fixed_size=None,
                  lazy=False):
-        """Randomly zoom in and/or out on an image 
+        """
+        Randomly zoom in and/or out on an image 
 
         Arguments
         ---------

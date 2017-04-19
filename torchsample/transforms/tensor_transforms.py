@@ -7,7 +7,8 @@ import torch
 
 
 class Compose(object):
-    """Composes several transforms together.
+    """
+    Composes several transforms together.
 
     Args:
         transforms (List[Transform]): list of transforms to compose.
@@ -33,7 +34,9 @@ class Compose(object):
 
 
 class ToTensor(object):
-    """Converts a numpy array to torch.Tensor"""
+    """
+    Converts a numpy array to torch.Tensor
+    """
     
     def __call__(self, x, y=None):
         x = torch.from_numpy(x)
@@ -58,7 +61,8 @@ class ToCuda(object):
 
 
 class ToFile(object):
-    """Saves an image to file. Useful as the last transform
+    """
+    Saves an image to file. Useful as the last transform
     when wanting to observe how augmentation/affine transforms
     are affecting the data
     """
@@ -115,7 +119,8 @@ class TypeCast(object):
 
 
 class AddChannel(object):
-    """Adds a dummy channel to an image. 
+    """
+    Adds a dummy channel to an image. 
     This will make an image of size (28, 28) to now be
     of size (1, 28, 28), for example.
     """
@@ -143,7 +148,8 @@ class Transpose(object):
 
 
 class RangeNormalize(object):
-    """Given min_val: (R, G, B) and max_val: (R,G,B),
+    """
+    Given min_val: (R, G, B) and max_val: (R,G,B),
     will normalize each channel of the torch.*Tensor to
     the provided min and max values.
 
@@ -200,7 +206,9 @@ class RangeNormalize(object):
 
 
 class StdNormalize(object):
-    """Normalize torch tensor to have zero mean and unit std deviation"""
+    """
+    Normalize torch tensor to have zero mean and unit std deviation
+    """
 
     def __init__(self):
         pass
@@ -220,7 +228,8 @@ class StdNormalize(object):
 class Slice2D(object):
 
     def __init__(self, axis=0, reject_zeros=False):
-        """Take a random 2D slice from a 3D image along 
+        """
+        Take a random 2D slice from a 3D image along 
         a given axis. This image should not have a 4th channel dim.
 
         Arguments
@@ -348,6 +357,9 @@ class SpecialCrop(object):
 class Pad(object):
 
     def __init__(self, size):
+        """
+        Pads an image to the given size
+        """
         self.size = size
 
     def __call__(self, x, y=None):

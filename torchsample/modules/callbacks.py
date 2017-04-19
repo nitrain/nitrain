@@ -98,13 +98,14 @@ class TQDM(Callback):
     def on_epoch_begin(self, epoch, logs=None):
         self.progbar = tqdm(total=self.params['nb_batches'],
                             unit=' batches')
-        self.progbar.set_description('Epoch %i' % (epoch+1))
+        self.progbar.set_description('Epoch %i/%i' % 
+                        (epoch+1, self.params['nb_epoch']))
 
     def on_epoch_end(self, epoch, logs=None):
         self.progbar.set_postfix({
             'Loss': '%.04f' % 
                     (self.model.history.total_loss / self.params['nb_batches']),
-            'Val Loss': '%.04f' % (logs['val_loss'])
+            'Val_Loss': '%.04f' % (logs['val_loss'])
             })
         self.progbar.update()
         self.progbar.close()
@@ -131,6 +132,8 @@ class History(Callback):
         self.epoch = []
         self.losses = []
         self.val_losses = []
+        self.reg_losses = []
+        self.total_losses = []
 
     def on_epoch_begin(self, epoch, logs=None):
         self.total_loss = 0.
@@ -144,6 +147,9 @@ class History(Callback):
         self.losses.append(self.total_loss / self.params['nb_batches'])
         if 'val_loss' in logs:
             self.val_losses.append(logs['val_loss'])
+        if 'reg_loss' in logs:
+            self.reg_losses.append(logs['reg_loss'])
+            self.total_losses.append(logs['total_loss'])
 
 
 class LambdaCallback(Callback):
