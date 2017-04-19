@@ -1,3 +1,6 @@
+
+import torch
+
 class L1Regularizer(object):
     def __init__(self, scale=0.0):
         self.scale = scale
@@ -16,3 +19,13 @@ class L1L2Regularizer(object):
         self.l2 = L2Regularizer(l2_scale)
     def __call__(self, weight):
         return self.l1(weight) + self.l2(weight)
+
+class UnitNormClipper(object):
+
+    def __init__(self, frequency=5):
+        self.frequency = frequency
+
+    def __call__(self, module):
+        if hasattr(module, 'weight'):
+            w = module.weight.data
+            w.div_(torch.norm(w, 2, 1).expand_as(w))

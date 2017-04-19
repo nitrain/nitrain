@@ -2,11 +2,18 @@
 SuperModule for high level training on Pytorch models
 """
 
+import math
+from tqdm import tqdm
+
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+from torch.utils.data import DataLoader
 
-from torch.utils.data import TensorDataset, DataLoader
+# local imports
+from .. import TensorDataset
+from . import callbacks as cbks
+
 
 class SuperModule(nn.Module):
 
@@ -20,12 +27,7 @@ class SuperModule(nn.Module):
         - normalizers
         """
         super(SuperModule, self).__init__()
-        self.opts = []
-        self.losses = []
-
-        self.callbacks = None
-        self.regularizers = None
-        self.normalizers = None
+        self.history = cbks.History()
 
     def forward(self, *input):
         """Defines the computation performed at every call.
@@ -37,52 +39,119 @@ class SuperModule(nn.Module):
     def set_loss(self, loss):
         self.loss = loss
 
-    def set_optimizer(self, optimizer, lr=1e-4):
-        self.optimizer = optimizer(self.parameters(), lr=lr)
+    def set_optimizer(self, optimizer):
+        self.optimizer = optimizer(self.parameters())
 
-    def fit(self, x, y, nb_epoch=100, batch_size=32, verbose=1):
-        train_dataset = TensorDataset(torch.from_numpy(x), torch.from_numpy(y))
+    def fit(self,
+            x, 
+            y, 
+            val_data=None, 
+            nb_epoch=100, 
+            batch_size=32, 
+            callbacks=None, 
+            verbose=1):
+        """
+        Fit a model on torch tensors
+        """
+        train_dataset = TensorDataset(x, y)
         train_loader = DataLoader(train_dataset, batch_size=batch_size)
-        self.fit_loader(loader=train_loader, nb_epoch=nb_epoch, verbose=verbose)
+        if val_data is not None:
+            test_dataset = TensorDataset(val_data[0], val_data[1])
+            test_loader = DataLoader(test_dataset, batch_size=batch_size)
+        else:
+            test_loader = None
+        self.fit_loader(loader=train_loader, test_loader=test_loader,
+                        nb_epoch=nb_epoch, callbacks=callbacks, 
+                        verbose=verbose)
 
-    def fit_loader(self, loader, nb_epoch=100, verbose=1):
+    def fit_loader(self, 
+                   loader, 
+                   test_loader=None, 
+                   nb_epoch=100, 
+                   callbacks=None, 
+                   verbose=1):
+        """
+        Fit a model on a DataLoader
+        """
+        ## create callbacks
+        #self.history = cbks.History()
+        #callback_list = [cbks.BaseLogger()] + (callbacks or []) + [self.history]
+        #if verbose > 0:
+        callback_list = [self.history,cbks.TQDM()]
+        callbacks = cbks.CallbackList(callback_list)
+        callbacks.set_model(self)
+        callbacks.set_params({
+            'batch_size': loader.batch_size,
+            'nb_epoch': nb_epoch,
+            'nb_batches': int(math.ceil(len(loader.dataset.inputs)/loader.batch_size)),
+            'verbose': verbose,
+        })
+
+        callbacks.on_train_begin()
+
         for epoch in range(nb_epoch):
-            for batch_idx, (x_batch, y_batch) in enumerate(loader):
-                # Convert numpy array to torch Variable
+            epoch_logs = {
+                'epoch_idx': epoch
+            }
+            callbacks.on_epoch_begin(epoch, epoch_logs)
+
+            for batch_idx,(x_batch, y_batch) in enumerate(loader):
+
+                batch_logs = {
+                    'batch_idx': batch_idx,
+                }                
+                callbacks.on_batch_begin(batch_idx, batch_logs)
+
+                # Convert torch.Tensor to Variable
                 inputs = Variable(x_batch)
                 targets = Variable(y_batch)
 
-                # Forward + Backward + Optimize
+                # zero the gradients
                 self.optimizer.zero_grad()
+                # make forward pass
                 outputs = self(inputs)
                 # compute model loss
                 loss = self.loss(outputs, targets)
-
-                # add regularizer loss
-                for param in self.parameters():
-                    # filter out bias
-                    if param.dim() > 1:
-                        loss += self.reg_loss(param)
-
+                # make backward pass
                 loss.backward()
+                # make optimizer step to update weights
                 self.optimizer.step()
-                
-                if (epoch+1) % 5 == 0:
-                    print ('Epoch [%d/%d], Loss: %.4f' 
-                           %(epoch+1, nb_epoch, loss.data[0]))
+
+                batch_logs['loss'] = loss.data[0]
+                callbacks.on_batch_end(batch_idx, batch_logs)
+            
+            if test_loader is not None:
+                test_loss = self.evaluate_loader(test_loader)
+                epoch_logs['val_loss'] = test_loss
+
+            callbacks.on_epoch_end(epoch, epoch_logs)
+
+        callbacks.on_train_end()
 
     def predict(self, x):
-        x_var = Variable(torch.from_numpy(x))
+        x_var = Variable(x)
         y_pred = self(x_var)
         return y_pred.data.numpy()
 
     def evaluate(self, x, y):
-        x_var = Variable(torch.from_numpy(x))
-        y_var = Variable(torch.from_numpy(y))
+        x_var = Variable(x)
+        y_var = Variable(y)
 
         y_pred = self(x_var)
         loss = self.loss(y_pred, y_var)
         return loss.data.numpy()[0]
+
+    def evaluate_loader(self, loader):
+        losses = []
+        for x_batch, y_batch in loader:
+            x_batch = Variable(x_batch)
+            y_batch = Variable(y_batch)
+
+            y_pred = self(x_batch)
+            loss = self.loss(y_pred, y_batch)
+            losses.append(loss.data[0])
+
+        return torch.mean(torch.FloatTensor(losses))   
 
 
 
