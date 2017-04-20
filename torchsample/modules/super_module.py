@@ -1,6 +1,8 @@
 """
 SuperModule for high level training on Pytorch models
 """
+from __future__ import print_function
+from __future__ import absolute_import
 
 import math
 
@@ -10,14 +12,11 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
 # local imports
-from .. import TensorDataset
-from .callbacks import CallbackList, History, TQDM
-from .constraints import ConstraintList
-from .regularizers import RegularizerList
+from ..datasets import TensorDataset
+from ..callbacks import CallbackList, History, TQDM
+from ..constraints import ConstraintList
+from ..regularizers import RegularizerList
 
-
-def load_super_module(file):
-    pass
 
 class SuperModule(nn.Module):
 
@@ -56,7 +55,7 @@ class SuperModule(nn.Module):
         self._constraints = constraints
 
     def set_callbacks(self, callbacks):
-        self._callbacks = callbacks
+        self._callbacks += callbacks
 
     def fit(self,
             x, 
@@ -185,14 +184,10 @@ class SuperModule(nn.Module):
         preds = self.predict_loader(loader, verbose=verbose)
         return preds
 
-    def predict_on_batch(self, x):
-        x = Variable(x)
-        preds = self(x)
-        return preds
-
     def predict_loader(self,
                        loader,
                        verbose=1):
+        self.eval()
         preds = []
         for batch_idx, batch in enumerate(loader):
             if loader.dataset.has_target:
@@ -200,8 +195,15 @@ class SuperModule(nn.Module):
             x_batch = Variable(batch)
             batch_pred = self(x_batch)
             preds.append(batch_pred.data)
-
+        self.train()
         return Variable(torch.cat(preds))
+
+    def predict_on_batch(self, x):
+        self.eval()
+        x = Variable(x)
+        preds = self(x)
+        self.train()
+        return preds
 
     def evaluate(self, 
                  x, 
@@ -213,39 +215,47 @@ class SuperModule(nn.Module):
         loss = self.evaluate_loader(loader)
         return loss
 
-    def evaluate_on_batch(self, x, y):
-        x = Variable(x)
-        y = Variable(y)
-        y_pred = self(y)
-        loss = self._loss(y_pred, y)
-        return loss.data[0]
-
     def evaluate_loader(self, loader):
-        nb_batches = int(math.ceil(len(loader.dataset.inputs)/loader.batch_size))
-        losses = torch.FloatTensor(nb_batches)
+        self.eval()
+        total_loss = 0.
+        total_samples = 0.
         for batch_idx, (x_batch, y_batch) in enumerate(loader):
             x_batch = Variable(x_batch)
             y_batch = Variable(y_batch)
 
             y_pred = self(x_batch)
             loss = self._loss(y_pred, y_batch)
-            losses[batch_idx] = loss.data[0]
+            total_loss += loss.data[0]*len(x_batch)
+            total_samples += len(x_batch)
+        self.train()
+        return total_loss / total_samples
 
-        return torch.mean(losses)
+    def evaluate_on_batch(self, x, y):
+        self.eval()
+        x = Variable(x)
+        y = Variable(y)
+        y_pred = self(y)
+        loss = self._loss(y_pred, y)
+        self.train()
+        return loss.data[0]
 
-    def save(self, file):
+    def save_state_dict(self, file):
         """
         Save a model to disk
 
         Considerations:
-            - architecture
-            - weights
+            - architecture & weights
+                - state_dict()
             - callbacks
             - constraints
             - optimizers
             - regularizers
         """
-        pass
+        # model parameters -> ordered dict
+        state_dict = self.state_dict()
+        torch.save(state_dict, file)
+
+
 
 
 

@@ -127,6 +127,9 @@ class History(Callback):
     every SuperModule. The `History` object
     gets returned by the `fit` method of models.
     """
+    def __init__(self):
+        self.total_loss = 0.
+        self.samples_seen = 0.
 
     def on_train_begin(self, logs=None):
         self.epoch = []
