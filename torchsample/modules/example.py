@@ -6,18 +6,32 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from keras.datasets import mnist
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
+## LOAD DATA
+import os
+from torchvision import datasets
+ROOT = './data'
+dataset = datasets.MNIST(ROOT, train=True, download=True)
+x_train, y_train = torch.load(os.path.join(dataset.root, 'processed/training.pt'))
+x_test, y_test = torch.load(os.path.join(dataset.root, 'processed/test.pt'))
+
+x_train = x_train.float()
+y_train = y_train.long()
+x_test = x_test.float()
+y_test = y_test.long()
+
 x_train = x_train / 255.
 x_test = x_test / 255.
-x_train = np.expand_dims(x_train,1).astype('float32')
-x_test = np.expand_dims(x_test,1).astype('float32')
+x_train = x_train.unsqueeze(1)
+x_test = x_test.unsqueeze(1)
 
-x_train = torch.from_numpy(x_train[:10000])
-y_train = torch.from_numpy(y_train[:10000])
-x_test = torch.from_numpy(x_test[:1000])
-y_test = torch.from_numpy(y_test[:1000])
+# only train on a subset
+x_train = x_train[:10000]
+y_train = y_train[:10000]
+x_test = x_test[:1000]
+y_test = y_test[:1000]
 
+
+## Create your model exactly as you would with `nn.Module`
 from torchsample.modules import SuperModule
 class Network(SuperModule):
     def __init__(self):
@@ -68,6 +82,12 @@ model.fit(x_train, y_train,
           nb_epoch=5, 
           batch_size=128,
           verbose=1)
+
+# CHECK NON-NEGATIVITY CONSTRAINT
+print('# Negative Conv Weights: ' , torch.sum(model.conv1.weight < -1e-5).data[0])
+
+# CHECK UNIT NORM CONSTRAINT
+print('Avg. FC1 Norm: ' , torch.mean(torch.norm(model.fc1.weight, 2, 1)).data[0])
 
 # SAVE MODEL PARAMETERS (doesnt save architecture)
 model.save_state_dict('/users/ncullen/desktop/mymodel.t7')
