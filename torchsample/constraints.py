@@ -6,16 +6,8 @@ import fnmatch
 
 import torch
 
-class Constraint(object):
 
-    def __call__(self):
-        raise NotImplementedError('Subclass much implement this method')
-
-    def get_config(self):
-        return {'name': self.__class__.__name__}
-
-
-class ConstraintList(object):
+class ConstraintModule(object):
 
     def __init__(self, constraints):
         self.constraints = constraints
@@ -40,6 +32,12 @@ class ConstraintList(object):
         for constraint in self.epoch_constraints:
             if ((epoch+1) % constraint.frequency == 0):
                 self._apply(self.model, constraint)
+
+
+class Constraint(object):
+
+    def __call__(self):
+        raise NotImplementedError('Subclass much implement this method')
 
 
 class UnitNorm(Constraint):

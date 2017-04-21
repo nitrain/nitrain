@@ -5,11 +5,19 @@ SuperModule Callbacks
 from __future__ import absolute_import
 from __future__ import print_function
 
+from collections import OrderedDict
+from collections import Iterable
+import warnings
+
+import os
+import csv
+import time
 from tqdm import tqdm
 
+import torch
 
 
-class CallbackList(object):
+class CallbackModule(object):
     """
     Container holding a list of callbacks.
     """
@@ -93,20 +101,34 @@ class Callback(object):
     def on_train_end(self, logs=None):
         pass
 
+
 class TQDM(Callback):
 
+    def __init__(self):
+        """
+        TQDM Progress Bar callback
+
+        This callback is automatically applied to 
+        every SuperModule if verbose > 0
+        """
+        super(TQDM, self).__init__()
+
     def on_epoch_begin(self, epoch, logs=None):
-        self.progbar = tqdm(total=self.params['nb_batches'],
+        self.progbar = tqdm(total=logs['nb_batches'],
                             unit=' batches')
         self.progbar.set_description('Epoch %i/%i' % 
-                        (epoch+1, self.params['nb_epoch']))
+                        (epoch+1, logs['nb_epoch']))
 
     def on_epoch_end(self, epoch, logs=None):
-        self.progbar.set_postfix({
-            'Loss': '%.04f' % 
-                    (self.model.history.total_loss / self.params['nb_batches']),
-            'Val_Loss': '%.04f' % (logs['val_loss'])
-            })
+        if 'val_loss' in logs:
+            self.progbar.set_postfix({
+                'Loss': '%.04f' % logs['loss'],
+                'Val_Loss': '%.04f' % (logs['val_loss'])
+                })
+        else:
+            self.progbar.set_postfix({
+                'Loss': '%.04f' % logs['loss']
+                })
         self.progbar.update()
         self.progbar.close()
 
@@ -116,7 +138,7 @@ class TQDM(Callback):
     def on_batch_end(self, batch, logs=None):
         self.progbar.set_postfix({
             'Loss': '%.04f' % 
-            (self.model.history.total_loss / (batch+1))})
+            (self.model.history.loss / self.model.history.samples_seen)})
 
 
 class History(Callback):
@@ -124,35 +146,373 @@ class History(Callback):
     Callback that records events into a `History` object.
 
     This callback is automatically applied to
-    every SuperModule. The `History` object
-    gets returned by the `fit` method of models.
+    every SuperModule.
     """
     def __init__(self):
-        self.total_loss = 0.
+        self.loss = 0.
         self.samples_seen = 0.
+        super(History, self).__init__()
 
     def on_train_begin(self, logs=None):
-        self.epoch = []
+        self.epochs = []
         self.losses = []
         self.val_losses = []
         self.reg_losses = []
-        self.total_losses = []
 
     def on_epoch_begin(self, epoch, logs=None):
-        self.total_loss = 0.
+        self.loss = 0.
         self.samples_seen = 0.
 
     def on_batch_end(self, batch, logs=None):
-        self.total_loss += logs['loss']
+        self.loss += logs['loss']*logs['batch_samples']
+        if 'reg_loss' in logs:
+            self.reg_loss += logs['reg_loss']*logs['batch_samples']
+            self.loss += self.reg_loss
+        self.samples_seen += logs['batch_samples']
 
     def on_epoch_end(self, epoch, logs=None):
-        self.epoch.append(epoch)
-        self.losses.append(self.total_loss / self.params['nb_batches'])
+        self.epochs.append(epoch)
+        self.losses.append(logs['loss'])
         if 'val_loss' in logs:
             self.val_losses.append(logs['val_loss'])
         if 'reg_loss' in logs:
             self.reg_losses.append(logs['reg_loss'])
-            self.total_losses.append(logs['total_loss'])
+
+
+class ModelCheckpoint(Callback):
+    """
+    Model Checkpoint to save model weights during training
+    """
+
+    def __init__(self, 
+                 file, 
+                 monitor='val_loss', 
+                 save_best_only=False, 
+                 save_weights_only=True,
+                 max_checkpoints=-1,
+                 verbose=0):
+        """
+        Model Checkpoint to save model weights during training
+
+        Arguments
+        ---------
+        file : string
+            file to which model will be saved.
+            It can be written 'filename_{epoch}_{loss}' and those
+            values will be filled in before saving.
+        monitor : string in {'val_loss', 'loss'}
+            whether to monitor train or val loss
+        save_best_only : boolean
+            whether to only save if monitored value has improved
+        save_weight_only : boolean 
+            whether to save entire model or just weights
+            NOTE: only `True` is supported at the moment
+        max_checkpoints : integer > 0 or -1
+            the max number of models to save. Older model checkpoints
+            will be overwritten if necessary. Set equal to -1 to have
+            no limit
+        verbose : integer in {0, 1}
+            verbosity
+        """
+        self.file = file
+        self.monitor = monitor
+        self.save_best_only = save_best_only
+        self.save_weights_only = save_weights_only
+        self.max_checkpoints = max_checkpoints
+        self.verbose = verbose
+
+        if self.max_checkpoints > 0:
+            self.old_files = []
+
+        # mode = 'min' only supported
+        self.best_loss = 1e15
+        super(ModelCheckpoint, self).__init__()
+
+    def on_epoch_end(self, epoch, logs=None):
+        file = self.file.format(epoch='%03i'%(epoch+1), 
+                                loss='%0.4f'%logs[self.monitor])
+        if self.save_best_only:
+            current_loss = logs.get(self.monitor)
+            if current_loss is None:
+                pass
+            else:
+                if current_loss < self.best_loss:
+                    if self.verbose > 0:
+                        print('\nEpoch %i: improved from %0.4f to %0.4f saving model to %s' % 
+                              (epoch+1, self.best_loss, current_loss, file))
+                    self.best_loss = current_loss
+                    self.model.save_state_dict(file)
+                    if self.max_checkpoints > 0:
+                        if len(self.old_files) == self.max_checkpoints:
+                            try:
+                                os.remove(self.old_files[0])
+                            except:
+                                pass
+                            self.old_files = self.old_files[1:]
+                        self.old_files.append(file)
+        else:
+            if self.verbose > 0:
+                print('\nEpoch %i: saving model to %s' % (epoch+1, file))
+            self.model.save_state_dict(file)
+            if self.max_checkpoints > 0:
+                if len(self.old_files) == self.max_checkpoints:
+                    try:
+                        os.remove(self.old_files[0])
+                    except:
+                        pass
+                    self.old_files = self.old_files[1:]
+                self.old_files.append(file)
+
+
+class EarlyStopping(Callback):
+    """
+    Early Stopping to terminate training early under certain conditions
+    """
+
+    def __init__(self, 
+                 monitor='val_loss',
+                 min_delta=0,
+                 patience=0):
+        """
+        EarlyStopping callback to exit the training loop if training or
+        validation loss does not improve by a certain amount for a certain
+        number of epochs
+
+        Arguments
+        ---------
+        monitor : string in {'val_loss', 'loss'}
+            whether to monitor train or val loss
+        min_delta : float
+            minimum change in monitored value to qualify as improvement.
+            This number should be positive.
+        patience : integer
+            number of epochs to wait for improvment before terminating.
+            the counter be reset after each improvment
+        """
+        self.monitor = monitor
+        self.min_delta = min_delta
+        self.patience = patience
+        self.wait = 0
+        self.best_loss = 1e-15
+        self.stopped_epoch = 0
+        super(EarlyStopping, self).__init__()
+
+    def on_train_begin(self, logs=None):
+        self.wait = 0
+        self.best_loss = 1e15
+
+    def on_epoch_end(self, epoch, logs=None):
+        current_loss = logs.get(self.monitor)
+        if current_loss is None:
+            pass
+        else:
+            if (current_loss - self.best_loss) < -self.min_delta:
+                self.best_loss = current_loss
+                self.wait = 1
+            else:
+                if self.wait >= self.patience:
+                    self.stopped_epoch = epoch + 1
+                    self.model.stop_training = True
+                self.wait += 1
+
+    def on_train_end(self, logs):
+        if self.stopped_epoch > 0:
+            print('\nTerminated Training for Early Stopping at Epoch %04i' % 
+                (self.stopped_epoch))
+
+
+class LearningRateScheduler(Callback):
+    """
+    Schedule the learning rate according to some function of the 
+    current epoch index, current learning rate, and current train/val loss.
+    """
+
+    def __init__(self, schedule):
+        """
+        LearningRateScheduler callback to adapt the learning rate
+        according to some function
+
+        Arguments
+        ---------
+        schedule : callable
+            should return a number of learning rates equal to the number
+            of optimizer.param_groups. It should take the epoch index and
+            **kwargs (or logs) as argument. **kwargs (or logs) will return
+            the epoch logs such as mean training and validation loss from
+            the epoch
+        """
+        self.schedule = schedule
+        super(LearningRateScheduler, self).__init__()
+
+    def on_epoch_begin(self, epoch, logs=None):
+        current_lrs = [p['lr'] for p in self.model._optimizer.param_groups]
+        lr_list = self.schedule(epoch, current_lrs, **logs)
+        if not isinstance(lr_list, list):
+            lr_list = [lr_list]
+
+        for param_group, lr_change in zip(self.model._optimizer.param_groups, lr_list):
+            param_group['lr'] = lr_change
+
+
+class ReduceLROnPlateau(Callback):
+    """
+    Reduce the learning rate if the train or validation loss plateaus
+    """
+
+    def __init__(self,
+                 monitor='val_loss', 
+                 factor=0.1, 
+                 patience=10,
+                 epsilon=0, 
+                 cooldown=0, 
+                 min_lr=0,
+                 verbose=0):
+        """
+        Reduce the learning rate if the train or validation loss plateaus
+
+        Arguments
+        ---------
+        monitor : string in {'loss', 'val_loss'}
+            which metric to monitor
+        factor : floar
+            factor to decrease learning rate by
+        patience : integer
+            number of epochs to wait for loss improvement before reducing lr
+        epsilon : float
+            how much improvement must be made to reset patience
+        cooldown : integer 
+            number of epochs to cooldown after a lr reduction
+        min_lr : float
+            minimum value to ever let the learning rate decrease to
+        verbose : integer
+            whether to print reduction to console
+        """
+        self.monitor = monitor
+        if factor >= 1.0:
+            raise ValueError('ReduceLROnPlateau does not support a factor >= 1.0.')
+        self.factor = factor
+        self.min_lr = min_lr
+        self.epsilon = epsilon
+        self.patience = patience
+        self.verbose = verbose
+        self.cooldown = cooldown
+        self.cooldown_counter = 0
+        self.wait = 0
+        self.best_loss = 1e15
+        self._reset()
+        super(ReduceLROnPlateau, self).__init__()
+
+    def _reset(self):
+        """
+        Reset the wait and cooldown counters
+        """
+        self.monitor_op = lambda a, b: (a - b) < -self.epsilon
+        self.best_loss = 1e15
+        self.cooldown_counter = 0
+        self.wait = 0
+
+    def on_train_begin(self, logs=None):
+        self._reset()
+
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
+        logs['lr'] = [p['lr'] for p in self.model._optimizer.param_groups]
+        current_loss = logs.get(self.monitor)
+        if current_loss is None:
+            pass
+        else:  
+            if self.cooldown_counter > 0:
+                # if in cooldown phase
+                self.cooldown_counter += 1
+                self.wait = 0
+            if self.monitor_op(current_loss, self.best_loss):
+                # not in cooldown and loss improved
+                self.best_loss = current_loss
+                self.wait = 0
+            else:
+                # loss didnt improve
+                for p in self.model._optimizer.param_groups:
+                    old_lr = p['lr']
+                    if old_lr > self.min_lr + 1e-4:
+                        new_lr = old_lr * self.factor
+                        new_lr = max(new_lr, self.min_lr)
+                        if self.verbose > 0:
+                            print('\nEpoch %05d: reducing lr from %0.3f to %0.3f' % 
+                                (epoch, old_lr, new_lr))
+                        p['lr'] = new_lr
+                        self.cooldown_counter = self.cooldown
+                        self.wait = 0
+
+
+class CSVLogger(Callback):
+    """
+    Logs epoch-level metrics to a CSV file
+    """
+
+    def __init__(self, 
+                 file, 
+                 separator=',', 
+                 append=False):
+        """
+        Logs epoch-level metrics to a CSV file
+
+        Arguments
+        ---------
+        file : string
+            path to csv file
+        separator : string
+            delimiter for file
+        apped : boolean
+            whether to append result to existing file or make new file
+        """
+        self.file = file
+        self.sep = separator
+        self.append = append
+        self.writer = None
+        self.keys = None
+        self.append_header = True
+        super(CSVLogger, self).__init__()
+
+    def on_train_begin(self, logs=None):
+        if self.append:
+            if os.path.exists(self.file):
+                with open(self.file) as f:
+                    self.append_header = not bool(len(f.readline()))
+            self.csv_file = open(self.file, 'a')
+        else:
+            self.csv_file = open(self.file, 'w')
+
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
+        RK = {'nb_batches', 'nb_epoch'}
+
+        def handle_value(k):
+            is_zero_dim_tensor = isinstance(k, torch.Tensor) and k.dim() == 0
+            if isinstance(k, Iterable) and not is_zero_dim_tensor:
+                return '"[%s]"' % (', '.join(map(str, k)))
+            else:
+                return k
+
+        if not self.writer:
+            self.keys = sorted(logs.keys())
+
+            class CustomDialect(csv.excel):
+                delimiter = self.sep
+
+            self.writer = csv.DictWriter(self.csv_file,
+                    fieldnames=['epoch'] + [k for k in self.keys if k not in RK], 
+                    dialect=CustomDialect)
+            if self.append_header:
+                self.writer.writeheader()
+
+        row_dict = OrderedDict({'epoch': epoch})
+        row_dict.update((key, handle_value(logs[key])) for key in self.keys if key not in RK)
+        self.writer.writerow(row_dict)
+        self.csv_file.flush()
+
+    def on_train_end(self, logs=None):
+        self.csv_file.close()
+        self.writer = None
 
 
 class LambdaCallback(Callback):

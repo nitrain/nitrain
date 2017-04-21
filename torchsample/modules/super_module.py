@@ -13,9 +13,9 @@ from torch.utils.data import DataLoader
 
 # local imports
 from ..datasets import TensorDataset
-from ..callbacks import CallbackList, History, TQDM
-from ..constraints import ConstraintList
-from ..regularizers import RegularizerList
+from ..callbacks import CallbackModule, History, TQDM
+from ..constraints import ConstraintModule
+from ..regularizers import RegularizerModule
 
 
 class SuperModule(nn.Module):
@@ -34,6 +34,7 @@ class SuperModule(nn.Module):
         self._callbacks = [self.history]
         self._constraints = []
         self._regularizers = []
+        self.stop_training = False
 
     def forward(self, *input):
         """
@@ -104,59 +105,49 @@ class SuperModule(nn.Module):
         """
         ## create regularizers
         if len(self._regularizers) > 0:
-            regularizers = RegularizerList(self._regularizers)
+            regularizers = RegularizerModule(self._regularizers)
             regularizers.set_model(self)
         else:
             regularizers = None
 
         ## create constraints
-        constraints = ConstraintList(self._constraints)
+        constraints = ConstraintModule(self._constraints)
         constraints.set_model(self)
 
         ## create callbacks
         if verbose > 0:
             self._callbacks += [TQDM()]
-        callbacks = CallbackList(self._callbacks)
+        callbacks = CallbackModule(self._callbacks)
         callbacks.set_model(self)
-        callbacks.set_params({
-            'batch_size': loader.batch_size,
-            'nb_epoch': nb_epoch,
-            'nb_batches': int(math.ceil(len(loader.dataset.inputs)/loader.batch_size)),
-            'verbose': verbose,
-        })
 
         callbacks.on_train_begin()
 
         for epoch_idx in range(nb_epoch):
             epoch_logs = {
-                'epoch_idx': epoch_idx
+                'nb_batches': int(math.ceil(len(loader.dataset.inputs)/loader.batch_size)),
+                'nb_epoch': nb_epoch
             }
             callbacks.on_epoch_begin(epoch_idx, epoch_logs)
 
             for batch_idx,(x_batch, y_batch) in enumerate(loader):
-
                 batch_logs = {
                     'batch_idx': batch_idx,
+                    'batch_samples': len(x_batch)
                 }                
                 callbacks.on_batch_begin(batch_idx, batch_logs)
 
-                # Convert torch.Tensor to Variable
                 inputs = Variable(x_batch)
                 targets = Variable(y_batch)
 
-                # zero the gradients
                 self._optimizer.zero_grad()
-                # make forward pass
                 outputs = self(inputs)
-                # compute model loss
                 loss = self._loss(outputs, targets)
-                batch_logs['loss'] = loss.data[0]
-
+                
                 if regularizers is not None:
                     reg_loss = regularizers.compute_loss()
-                    batch_logs['reg_loss'] = reg_loss
                     loss += reg_loss
-                    batch_logs['total_loss'] = loss.data[0]
+                    batch_logs['reg_loss'] = reg_loss
+                batch_logs['loss'] = loss.data[0]
 
                 # make backward pass
                 loss.backward()
@@ -167,11 +158,16 @@ class SuperModule(nn.Module):
                 constraints.on_batch_end(batch_idx)
 
             if val_loader is not None:
-                test_loss = self.evaluate_loader(val_loader)
-                epoch_logs['val_loss'] = test_loss
+                val_loss = self.evaluate_loader(val_loader)
+                epoch_logs['val_loss'] = val_loss
+            epoch_logs['loss'] = self.history.loss / self.history.samples_seen
+            if regularizers is not None:
+                epoch_logs['reg_loss'] = self.history.reg_loss / self.history.samples_seen
 
             callbacks.on_epoch_end(epoch_idx, epoch_logs)
             constraints.on_epoch_end(epoch_idx)
+            if self.stop_training:
+                break
 
         callbacks.on_train_end()
 
@@ -241,15 +237,7 @@ class SuperModule(nn.Module):
 
     def save_state_dict(self, file):
         """
-        Save a model to disk
-
-        Considerations:
-            - architecture & weights
-                - state_dict()
-            - callbacks
-            - constraints
-            - optimizers
-            - regularizers
+        Save a model parameters to disk
         """
         # model parameters -> ordered dict
         state_dict = self.state_dict()

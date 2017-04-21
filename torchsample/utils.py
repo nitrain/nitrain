@@ -5,23 +5,6 @@ Util functions for torchsample
 import pickle
 import torch
 
-def save_transform(file, transform):
-    """
-    Save a transform object
-    """
-    with open(file, 'wb') as output_file:
-        pickler = pickle.Pickler(output_file, -1)
-        pickler.dump(transform)
-
-
-def load_transform(file):
-    """
-    Load a transform object
-    """
-    with open(file, 'rb') as input_file:
-        transform = pickle.load(input_file)
-    return transform
-
 
 def th_random_choice(a, size=None, replace=True, p=None):
     """
@@ -44,34 +27,6 @@ def th_random_choice(a, size=None, replace=True, p=None):
     --------
     samples : 1-D ndarray, shape (size,)
         The generated random samples
-    
-    Notes
-    -----
-    Handle:
-        - a is 1D tensor, size is None
-
-    Example
-    -------
-    - with size = 100,000:
-        - no probabilities
-            >>> x = torch.range(0,4)
-            >>> xx = th_random_choice(x,size=100000))
-            >>> print('%i - %.03f' % (0, torch.sum(xx==0)/100000))
-            >>> print('%i - %.03f' % (1, torch.sum(xx==1)/100000))
-            >>> print('%i - %.03f' % (2, torch.sum(xx==2)/100000))
-            >>> print('%i - %.03f' % (3, torch.sum(xx==3)/100000))
-            >>> print('%i - %.03f' % (4, torch.sum(xx==4)/100000))
-            >>> print('\n')
-
-        - probabilities
-            >>> x = torch.range(0,4)
-            >>> xx = th_random_choice(x,size=100000, p=[0.1,0.2,0.3,0.05,0.35])
-            >>> print('%.03f - %.03f' % (0.1, torch.sum(xx==0)/100000))
-            >>> print('%.03f - %.03f' % (0.2, torch.sum(xx==1)/100000))
-            >>> print('%.03f - %.03f' % (0.3, torch.sum(xx==2)/100000))
-            >>> print('%.03f - %.03f' % (0.05, torch.sum(xx==3)/100000))
-            >>> print('%.03f - %.03f' % (0.35, torch.sum(xx==4)/100000))
-            >>> print('\n')
     """
     if size is None:
         size = 1
@@ -234,3 +189,21 @@ def th_matrixcorr(x, y):
     r_mat = r_num.div(r_den)
     return r_mat
 
+
+def save_transform(file, transform):
+    """
+    Save a transform object
+    """
+    with open(file, 'wb') as output_file:
+        pickler = pickle.Pickler(output_file, -1)
+        pickler.dump(transform)
+
+
+def load_transform(file):
+    """
+    Load a transform object
+    """
+    with open(file, 'rb') as input_file:
+        transform = pickle.load(input_file)
+    return transform
+    

@@ -2,14 +2,12 @@
 import torch
 from fnmatch import fnmatch
 
-class RegularizerList(object):
+
+class RegularizerModule(object):
 
     def __init__(self, regularizers):
         self.regularizers = regularizers
         self.loss = 0.
-
-    def set_model(self, model):
-        self.model = model
 
     def _apply(self, module, regularizer):
         for name, module in module.named_children():
@@ -17,14 +15,15 @@ class RegularizerList(object):
                 self.loss += regularizer(module)
                 self._apply(module, regularizer)
 
-    def compute_loss(self):
+    def __call__(self, model):
         self.loss = 0.
         for regularizer in self.regularizers:
-            self._apply(self.model, regularizer)
+            self._apply(model, regularizer)
         return self.loss
 
     def __len__(self):
         return len(self.regularizers)
+
 
 class L1Regularizer(object):
 
@@ -36,6 +35,7 @@ class L1Regularizer(object):
         w = module.weight.data
         return torch.sum(torch.abs(w)) * self.scale
 
+
 class L2Regularizer(object):
 
     def __init__(self, scale=0.0, module_filter='*'):
@@ -45,6 +45,7 @@ class L2Regularizer(object):
     def __call__(self, module):
         w = module.weight.data
         return torch.sum(torch.pow(w,2)) * self.scale
+
 
 class L1L2Regularizer(object):
 
