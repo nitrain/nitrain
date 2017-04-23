@@ -65,7 +65,7 @@ def th_meshgrid(*args):
     result = [[]]
     for pool in pools:
         result = [x+[y] for x in result for y in pool]
-    return torch.Tensor(result)
+    return torch.Tensor(result).long()
 
 
 def th_affine2d(x, matrix, coords=None):
@@ -179,10 +179,10 @@ def F_map_coordinates2d(input, coords):
     coords_lb = torch.stack([coords_lt[:, 0], coords_rb[:, 1]], 1)
     coords_rt = torch.stack([coords_rb[:, 0], coords_lt[:, 1]], 1)
 
-    vals_lt = th_gather2d(input,  coords_lt.detach())
-    vals_rb = th_gather2d(input,  coords_rb.detach())
-    vals_lb = th_gather2d(input,  coords_lb.detach())
-    vals_rt = th_gather2d(input,  coords_rt.detach())
+    vals_lt = th_gather_nd(input,  coords_lt.detach())
+    vals_rb = th_gather_nd(input,  coords_rb.detach())
+    vals_lb = th_gather_nd(input,  coords_lb.detach())
+    vals_rt = th_gather_nd(input,  coords_rt.detach())
 
     coords_offset_lt = coords - coords_lt.type(coords.data.type())
 
@@ -247,14 +247,14 @@ def F_map_coordinates3d(input, coords):
     c_110 = torch.stack([x1,y1,z0])
     c_101 = torch.stack([x1,y0,z1])
 
-    vals_000 = th_gather3d(input, c_000.detach())
-    vals_111 = th_gather3d(input, c_111.detach())
-    vals_001 = th_gather3d(input, c_001.detach())
-    vals_010 = th_gather3d(input, c_010.detach())
-    vals_011 = th_gather3d(input, c_011.detach())
-    vals_100 = th_gather3d(input, c_100.detach())
-    vals_110 = th_gather3d(input, c_110.detach())
-    vals_101 = th_gather3d(input, c_101.detach())
+    vals_000 = th_gather_nd(input, c_000.detach())
+    vals_111 = th_gather_nd(input, c_111.detach())
+    vals_001 = th_gather_nd(input, c_001.detach())
+    vals_010 = th_gather_nd(input, c_010.detach())
+    vals_011 = th_gather_nd(input, c_011.detach())
+    vals_100 = th_gather_nd(input, c_100.detach())
+    vals_110 = th_gather_nd(input, c_110.detach())
+    vals_101 = th_gather_nd(input, c_101.detach())
 
     xd = ((x-x0)/(x1-x0))
     yd = (y-y0)/(y1-y0)
@@ -287,16 +287,17 @@ def F_map_coordinates2d_2(input, coords):
     c_01 = torch.stack([x0,y1])
     c_10 = torch.stack([x1,y0])
 
-    vals_00 = th_gather2d(input, c_00.detach())
-    vals_11 = th_gather2d(input, c_11.detach())
-    vals_01 = th_gather2d(input, c_01.detach())
-    vals_10 = th_gather2d(input, c_10.detach())
+    vals_00 = th_gather_nd(input, c_00.detach())
+    vals_11 = th_gather_nd(input, c_11.detach())
+    vals_01 = th_gather_nd(input, c_01.detach())
+    vals_10 = th_gather_nd(input, c_10.detach())
 
     c0 = ((x1-x)/(x1-x0))*vals_00 + ((x-x1)/(x1-x0))*vals_10
     c1 = ((x1-x)/(x1-x0))*vals_01 + ((x-x0)/(x1-x0))*vals_11
     c = ((y1-y)/(y1-y0))*c0 + ((y-y0)/(y1-y0))*c1
 
     return c.view_as(input)
+
 
 def F_bicubic2d(input, coords):
     def cubic_hermite(A,B,C,D,t):
@@ -317,25 +318,25 @@ def F_bicubic2d(input, coords):
     yint = y.long()
     yfract = y - y.floor()
 
-    p00 = th_gather2d(input, torch.stack([xint - 1, yint - 1]))
-    p10 = th_gather2d(input, torch.stack([xint + 0, yint - 1]))
-    p20 = th_gather2d(input, torch.stack([xint + 1, yint - 1]))
-    p30 = th_gather2d(input, torch.stack([xint + 2, yint - 1]))
+    p00 = th_gather_nd(input, torch.stack([xint - 1, yint - 1]))
+    p10 = th_gather_nd(input, torch.stack([xint + 0, yint - 1]))
+    p20 = th_gather_nd(input, torch.stack([xint + 1, yint - 1]))
+    p30 = th_gather_nd(input, torch.stack([xint + 2, yint - 1]))
 
-    p01 = th_gather2d(input, torch.stack([xint - 1, yint + 0]))
-    p11 = th_gather2d(input, torch.stack([xint + 0, yint + 0]))
-    p21 = th_gather2d(input, torch.stack([xint + 1, yint + 0]))
-    p31 = th_gather2d(input, torch.stack([xint + 2, yint + 0]))
+    p01 = th_gather_nd(input, torch.stack([xint - 1, yint + 0]))
+    p11 = th_gather_nd(input, torch.stack([xint + 0, yint + 0]))
+    p21 = th_gather_nd(input, torch.stack([xint + 1, yint + 0]))
+    p31 = th_gather_nd(input, torch.stack([xint + 2, yint + 0]))
  
-    p02 = th_gather2d(input, torch.stack([xint - 1, yint + 1]))
-    p12 = th_gather2d(input, torch.stack([xint + 0, yint + 1]))
-    p22 = th_gather2d(input, torch.stack([xint + 1, yint + 1]))
-    p32 = th_gather2d(input, torch.stack([xint + 2, yint + 1]))
+    p02 = th_gather_nd(input, torch.stack([xint - 1, yint + 1]))
+    p12 = th_gather_nd(input, torch.stack([xint + 0, yint + 1]))
+    p22 = th_gather_nd(input, torch.stack([xint + 1, yint + 1]))
+    p32 = th_gather_nd(input, torch.stack([xint + 2, yint + 1]))
  
-    p03 = th_gather2d(input, torch.stack([xint - 1, yint + 2]))
-    p13 = th_gather2d(input, torch.stack([xint + 0, yint + 2]))
-    p23 = th_gather2d(input, torch.stack([xint + 1, yint + 2]))
-    p33 = th_gather2d(input, torch.stack([xint + 2, yint + 2]))
+    p03 = th_gather_nd(input, torch.stack([xint - 1, yint + 2]))
+    p13 = th_gather_nd(input, torch.stack([xint + 0, yint + 2]))
+    p23 = th_gather_nd(input, torch.stack([xint + 1, yint + 2]))
+    p33 = th_gather_nd(input, torch.stack([xint + 2, yint + 2]))
 
     col0 = cubic_hermite(p00,p10,p20,p30,xfract)
     col1 = cubic_hermite(p01,p11,p21,p31,xfract)
@@ -346,7 +347,16 @@ def F_bicubic2d(input, coords):
     return x_mapped
 
 
-def th_gathernd(x, coords):
+def th_gather_nd(x, coords):
+    """
+    Returns a flattened tensor of x indexed by coords
+
+    Example:
+        >>> x = torch.randn(2,3,1) # random 3d tensor
+        >>> coords = th_meshgrid(2,3,1) # create coordinate grid
+        >>> xx = th_gather_nd(x, coords).view_as(x) # gather and view
+        >>> print(th_allclose(x, xx)) # True
+    """
     if coords.size(1) != x.dim():
         raise ValueError('Coords must have column for each image dim')
 
@@ -354,18 +364,6 @@ def th_gathernd(x, coords):
     for i in range(x.dim()-2):
         inds += coords[:,i+1]*x.size(i+2)
     inds += coords[:,-1]
-    x_gather = torch.index_select(th_flatten(x), 0, inds)
-    return x_gather
-
-
-def th_gather2d(x, coords):
-    inds = coords[:, 0] * x.size(1) + coords[:, 1]
-    x_gather = torch.index_select(th_flatten(x), 0, inds)
-    return x_gather
-
-
-def th_gather3d(x, coords):
-    inds = coords[:,0]*x.size(1) + coords[:,1]*x.size(2) + coords[:,2]
     x_gather = torch.index_select(th_flatten(x), 0, inds)
     return x_gather
 
