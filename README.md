@@ -1,11 +1,11 @@
-## High-Level Training, Data Augmentation, and Utilities for Pytorch
+## `High-Level Training, Data Augmentation, and Utilities for Pytorch`
 
 This package provides a few things:
 - A high-level module for Keras-like training with callbacks, constraints, and regularizers.
 - Comprehensive data augmentation, transforms, sampling, and loading
 - Utility tensor and variable functions so you don't need numpy as often
 
-## `SuperModule`
+## SuperModule
 The `SuperModule` class provides a high-level training interface which abstracts
 away the training loop while providing callbacks, constraints, and regularizers. 
 Most importantly, you lose ZERO flexibility since this model inherits directly
