@@ -1,6 +1,6 @@
 
 import torch
-import torch.nn.function as F
+import torch.nn.functional as F
 from torch.autograd import Variable
 
 from ..utils import th_meshgrid, th_gather_nd
