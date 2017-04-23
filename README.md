@@ -75,7 +75,7 @@ These transforms work directly on torch tensors
 - `ToTensor()` 
 
 ### Affine Transforms
-![Original](https://github.com/ncullen93/torchsample/blob/master/tutorials/imgs/orig1.png "Original") ![Transformed](https://github.com/ncullen93/torchsample/blob/master/tutorials/imgs/tform1.png "Transformed")
+![Original](https://github.com/ncullen93/torchsample/blob/master/examples/imgs/orig1.png "Original") ![Transformed](https://github.com/ncullen93/torchsample/blob/master/examples/imgs/tform1.png "Transformed")
 
 The following transforms perform affine (or affine-like) transforms on torch tensors. 
 
