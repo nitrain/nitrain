@@ -59,11 +59,20 @@ def th_random_choice(a, size=None, replace=True, p=None):
 
 
 def th_meshgrid(*args):
-    pools = (torch.range(0,i-1) for i in args)
+    dtype = torch.LongTensor
+    pools = []
+    for i in args:
+        if isinstance(i, int):
+            pools.append(torch.range(0, i-1))
+        else:
+            if type(i) != torch.LongTensor:
+                dtype = i.type()
+            pools.append(i)
     result = [[]]
     for pool in pools:
         result = [x+[y] for x in result for y in pool]
-    return torch.Tensor(result).long()
+    return torch.Tensor(result).type(dtype)
+
 
 
 def th_affine_2d(x, matrix, mode='bilinear', center=True):
