@@ -1,4 +1,4 @@
-# Data Augmentation, Loading, and High-Level Training for Pytorch
+## High-Level Training, Data Augmentation, and Utilities for Pytorch
 
 This package provides a few things:
 - A high-level module for Keras-like training with callbacks, constraints, and regularizers.
