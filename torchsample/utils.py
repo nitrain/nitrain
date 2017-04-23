@@ -60,30 +60,23 @@ def th_random_choice(a, size=None, replace=True, p=None):
     return a[idx]
 
 
-def th_meshgrid2d(h, w):
-    """
-    Generates a meshgrid of shape (h*w, 2)
+def product(*args, **kwds):
+    # product('ABCD', 'xy') --> Ax Ay Bx By Cx Cy Dx Dy
+    # product(range(2), repeat=3) --> 000 001 010 011 100 101 110 111
+    pools = map(tuple, args)# * kwds.get('repeat', 1)
+    result = [[]]
+    for pool in pools:
+        result = [x+[y] for x in result for y in pool]
+    return torch.LongTensor(result)
+    #for prod in result:
+    #    yield tuple(prod)
 
-    Arguments
-    ---------
-    h : integer
-    w : integer
-    """
-    x = torch.range(0, h-1)
-    y = torch.range(0, w-1)
-    grid = torch.stack([x.repeat(w),
-                        y.repeat(h,1).t().contiguous().view(-1)],1)
-    return grid
-
-
-def th_meshgrid3d(h,w,d):
-    x = torch.range(0, h-1)
-    y = torch.range(0, w-1)
-    z = torch.range(0, d-1)
-    grid = torch.stack([x.repeat(w*d),
-                       y.repeat(h,1).t().contiguous().view(-1).repeat(d,1).view(-1),
-                       z.repeat(h*w,1).t().contiguous().view(-1)],1)
-    return grid
+def th_meshgrid(*args):
+    pools = (torch.range(0,i-1) for i in args)
+    result = [[]]
+    for pool in pools:
+        result = [x+[y] for x in result for y in pool]
+    return torch.Tensor(result)
 
 
 def th_affine2d(x, matrix, coords=None):
@@ -113,7 +106,7 @@ def th_affine2d(x, matrix, coords=None):
     # generate coordinate grid if not given
     # can be passed as arg for speed
     if coords is None:
-        coords = th_meshgrid2d(H, W)
+        coords = th_meshgrid(H, W)
 
     # make the center coordinate the origin
     coords[:,0] -= (H / 2. + 0.5)
@@ -159,7 +152,7 @@ def F_affine2d(x, matrix, center=True):
     b = matrix[:2,2]
 
     # make a meshgrid of normal coordinates
-    coords = Variable(th_meshgrid2d(x.size(0),x.size(1)), requires_grad=False)
+    coords = Variable(th_meshgrid(x.size(0),x.size(1)), requires_grad=False)
 
     if center:
         # shift the coordinates so center is the origin
@@ -212,7 +205,7 @@ def F_affine3d(x, matrix, center=True):
     b = matrix[:3,3]
 
     # make a meshgrid of normal coordinates
-    coords = Variable(th_meshgrid3d(x.size(0),x.size(1),x.size(2)), 
+    coords = Variable(th_meshgrid(x.size(0),x.size(1),x.size(2)), 
                       requires_grad=False)
 
     if center:
