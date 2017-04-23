@@ -60,17 +60,6 @@ def th_random_choice(a, size=None, replace=True, p=None):
     return a[idx]
 
 
-def product(*args, **kwds):
-    # product('ABCD', 'xy') --> Ax Ay Bx By Cx Cy Dx Dy
-    # product(range(2), repeat=3) --> 000 001 010 011 100 101 110 111
-    pools = map(tuple, args)# * kwds.get('repeat', 1)
-    result = [[]]
-    for pool in pools:
-        result = [x+[y] for x in result for y in pool]
-    return torch.LongTensor(result)
-    #for prod in result:
-    #    yield tuple(prod)
-
 def th_meshgrid(*args):
     pools = (torch.range(0,i-1) for i in args)
     result = [[]]
@@ -81,7 +70,8 @@ def th_meshgrid(*args):
 
 def th_affine2d(x, matrix, coords=None):
     """
-    Affine transform in pytorch. 
+    Affine image transform on torch.Tensor
+
     Only supports nearest neighbor interpolation at the moment.
 
     Assumes channel axis is 0th dim and there is no sample dim
@@ -147,6 +137,9 @@ def th_affine2d(x, matrix, coords=None):
 
 
 def F_affine2d(x, matrix, center=True):
+    """
+    2D Affine image transform on torch.autograd.Variable
+    """
     # grab A and b weights from 2x3 matrix
     A = matrix[:2,:2]
     b = matrix[:2,2]
@@ -175,7 +168,7 @@ def F_affine2d(x, matrix, center=True):
 
 def F_map_coordinates2d(input, coords):
     """
-    bilinear interpolation of 2d image
+    bilinear interpolation of 2d torch.autograd.Variable
     """
     xc = torch.clamp(coords[:,0], 0, input.size(0)-1)
     yc = torch.clamp(coords[:,1], 0, input.size(1)-1)
@@ -352,10 +345,23 @@ def F_bicubic2d(input, coords):
     x_mapped = cubic_hermite(col0,col1,col2,col3,yfract)
     return x_mapped
 
+
+def th_gathernd(x, coords):
+    if coords.size(1) != x.dim():
+        raise ValueError('Coords must have column for each image dim')
+
+    inds = coords[:,0]*x.size(1)
+    for i in range(x.dim()-2):
+        inds += coords[:,i+1]*x.size(i+2)
+    inds += coords[:,-1]
+    x_gather = torch.index_select(th_flatten(x), 0, inds)
+    return x_gather
+
+
 def th_gather2d(x, coords):
     inds = coords[:, 0] * x.size(1) + coords[:, 1]
     x_gather = torch.index_select(th_flatten(x), 0, inds)
-    return x_gather.view_as(x)
+    return x_gather
 
 
 def th_gather3d(x, coords):
