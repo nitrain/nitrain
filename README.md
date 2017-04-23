@@ -46,13 +46,17 @@ model.fit(x_train, y_train,
 ## Utility Functions
 Finally, torchsample provides a few utility functions not commonly found:
 
+### Tensor Functions
 - `th_meshgrid` (mimics itertools.product and np.meshgrid)
 - `th_gather_nd` (N-dimensional version of torch.gather)
 - `th_random_choice` (mimics np.random.choice)
 - `th_pearsonr` (mimics scipy.stats.pearsonr)
 - `th_corrcoef` (mimics np.corrcoef)
-- `th_affine_transform` (functional affine transform)
+- `th_affine2d` and `th_affine3d` (affine transforms on torch.Tensors)
 
+### Variable Functions
+- `F_affine2d` and `F_affine3d`
+- `F_map_coordinates2d` and `F_map_coordinates3d`
 
 ## Data Augmentation and Datasets
 The torchsample package provides a ton of good data augmentation and transformation
