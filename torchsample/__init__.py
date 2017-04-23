@@ -8,6 +8,6 @@ from .callbacks import *
 from .constraints import *
 from .regularizers import *
 
-
+from . import functions
 from . import transforms
 from . import modules
