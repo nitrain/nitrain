@@ -26,8 +26,7 @@ class Affine(object):
                  rotation_range=None, 
                  translation_range=None,
                  shear_range=None, 
-                 zoom_range=None,
-                 fixed_size=None):
+                 zoom_range=None):
         """
         Perform an affine transforms with various sub-transforms, using
         only one interpolation and without having to instantiate each
@@ -88,9 +87,12 @@ class Affine(object):
             zoom_tform = Zoom(zoom_range, lazy=True)
             self.transforms.append(zoom_tform)
 
-        self.coords = None
-        if fixed_size is not None:
-            self.coords = th_meshgrid(fixed_size[0], fixed_size[1])
+        #self.coords = None
+        #if fixed_size is not None:
+        #    self.coords = th_meshgrid(fixed_size[0], fixed_size[1])
+
+        if len(self.transforms) == 0:
+            raise Exception('Must give at least one transform parameter in Affine()')
 
     def __call__(self, x, y=None):
         # collect all of the lazily returned tform matrices
@@ -98,10 +100,12 @@ class Affine(object):
         for tform in self.transforms[1:]:
             tform_matrix = torch.mm(tform_matrix, tform(x)) 
 
-        x = th_affine_transform(x, tform_matrix, self.coords)
+        x = th_affine_transform(x, tform_matrix)
+
+        self.tform_matrix = tform_matrix
 
         if y is not None:
-            y = th_affine_transform(y, tform_matrix, self.coords)
+            y = th_affine_transform(y, tform_matrix)
             return x, y
         else:
             return x
@@ -140,6 +144,9 @@ class AffineCompose(object):
 
         self.coords = None
         if fixed_size is not None:
+            if len(fixed_size) == 3:
+                # assume channel is first dim
+                fixed_size = fixed_size[1:]
             self.coords = th_meshgrid(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):

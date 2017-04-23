@@ -47,7 +47,11 @@ class SuperModule(nn.Module):
         self._loss = loss
 
     def set_optimizer(self, optimizer, **kwargs):
-        self._optimizer = optimizer(self.parameters(), **kwargs)
+        if 'parameters' in kwargs:
+            parameters = kwargs['parameters']
+        else:
+            parameters = self.parameters()
+        self._optimizer = optimizer(parameters, **kwargs)
 
     def set_regularizers(self, regularizers):
         self._regularizers = regularizers

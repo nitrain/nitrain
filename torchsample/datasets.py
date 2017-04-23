@@ -186,7 +186,7 @@ class TensorDataset(torch.utils.data.Dataset):
     def __init__(self,
                  input_tensor,
                  target_tensor=None,
-                 transform=None, 
+                 input_transform=None, 
                  target_transform=None,
                  co_transform=None):
         """
@@ -216,7 +216,7 @@ class TensorDataset(torch.utils.data.Dataset):
             self.has_target = False
         else:
             self.has_target = True
-        self.transform = transform
+        self.input_transform = input_transform
         self.target_transform = target_transform
         self.co_transform = co_transform
 
@@ -228,8 +228,8 @@ class TensorDataset(torch.utils.data.Dataset):
             target_sample = self.targets[index]
 
         # apply transforms
-        if self.transform is not None:
-            input_sample = self.transform(input_sample)
+        if self.input_transform is not None:
+            input_sample = self.input_transform(input_sample)
         if self.has_target and self.target_transform is not None:
             target_sample = self.target_transform(target_sample)
         if self.has_target and self.co_transform is not None:
