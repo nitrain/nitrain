@@ -5,7 +5,7 @@ from torch.autograd import Variable
 
 from ..utils import th_meshgrid, th_gather_nd
 
-def F_affine2d(x, matrix, center=True):
+def F_affine_2d(x, matrix, center=True):
     """
     2D Affine image transform on torch.autograd.Variable
     """
@@ -30,12 +30,12 @@ def F_affine2d(x, matrix, center=True):
         new_coords[:,1] = new_coords[:,1] + (x.size(1) / 2. + 0.5)
 
     # map new coordinates using bilinear interpolation
-    x_transformed = F_map_coordinates2d(x, new_coords)
+    x_transformed = F_bilinear_interp_2d(x, new_coords)
 
     return x_transformed
 
 
-def F_map_coordinates2d(input, coords):
+def F_bilinear_interp_2d(input, coords):
     """
     bilinear interpolation of 2d torch.autograd.Variable
     """
@@ -61,7 +61,7 @@ def F_map_coordinates2d(input, coords):
     return mapped_vals.view_as(input)
 
 
-def F_affine3d(x, matrix, center=True):
+def F_affine_3d(x, matrix, center=True):
     # grab A and b weights from 2x3 matrix
     A = matrix[:3,:3]
     b = matrix[:3,3]
@@ -86,12 +86,12 @@ def F_affine3d(x, matrix, center=True):
         new_coords[:,2] = new_coords[:,2] + (x.size(2) / 2. + 0.5)
 
     # map new coordinates using bilinear interpolation
-    x_transformed = F_map_coordinates3d(x, new_coords)
+    x_transformed = F_bilinear_interp_3d(x, new_coords)
 
     return x_transformed
 
 
-def F_map_coordinates3d(input, coords):
+def F_bilinear_interp_3d(input, coords):
     """
     trilinear interpolation of 3D image
     """
@@ -142,34 +142,8 @@ def F_map_coordinates3d(input, coords):
     return c.view_as(input)
 
 
-def F_map_coordinates2d_2(input, coords):
-    x = torch.clamp(coords[:,0], 0, input.size(0)-1.00001)
-    x0 = x.floor().long()
-    x1 = x0 + 1
-
-    y = torch.clamp(coords[:,1], 0, input.size(1)-1.00001)
-    y0 = y.floor().long()
-    y1 = y0 + 1
-
-    c_00 = torch.stack([x0,y0])
-    c_11 = torch.stack([x1,y1])
-    c_01 = torch.stack([x0,y1])
-    c_10 = torch.stack([x1,y0])
-
-    vals_00 = th_gather_nd(input, c_00.detach())
-    vals_11 = th_gather_nd(input, c_11.detach())
-    vals_01 = th_gather_nd(input, c_01.detach())
-    vals_10 = th_gather_nd(input, c_10.detach())
-
-    c0 = ((x1-x)/(x1-x0))*vals_00 + ((x-x1)/(x1-x0))*vals_10
-    c1 = ((x1-x)/(x1-x0))*vals_01 + ((x-x0)/(x1-x0))*vals_11
-    c = ((y1-y)/(y1-y0))*c0 + ((y-y0)/(y1-y0))*c1
-
-    return c.view_as(input)
-
-
-def F_bicubic2d(input, coords):
-    def cubic_hermite(A,B,C,D,t):
+def F_bicubic_interp_2d(input, coords):
+    def cubic_hermite(A, B, C, D, t):
         a = -A / 2.0 + (3.0*B) / 2.0 - (3.0*C) / 2.0 + D / 2.0
         b = A - (5.0*B) / 2.0 + 2.0*C - D / 2.0
         c = -A / 2.0 + C / 2.0
