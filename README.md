@@ -1,9 +1,9 @@
-# torchsample: Data Augmentation, Loading, and High-Level Modules
+# Data Augmentation, Loading, and High-Level Training for Pytorch
 
-This package provides a few things;
-- Comprehensive data augmentation, sampling, and loading
+This package provides a few things:
 - A high-level module for Keras-like training with callbacks, constraints, and regularizers.
-- Utility functions not commonly found elsewhere
+- Comprehensive data augmentation, transforms, sampling, and loading
+- Utility tensor and variable functions so you don't need numpy as often
 
 ## `SuperModule`
 The `SuperModule` class provides a high-level training interface which abstracts
@@ -14,6 +14,7 @@ from `nn.Module`.
 Example:
 ```python
 from torchsample.modules import SuperModule
+# Define your model EXACTLY as if you were using nn.Module
 class Network(SuperModule):
     def __init__(self):
         super(Network, self).__init__()
