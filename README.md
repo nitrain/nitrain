@@ -49,6 +49,7 @@ Finally, torchsample provides a few utility functions not commonly found:
 ### Tensor Functions
 - `th_meshgrid` (mimics itertools.product and np.meshgrid)
 - `th_gather_nd` (N-dimensional version of torch.gather)
+
   - ```python
     >>> x = torch.zeros(2,3,4,5)
     >>> x[0,2,0,1] = 12
