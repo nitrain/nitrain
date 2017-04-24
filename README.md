@@ -54,7 +54,7 @@ Finally, torchsample provides a few utility functions not commonly found:
     >>> x[0,2,0,1] = 12
     >>> x[1,1,3,1] = 23
     >>> idx = torch.LongTensor([[0,2,0,1],
-    ...                        [1,1,3,1]])
+    ...                         [1,1,3,1]])
     >>> th_gather_nd(x,idx)
     [out]:
           12
