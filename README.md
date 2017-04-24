@@ -43,7 +43,8 @@ model.fit(x_train, y_train,
           verbose=1)
 ```
 
-You can also fit directly on a `torch.utils.data.DataLoader` :
+You can also fit directly on a `torch.utils.data.DataLoader` and can have
+a validation set as well :
 
 ```python
 from torchsample import TensorDataset
