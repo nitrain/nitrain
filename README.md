@@ -92,7 +92,7 @@ Finally, torchsample provides a few utility functions not commonly found:
     #   [torch.FloatTensor of size 2]
     >>> x = torch.randn(12,5,3)
     >>> coords = th_meshgrid_like(x)
-    >>> xx = th_gather_nd(x, coords)
+    >>> xx = th_gather_nd(x, coords).view_as(x)
     >>> print(th_allclose(x, xx))
     # True
     ```
