@@ -47,7 +47,7 @@ model.fit(x_train, y_train,
 Finally, torchsample provides a few utility functions not commonly found:
 
 ### Tensor Functions
-- `th_iterproduct` (mimics itertools.product and np.meshgrid)
+- `th_iterproduct` (mimics itertools.product)
 
   - ```python
     >>> grid = th_iterproduct(2,2,2)
