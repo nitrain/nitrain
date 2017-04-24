@@ -65,7 +65,7 @@ def th_meshgrid(*args):
         if isinstance(i, int):
             pools.append(torch.range(0, i-1))
         else:
-            if type(i) != torch.LongTensor:
+            if i.type() != torch.LongTensor:
                 dtype = i.type()
             pools.append(i)
     result = [[]]
@@ -74,30 +74,64 @@ def th_meshgrid(*args):
     return torch.Tensor(result).type(dtype)
 
 
+def th_meshgrid_like(x):
+    return th_meshgrid(*x.size())
+
+
+def th_gather_nd(x, coords):
+    inds = coords.mv(torch.LongTensor(x.stride()))
+    x_gather = torch.index_select(th_flatten(x), 0, inds)
+    return x_gather
+
 
 def th_affine_2d(x, matrix, mode='bilinear', center=True):
     """
-    2D Affine image transform on torch.autograd.Variable
+    2D Affine image transform on torch.Tensor
+
+    Arguments
+    ---------
+    x : torch.Tensor of size (C, H, W)
+        image tensor to be transformed
+
+    matrix : torch.Tensor of size (3, 3) or (2, 3)
+        transformation matrix
+
+    mode : string in {'nearest', 'bilinear'}
+        interpolation scheme to use
+
+    center : boolean
+        whether to alter the bias of the transform 
+        so the transform is applied about the center
+        of the image rather than the origin
+
+    Example
+    -------
+    >>> x = torch.zeros(3,20,20)
+    >>> x[:2,5:15,5:15] = 1
+    >>> x[-1,2:12,7:17] = 1
+    >>> matrix = torch.FloatTensor([[1.,0,-5],[0,1.,0]])
+    >>> xn = th_affine_2d(x, matrix, mode='nearest')
+    >>> xb = th_affine_2d(x, matrix, mode='bilinear')
     """
     # grab A and b weights from 2x3 matrix
     A = matrix[:2,:2]
     b = matrix[:2,2]
 
     # make a meshgrid of normal coordinates
-    coords = th_meshgrid(x.size(0),x.size(1))
+    coords = th_meshgrid(x.size(1),x.size(2)).float()
 
     if center:
         # shift the coordinates so center is the origin
-        coords[:,0] = coords[:,0] - (x.size(0) / 2. + 0.5)
-        coords[:,1] = coords[:,1] - (x.size(1) / 2. + 0.5)
+        coords[:,0] = coords[:,0] - (x.size(1) / 2. + 0.5)
+        coords[:,1] = coords[:,1] - (x.size(2) / 2. + 0.5)
 
     # apply the coordinate transformation
     new_coords = coords.mm(A.t().contiguous()) + b.expand_as(coords)
 
     if center:
         # shift the coordinates back so origin is origin
-        new_coords[:,0] = new_coords[:,0] + (x.size(0) / 2. + 0.5)
-        new_coords[:,1] = new_coords[:,1] + (x.size(1) / 2. + 0.5)
+        new_coords[:,0] = new_coords[:,0] + (x.size(1) / 2. + 0.5)
+        new_coords[:,1] = new_coords[:,1] + (x.size(2) / 2. + 0.5)
 
     # map new coordinates using bilinear interpolation
     if mode == 'nearest':
@@ -112,13 +146,14 @@ def th_nearest_interp_2d(input, coords):
     """
     2d nearest neighbor interpolation torch.Tensor
     """
-    xc = torch.clamp(coords[:,0], 0, input.size(0)-1)
-    yc = torch.clamp(coords[:,1], 0, input.size(1)-1)
+    xc = torch.clamp(coords[:,0], 0, input.size(1)-1)
+    yc = torch.clamp(coords[:,1], 0, input.size(2)-1)
 
     coords = torch.stack([xc.round().long(), 
                           yc.round().long()], 1)
 
-    mapped_vals = th_gather_nd(input, coords)
+    mapped_vals = torch.stack([th_gather_nd(input[i], coords)
+                    for i in range(input.size(0))], 0)
 
     return mapped_vals.view_as(input)
 
@@ -126,51 +161,96 @@ def th_nearest_interp_2d(input, coords):
 def th_bilinear_interp_2d(input, coords):
     """
     bilinear interpolation of 2d torch.autograd.Variable
+
+    Arguments
+    ---------
+    input : torch.FloatTensor of size (C, H, W)
+        image to interpolate
+
+    coords : torch.FloatTensor of size (C*H*W, 2)
+        coordinates to index the input on
     """
-    xc = torch.clamp(coords[:,0], 0, input.size(0)-1)
-    yc = torch.clamp(coords[:,1], 0, input.size(1)-1)
-    coords = torch.stack([xc,yc],1)
+    xc = torch.clamp(coords[:,0], 0, input.size(1)-1)
+    yc = torch.clamp(coords[:,1], 0, input.size(2)-1)
+    coords = torch.stack([xc, yc],1)
 
     coords_lt = coords.floor().long()
     coords_rb = coords.ceil().long()
     coords_lb = torch.stack([coords_lt[:, 0], coords_rb[:, 1]], 1)
     coords_rt = torch.stack([coords_rb[:, 0], coords_lt[:, 1]], 1)
 
-    vals_lt = th_gather_nd(input,  coords_lt)
-    vals_rb = th_gather_nd(input,  coords_rb)
-    vals_lb = th_gather_nd(input,  coords_lb)
-    vals_rt = th_gather_nd(input,  coords_rt)
-
-    coords_offset_lt = coords - coords_lt.type(coords.data.type())
-    vals_t = vals_lt + (vals_rt - vals_lt) * coords_offset_lt[:, 0]
-    vals_b = vals_lb + (vals_rb - vals_lb) * coords_offset_lt[:, 0]
-    mapped_vals = vals_t + (vals_b - vals_t) * coords_offset_lt[:, 1]
+    vals_lt = torch.stack([th_gather_nd(input[i], coords_lt)
+                    for i in range(input.size(0))],0)
+    vals_rb = torch.stack([th_gather_nd(input[i], coords_rb)
+                    for i in range(input.size(0))],0)
+    vals_lb = torch.stack([th_gather_nd(input[i], coords_lb)
+                    for i in range(input.size(0))],0)
+    vals_rt = torch.stack([th_gather_nd(input[i], coords_rt)
+                    for i in range(input.size(0))],0)
+    
+    c_u = coords.unsqueeze(0).repeat(input.size(0),1,1)
+    clt_u = coords_lt.unsqueeze(0).repeat(input.size(0),1,1).type(coords.type())
+    coords_offset_lt = c_u - clt_u
+                       
+    vals_t = vals_lt + (vals_rt - vals_lt) * coords_offset_lt[:,:,0]
+    vals_b = vals_lb + (vals_rb - vals_lb) * coords_offset_lt[:,:,0]
+    mapped_vals = vals_t + (vals_b - vals_t) * coords_offset_lt[:,:,1]
 
     return mapped_vals.view_as(input)
 
 
 def th_affine_3d(x, matrix, mode='bilinear', center=True):
+    """
+    3D Affine image transform on torch.Tensor
+
+    Arguments
+    ---------
+    x : torch.Tensor of size (C, D, H, W)
+        image tensor to be transformed
+
+    matrix : torch.Tensor of size (3, 4) or (4, 4)
+        transformation matrix
+
+    mode : string in {'nearest', 'bilinear'}
+        interpolation scheme to use
+
+    center : boolean
+        whether to alter the bias of the transform 
+        so the transform is applied about the center
+        of the image rather than the origin
+
+    Example
+    -------
+    >>> x = torch.zeros(1,20,20,20)
+    >>> x[:,5:15,5:15,5:15] = 1
+    >>> matrix = torch.FloatTensor([[1.2, 0, 0, 0],
+                                    [0, 1.2, 0, 0],
+                                    [0, 0, 1.2, 0]])
+    >>> xn = th_affine_3d(x, matrix, mode='nearest')
+    >>> xb = th_affine_3d(x, matrix, mode='bilinear')
+
+    """
     # grab A and b weights from 2x3 matrix
     A = matrix[:3,:3]
     b = matrix[:3,3]
 
     # make a meshgrid of normal coordinates
-    coords = th_meshgrid(x.size(0),x.size(1),x.size(2))
+    coords = th_meshgrid(x.size(1),x.size(2),x.size(3)).float()
 
     if center:
         # shift the coordinates so center is the origin
-        coords[:,0] = coords[:,0] - (x.size(0) / 2. + 0.5)
-        coords[:,1] = coords[:,1] - (x.size(1) / 2. + 0.5)
-        coords[:,2] = coords[:,2] - (x.size(2) / 2. + 0.5)
+        coords[:,0] = coords[:,0] - (x.size(1) / 2. + 0.5)
+        coords[:,1] = coords[:,1] - (x.size(2) / 2. + 0.5)
+        coords[:,2] = coords[:,2] - (x.size(3) / 2. + 0.5)
 
     # apply the coordinate transformation
     new_coords = coords.mm(A.t().contiguous()) + b.expand_as(coords)
 
     if center:
         # shift the coordinates back so origin is origin
-        new_coords[:,0] = new_coords[:,0] + (x.size(0) / 2. + 0.5)
-        new_coords[:,1] = new_coords[:,1] + (x.size(1) / 2. + 0.5)
-        new_coords[:,2] = new_coords[:,2] + (x.size(2) / 2. + 0.5)
+        new_coords[:,0] = new_coords[:,0] + (x.size(1) / 2. + 0.5)
+        new_coords[:,1] = new_coords[:,1] + (x.size(2) / 2. + 0.5)
+        new_coords[:,2] = new_coords[:,2] + (x.size(3) / 2. + 0.5)
 
     # map new coordinates using bilinear interpolation
     if mode == 'nearest':
@@ -185,15 +265,16 @@ def th_nearest_interp_3d(input, coords):
     """
     2d nearest neighbor interpolation torch.Tensor
     """
-    xc = torch.clamp(coords[:,0], 0, input.size(0)-1)
-    yc = torch.clamp(coords[:,1], 0, input.size(1)-1)
-    zc = torch.clamp(coords[:,2], 0, input.size(2)-1)
+    xc = torch.clamp(coords[:,0], 0, input.size(1)-1)
+    yc = torch.clamp(coords[:,1], 0, input.size(2)-1)
+    zc = torch.clamp(coords[:,2], 0, input.size(3)-1)
 
-    coords = torch.stack([xc.round().long(), 
+    coords = torch.stack([xc.round().long(),
                           yc.round().long(),
                           zc.round().long()], 1)
 
-    mapped_vals = th_gather_nd(input, coords)
+    mapped_vals = torch.stack([th_gather_nd(input[i], coords)
+                    for i in range(input.size(0))], 0)
 
     return mapped_vals.view_as(input)
 
@@ -202,15 +283,15 @@ def th_bilinear_interp_3d(input, coords):
     """
     trilinear interpolation of 3D image
     """
-    x = torch.clamp(coords[:,0], 0, input.size(0)-1.00001)
+    x = torch.clamp(coords[:,0], 0, input.size(1)-1.00001)
     x0 = x.floor().long()
     x1 = x0 + 1
 
-    y = torch.clamp(coords[:,1], 0, input.size(1)-1.00001)
+    y = torch.clamp(coords[:,1], 0, input.size(2)-1.00001)
     y0 = y.floor().long()
     y1 = y0 + 1
 
-    z = torch.clamp(coords[:,2], 0, input.size(2)-1.00001)
+    z = torch.clamp(coords[:,2], 0, input.size(3)-1.00001)
     z0 = z.floor().long()
     z1 = z0 + 1
 
@@ -247,27 +328,6 @@ def th_bilinear_interp_3d(input, coords):
     c = c0*(1-zd) + c1*zd
 
     return c.view_as(input)
-
-
-def th_gather_nd(x, coords):
-    """
-    Returns a flattened tensor of x indexed by coords
-
-    Example:
-        >>> x = torch.randn(2,3,1) # random 3d tensor
-        >>> coords = th_meshgrid(2,3,1) # create coordinate grid
-        >>> xx = th_gather_nd(x, coords).view_as(x) # gather and view
-        >>> print(th_allclose(x, xx)) # True
-    """
-    if coords.size(1) != x.dim():
-        raise ValueError('Coords must have column for each image dim')
-
-    inds = coords[:,0]*x.size(1)
-    for i in range(x.dim()-2):
-        inds += coords[:,i+1]*x.size(i+2)
-    inds += coords[:,-1]
-    x_gather = torch.index_select(th_flatten(x), 0, inds)
-    return x_gather
 
 
 def th_flatten(x):
