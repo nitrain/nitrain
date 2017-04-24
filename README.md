@@ -49,33 +49,33 @@ Finally, torchsample provides a few utility functions not commonly found:
 ### Tensor Functions
 - `th_meshgrid` (mimics itertools.product and np.meshgrid)
 
-  - ```
+  - ```python
     >>> grid = th_meshgrid(2,2,2)
-          0     0     0
-          0     0     1
-          0     1     0
-          0     1     1
-          1     0     0
-          1     0     1
-          1     1     0
-          1     1     1
-      [torch.LongTensor of size 8x3]
+        #  0     0     0
+        #  0     0     1
+        #  0     1     0
+        #  0     1     1
+        #  1     0     0
+        #  1     0     1
+        #  1     1     0
+        #  1     1     1
+        # [torch.LongTensor of size 8x3]
     >>> grid = th_meshgrid(2,torch.LongTensor([3,4,5]))
-          0  3
-          0  4
-          0  5
-          1  3
-          1  4
-          1  5
-         [torch.LongTensor of size 6x2]
+        #  0  3
+        #  0  4
+        #  0  5
+        #  1  3
+        #  1  4
+        #  1  5
+        # [torch.LongTensor of size 6x2]
     >>> grid = th_meshgrid(torch.FloatTensor([3.4, 2.1]), 3, torch.LongTensor([3]))         
-         3.4000  0.0000  3.0000
-         3.4000  1.0000  3.0000
-         3.4000  2.0000  3.0000
-         2.1000  0.0000  3.0000
-         2.1000  1.0000  3.0000
-         2.1000  2.0000  3.0000
-        [torch.FloatTensor of size 6x3]
+        # 3.4000  0.0000  3.0000
+        # 3.4000  1.0000  3.0000
+        # 3.4000  2.0000  3.0000
+        # 2.1000  0.0000  3.0000
+        # 2.1000  1.0000  3.0000
+        # 2.1000  2.0000  3.0000
+        # [torch.FloatTensor of size 6x3]
     ```
 
 - `th_gather_nd` (N-dimensional version of torch.gather)
@@ -86,11 +86,15 @@ Finally, torchsample provides a few utility functions not commonly found:
     >>> x[1,1,3,1] = 23
     >>> idx = torch.LongTensor([[0,2,0,1],
     ...                         [1,1,3,1]])
-    >>> th_gather_nd(x,idx)
-    [out]:
-          12
-          23
-          [torch.FloatTensor of size 2]
+    >>> print(th_gather_nd(x,idx))
+    #      12
+    #      23
+    #   [torch.FloatTensor of size 2]
+    >>> x = torch.randn(12,5,3)
+    >>> coords = th_meshgrid_like(x)
+    >>> xx = th_gather_nd(x, coords)
+    >>> print(th_allclose(x, xx))
+    # True
     ```
 - `th_random_choice` (mimics np.random.choice)
 - `th_pearsonr` (mimics scipy.stats.pearsonr)
