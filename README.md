@@ -48,6 +48,36 @@ Finally, torchsample provides a few utility functions not commonly found:
 
 ### Tensor Functions
 - `th_meshgrid` (mimics itertools.product and np.meshgrid)
+
+  - ```python
+    >>> grid = th_meshgrid(2,3,2)
+          0     0     0
+          0     0     1
+          0     1     0
+          0     1     1
+          1     0     0
+          1     0     1
+          1     1     0
+          1     1     1
+      [torch.LongTensor of size 8x3]
+    >>> grid = th_meshgrid(2,torch.LongTensor([3,4,5]))
+          0  3
+          0  4
+          0  5
+          1  3
+          1  4
+          1  5
+         [torch.LongTensor of size 6x2]
+    >>> grid = th_meshgrid(torch.FloatTensor[25,50], 3, torch.LongTensor([3]))
+          25   0   3
+          25   1   3
+          25   2   3
+          50   0   3
+          50   1   3
+          50   2   3
+         [torch.LongTensor of size 6x3]
+    ```
+
 - `th_gather_nd` (N-dimensional version of torch.gather)
 
   - ```python
