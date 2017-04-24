@@ -49,6 +49,18 @@ Finally, torchsample provides a few utility functions not commonly found:
 ### Tensor Functions
 - `th_meshgrid` (mimics itertools.product and np.meshgrid)
 - `th_gather_nd` (N-dimensional version of torch.gather)
+  - ```python
+    >>> x = torch.zeros(2,3,4,5)
+    >>> x[0,2,0,1] = 12
+    >>> x[1,1,3,1] = 23
+    >>> idx = torch.LongTensor([[0,2,0,1],
+    ...                        [1,1,3,1]])
+    >>> th_gather_nd(x,idx)
+    [out]:
+          12
+          23
+          [torch.FloatTensor of size 2]
+    ```
 - `th_random_choice` (mimics np.random.choice)
 - `th_pearsonr` (mimics scipy.stats.pearsonr)
 - `th_corrcoef` (mimics np.corrcoef)
