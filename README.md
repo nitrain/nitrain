@@ -49,10 +49,13 @@ You can also fit directly on a `torch.utils.data.DataLoader` :
 from torchsample import TensorDataset
 from torch.utils.data import DataLoader
 
-dataset = TensorDataset(x_train, y_train)
-loader = DataLoader(dataset, batch_size=32)
+train_dataset = TensorDataset(x_train, y_train)
+train_loader = DataLoader(train_dataset, batch_size=32)
 
-model.fit_loader(loader, nb_epoch=100)
+val_dataset = TensorDataset(x_val, y_val)
+val_loader = DataLoader(val_dataset, batch_size=32)
+
+model.fit_loader(loader, val_loader=val_loader, nb_epoch=100)
 ```
 
 ## Utility Functions
