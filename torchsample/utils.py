@@ -65,7 +65,8 @@ def th_meshgrid(*args):
         if isinstance(i, int):
             pools.append(torch.range(0, i-1))
         else:
-            if i.type() != torch.LongTensor:
+            if type(i) != torch.LongTensor:
+                print
                 dtype = i.type()
             pools.append(i)
     result = [[]]
