@@ -67,7 +67,8 @@ class SuperModule(nn.Module):
             y,
             validation_data=None, 
             nb_epoch=100, 
-            batch_size=32, 
+            batch_size=32,
+            cuda_device=None,
             verbose=1):
         """
         Fit a model on torch tensors
@@ -80,11 +81,18 @@ class SuperModule(nn.Module):
         else:
             val_loader = None
         self.fit_loader(loader=train_loader, val_loader=val_loader,
-                        nb_epoch=nb_epoch, verbose=verbose)
+                        nb_epoch=nb_epoch, cuda_device=cuda_device,
+                        verbose=verbose)
 
-    def fit_on_batch(self, x, y):
+    def fit_on_batch(self, 
+                     x, 
+                     y, 
+                     cuda_device=None):
         inputs = Variable(x)
         targets = Variable(y)
+        if cuda_device is not None:
+            inputs = inputs.cuda(cuda_device)
+            targets = targets.cuda(cuda_device)
 
         # zero the gradients
         self._optimizer.zero_grad()
@@ -102,7 +110,8 @@ class SuperModule(nn.Module):
     def fit_loader(self, 
                    loader, 
                    val_loader=None, 
-                   nb_epoch=100, 
+                   nb_epoch=100,
+                   cuda_device=None,
                    verbose=1):
         """
         Fit a model on a DataLoader
@@ -142,6 +151,10 @@ class SuperModule(nn.Module):
 
                 inputs = Variable(x_batch)
                 targets = Variable(y_batch)
+                if cuda_device is not None:
+                    inputs = inputs.cuda(cuda_device)
+                    targets = targets.cuda(cuda_device)
+
 
                 self._optimizer.zero_grad()
                 outputs = self(inputs)
@@ -162,7 +175,8 @@ class SuperModule(nn.Module):
                 constraints.on_batch_end(batch_idx)
 
             if val_loader is not None:
-                val_loss = self.evaluate_loader(val_loader)
+                val_loss = self.evaluate_loader(val_loader, 
+                                                cuda_device=cuda_device)
                 epoch_logs['val_loss'] = val_loss
             epoch_logs['loss'] = self.history.loss / self.history.samples_seen
             if regularizers is not None:
@@ -177,15 +191,19 @@ class SuperModule(nn.Module):
 
     def predict(self, 
                 x, 
-                batch_size=32, 
+                batch_size=32,
+                cuda_device=None, 
                 verbose=1):
         dataset = TensorDataset(x)
         loader = DataLoader(dataset, batch_size=batch_size)
-        preds = self.predict_loader(loader, verbose=verbose)
+        preds = self.predict_loader(loader, 
+                                    cuda_device=cuda_device,
+                                    verbose=verbose)
         return preds
 
     def predict_loader(self,
                        loader,
+                       cuda_device=None,
                        verbose=1):
         self.eval()
         preds = []
@@ -193,14 +211,20 @@ class SuperModule(nn.Module):
             if loader.dataset.has_target:
                 batch = batch[0]
             x_batch = Variable(batch)
+            if cuda_device is not None:
+                x_batch = x_batch.cuda(cuda_device)
             batch_pred = self(x_batch)
             preds.append(batch_pred.data)
         self.train()
         return Variable(torch.cat(preds))
 
-    def predict_on_batch(self, x):
+    def predict_on_batch(self, 
+                         x, 
+                         cuda_device=None):
         self.eval()
         x = Variable(x)
+        if cuda_device is not None:
+            x = x.cuda(cuda_device)
         preds = self(x)
         self.train()
         return preds
@@ -208,20 +232,27 @@ class SuperModule(nn.Module):
     def evaluate(self, 
                  x, 
                  y, 
-                 batch_size=32, 
+                 batch_size=32,
+                 cuda_device=None, 
                  verbose=1):
         dataset = TensorDataset(x,y)
         loader = DataLoader(dataset, batch_size=batch_size)
-        loss = self.evaluate_loader(loader)
+        loss = self.evaluate_loader(loader, 
+                                    cuda_device=cuda_device)
         return loss
 
-    def evaluate_loader(self, loader):
+    def evaluate_loader(self, 
+                        loader, 
+                        cuda_device=None):
         self.eval()
         total_loss = 0.
         total_samples = 0.
         for batch_idx, (x_batch, y_batch) in enumerate(loader):
             x_batch = Variable(x_batch)
             y_batch = Variable(y_batch)
+            if cuda_device is not None:
+                x_batch = x_batch.cuda(cuda_device)
+                y_batch = y_batch.cuda(cuda_device)
 
             y_pred = self(x_batch)
             loss = self._loss(y_pred, y_batch)
@@ -230,10 +261,16 @@ class SuperModule(nn.Module):
         self.train()
         return total_loss / total_samples
 
-    def evaluate_on_batch(self, x, y):
+    def evaluate_on_batch(self, 
+                          x, 
+                          y, 
+                          cuda_device=None):
         self.eval()
         x = Variable(x)
         y = Variable(y)
+        if cuda_device is not None:
+            x = x.cuda(cuda_device)
+            y = y.cuda(cuda_device)
         y_pred = self(y)
         loss = self._loss(y_pred, y)
         self.train()
