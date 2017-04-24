@@ -68,14 +68,14 @@ Finally, torchsample provides a few utility functions not commonly found:
           1  4
           1  5
          [torch.LongTensor of size 6x2]
-    >>> grid = th_meshgrid(torch.FloatTensor[25,50], 3, torch.LongTensor([3]))
-          25   0   3
-          25   1   3
-          25   2   3
-          50   0   3
-          50   1   3
-          50   2   3
-         [torch.LongTensor of size 6x3]
+    >>> grid = th_meshgrid(torch.FloatTensor([3.4, 2.1]), 3, torch.LongTensor([3]))         
+         3.4000  0.0000  3.0000
+         3.4000  1.0000  3.0000
+         3.4000  2.0000  3.0000
+         2.1000  0.0000  3.0000
+         2.1000  1.0000  3.0000
+         2.1000  2.0000  3.0000
+        [torch.FloatTensor of size 6x3]
     ```
 
 - `th_gather_nd` (N-dimensional version of torch.gather)
