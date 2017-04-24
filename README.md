@@ -50,7 +50,7 @@ Finally, torchsample provides a few utility functions not commonly found:
 - `th_meshgrid` (mimics itertools.product and np.meshgrid)
 
   - ```
-    >>> grid = th_meshgrid(2,3,2)
+    >>> grid = th_meshgrid(2,2,2)
           0     0     0
           0     0     1
           0     1     0
