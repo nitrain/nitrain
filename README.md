@@ -43,11 +43,15 @@ model.fit(x_train, y_train,
           verbose=1)
 ```
 
-You can also fit directly on a `DataLoader` :
+You can also fit directly on a `torch.utils.data.DataLoader` :
 
 ```python
+from torchsample import TensorDataset
+from torch.utils.data import DataLoader
+
 dataset = TensorDataset(x_train, y_train)
 loader = DataLoader(dataset, batch_size=32)
+
 model.fit_loader(loader, nb_epoch=100)
 ```
 
