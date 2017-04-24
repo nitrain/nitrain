@@ -47,10 +47,10 @@ model.fit(x_train, y_train,
 Finally, torchsample provides a few utility functions not commonly found:
 
 ### Tensor Functions
-- `th_meshgrid` (mimics itertools.product and np.meshgrid)
+- `th_iterproduct` (mimics itertools.product and np.meshgrid)
 
   - ```python
-    >>> grid = th_meshgrid(2,2,2)
+    >>> grid = th_iterproduct(2,2,2)
         #  0     0     0
         #  0     0     1
         #  0     1     0
@@ -60,7 +60,7 @@ Finally, torchsample provides a few utility functions not commonly found:
         #  1     1     0
         #  1     1     1
         # [torch.LongTensor of size 8x3]
-    >>> grid = th_meshgrid(2,torch.LongTensor([3,4,5]))
+    >>> grid = th_iterproduct(2,torch.LongTensor([3,4,5]))
         #  0  3
         #  0  4
         #  0  5
@@ -68,7 +68,7 @@ Finally, torchsample provides a few utility functions not commonly found:
         #  1  4
         #  1  5
         # [torch.LongTensor of size 6x2]
-    >>> grid = th_meshgrid(torch.FloatTensor([3.4, 2.1]), 3, torch.LongTensor([3]))         
+    >>> grid = th_iterproduct(torch.FloatTensor([3.4, 2.1]), 3, torch.LongTensor([3]))         
         # 3.4000  0.0000  3.0000
         # 3.4000  1.0000  3.0000
         # 3.4000  2.0000  3.0000
@@ -91,7 +91,7 @@ Finally, torchsample provides a few utility functions not commonly found:
     #      23
     #   [torch.FloatTensor of size 2]
     >>> x = torch.randn(12,5,3)
-    >>> coords = th_meshgrid_like(x)
+    >>> coords = th_iterproduct_like(x)
     >>> xx = th_gather_nd(x, coords).view_as(x)
     >>> print(th_allclose(x, xx))
     # True

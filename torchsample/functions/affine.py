@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from ..utils import th_meshgrid, th_gather_nd
+from ..utils import th_iterproduct, th_gather_nd
 
 def F_affine_2d(x, matrix, center=True):
     """
@@ -14,7 +14,7 @@ def F_affine_2d(x, matrix, center=True):
     b = matrix[:2,2]
 
     # make a meshgrid of normal coordinates
-    coords = Variable(th_meshgrid(x.size(0),x.size(1)), requires_grad=False)
+    coords = Variable(th_iterproduct(x.size(0),x.size(1)), requires_grad=False)
 
     if center:
         # shift the coordinates so center is the origin
@@ -67,7 +67,7 @@ def F_affine_3d(x, matrix, center=True):
     b = matrix[:3,3]
 
     # make a meshgrid of normal coordinates
-    coords = Variable(th_meshgrid(x.size(0),x.size(1),x.size(2)), 
+    coords = Variable(th_iterproduct(x.size(0),x.size(1),x.size(2)), 
                       requires_grad=False)
 
     if center:

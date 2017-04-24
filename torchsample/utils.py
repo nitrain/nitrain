@@ -58,7 +58,7 @@ def th_random_choice(a, size=None, replace=True, p=None):
     return a[idx]
 
 
-def th_meshgrid(*args):
+def th_iterproduct(*args):
     dtype = torch.LongTensor
     pools = []
     for i in args:
@@ -74,8 +74,8 @@ def th_meshgrid(*args):
     return torch.Tensor(result).type(dtype)
 
 
-def th_meshgrid_like(x):
-    return th_meshgrid(*x.size())
+def th_iterproduct_like(x):
+    return th_iterproduct(*x.size())
 
 
 def th_gather_nd(x, coords):
@@ -118,7 +118,7 @@ def th_affine_2d(x, matrix, mode='bilinear', center=True):
     b = matrix[:2,2]
 
     # make a meshgrid of normal coordinates
-    coords = th_meshgrid(x.size(1),x.size(2)).float()
+    coords = th_iterproduct(x.size(1),x.size(2)).float()
 
     if center:
         # shift the coordinates so center is the origin
@@ -235,7 +235,7 @@ def th_affine_3d(x, matrix, mode='bilinear', center=True):
     b = matrix[:3,3]
 
     # make a meshgrid of normal coordinates
-    coords = th_meshgrid(x.size(1),x.size(2),x.size(3)).float()
+    coords = th_iterproduct(x.size(1),x.size(2),x.size(3)).float()
 
     if center:
         # shift the coordinates so center is the origin

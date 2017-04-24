@@ -17,7 +17,7 @@ import math
 import random
 import torch
 
-from ..utils import th_meshgrid, th_affine_2d
+from ..utils import th_iterproduct, th_affine_2d
 
 
 class Affine(object):
@@ -143,7 +143,7 @@ class AffineCompose(object):
             if len(fixed_size) == 3:
                 # assume channel is first dim
                 fixed_size = fixed_size[1:]
-            self.coords = th_meshgrid(fixed_size[0], fixed_size[1])
+            self.coords = th_iterproduct(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         # collect all of the lazily returned tform matrices
@@ -190,7 +190,7 @@ class Rotate(object):
         
         self.coords = None
         if not self.lazy and fixed_size is not None:
-            self.coords = th_meshgrid(fixed_size[0], fixed_size[1])
+            self.coords = th_iterproduct(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         degree = random.uniform(-self.rotation_range, self.rotation_range)
@@ -250,7 +250,7 @@ class Translate(object):
         
         self.coords = None
         if not self.lazy and fixed_size is not None:
-            self.coords = th_meshgrid(fixed_size[0], fixed_size[1])
+            self.coords = th_iterproduct(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         # height shift
@@ -307,7 +307,7 @@ class Shear(object):
         
         self.coords = None
         if not self.lazy and fixed_size is not None:
-            self.coords = th_meshgrid(fixed_size[0], fixed_size[1])
+            self.coords = th_iterproduct(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         shear = random.uniform(-self.shear_range, self.shear_range)
@@ -361,7 +361,7 @@ class Zoom(object):
 
         self.coords = None
         if not self.lazy and fixed_size is not None:
-            self.coords = th_meshgrid(fixed_size[0], fixed_size[1])
+            self.coords = th_iterproduct(fixed_size[0], fixed_size[1])
         
 
     def __call__(self, x, y=None):
