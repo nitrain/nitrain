@@ -107,31 +107,35 @@ def th_affine_2d(x, matrix, mode='bilinear', center=True):
     Example
     -------
     >>> x = torch.zeros(3,20,20)
-    >>> x[:2,5:15,5:15] = 1
+    >>> x[:2,5:15,5:15] = torch.randn(2,10,10)
     >>> x[-1,2:12,7:17] = 1
-    >>> matrix = torch.FloatTensor([[1.,0,-5],[0,1.,0]])
+    >>> matrix = torch.FloatTensor([[1.,0,-5],
+    ...                             [0,1.,3]])
     >>> xn = th_affine_2d(x, matrix, mode='nearest')
     >>> xb = th_affine_2d(x, matrix, mode='bilinear')
     """
-    # grab A and b weights from 2x3 matrix
-    A = matrix[:2,:2]
-    b = matrix[:2,2]
+    if matrix.dim() == 2:
+        matrix = matrix.unsqueeze(0).repeat(x.size(0),1,1)
+
+    A = matrix[:,:2,:2]
+    b = matrix[:,:2,2].unsqueeze(1)
 
     # make a meshgrid of normal coordinates
     coords = th_iterproduct(x.size(1),x.size(2)).float()
+    coords = coords.unsqueeze(0).repeat(x.size(0),1,1)
 
     if center:
         # shift the coordinates so center is the origin
-        coords[:,0] = coords[:,0] - (x.size(1) / 2. + 0.5)
-        coords[:,1] = coords[:,1] - (x.size(2) / 2. + 0.5)
+        coords[:,:,0] = coords[:,:,0] - (x.size(1) / 2. + 0.5)
+        coords[:,:,1] = coords[:,:,1] - (x.size(2) / 2. + 0.5)
 
     # apply the coordinate transformation
-    new_coords = coords.mm(A.t().contiguous()) + b.expand_as(coords)
+    new_coords = coords.bmm(A.transpose(1,2).contiguous()) + b.expand_as(coords)
 
     if center:
         # shift the coordinates back so origin is origin
-        new_coords[:,0] = new_coords[:,0] + (x.size(1) / 2. + 0.5)
-        new_coords[:,1] = new_coords[:,1] + (x.size(2) / 2. + 0.5)
+        new_coords[:,:,0] = new_coords[:,:,0] + (x.size(1) / 2. + 0.5)
+        new_coords[:,:,1] = new_coords[:,:,1] + (x.size(2) / 2. + 0.5)
 
     # map new coordinates using bilinear interpolation
     if mode == 'nearest':
@@ -146,13 +150,16 @@ def th_nearest_interp_2d(input, coords):
     """
     2d nearest neighbor interpolation torch.Tensor
     """
-    xc = torch.clamp(coords[:,0], 0, input.size(1)-1)
-    yc = torch.clamp(coords[:,1], 0, input.size(2)-1)
+    # take clamp of coords so they're in the image bounds
+    xc = torch.clamp(coords[:,:,0], 0, input.size(1)-1)
+    yc = torch.clamp(coords[:,:,1], 0, input.size(2)-1)
 
-    coords = torch.stack([xc.round().long(), 
-                          yc.round().long()], 1)
+    # round to nearest coordinate
+    coords = torch.stack([xc.round().long(),
+                          yc.round().long()], 2)
 
-    mapped_vals = torch.stack([th_gather_nd(input[i], coords)
+    # gather image values at coordinates
+    mapped_vals = torch.stack([th_gather_nd(input[i], coords[i])
                     for i in range(input.size(0))], 0)
 
     return mapped_vals.view_as(input)
@@ -170,27 +177,29 @@ def th_bilinear_interp_2d(input, coords):
     coords : torch.FloatTensor of size (C*H*W, 2)
         coordinates to index the input on
     """
-    xc = torch.clamp(coords[:,0], 0, input.size(1)-1)
-    yc = torch.clamp(coords[:,1], 0, input.size(2)-1)
-    coords = torch.stack([xc, yc],1)
+    # repeat coords along channel dim if not given that way
+    if coords.dim() == 2:
+        coords = coords.unsqueeze(0).repeat(input.size(0),1,1)
+
+    xc = torch.clamp(coords[:,:,0], 0, input.size(1)-1)
+    yc = torch.clamp(coords[:,:,1], 0, input.size(2)-1)
+    coords = torch.stack([xc, yc],2)
 
     coords_lt = coords.floor().long()
     coords_rb = coords.ceil().long()
-    coords_lb = torch.stack([coords_lt[:, 0], coords_rb[:, 1]], 1)
-    coords_rt = torch.stack([coords_rb[:, 0], coords_lt[:, 1]], 1)
+    coords_lb = torch.stack([coords_lt[:,:,0], coords_rb[:,:,1]], 2)
+    coords_rt = torch.stack([coords_rb[:,:,0], coords_lt[:,:,1]], 2)
 
-    vals_lt = torch.stack([th_gather_nd(input[i], coords_lt)
+    vals_lt = torch.stack([th_gather_nd(input[i], coords_lt[i])
                     for i in range(input.size(0))],0)
-    vals_rb = torch.stack([th_gather_nd(input[i], coords_rb)
+    vals_rb = torch.stack([th_gather_nd(input[i], coords_rb[i])
                     for i in range(input.size(0))],0)
-    vals_lb = torch.stack([th_gather_nd(input[i], coords_lb)
+    vals_lb = torch.stack([th_gather_nd(input[i], coords_lb[i])
                     for i in range(input.size(0))],0)
-    vals_rt = torch.stack([th_gather_nd(input[i], coords_rt)
+    vals_rt = torch.stack([th_gather_nd(input[i], coords_rt[i])
                     for i in range(input.size(0))],0)
     
-    c_u = coords.unsqueeze(0).repeat(input.size(0),1,1)
-    clt_u = coords_lt.unsqueeze(0).repeat(input.size(0),1,1).type(coords.type())
-    coords_offset_lt = c_u - clt_u
+    coords_offset_lt = coords - coords_lt.type(coords.type())
                        
     vals_t = vals_lt + (vals_rt - vals_lt) * coords_offset_lt[:,:,0]
     vals_b = vals_lb + (vals_rb - vals_lb) * coords_offset_lt[:,:,0]
@@ -221,36 +230,48 @@ def th_affine_3d(x, matrix, mode='bilinear', center=True):
 
     Example
     -------
-    >>> x = torch.zeros(1,20,20,20)
+    >>> x = torch.zeros(2,20,20,20)
     >>> x[:,5:15,5:15,5:15] = 1
-    >>> matrix = torch.FloatTensor([[1.2, 0, 0, 0],
-                                    [0, 1.2, 0, 0],
-                                    [0, 0, 1.2, 0]])
+    >>> matrix = torch.FloatTensor([[1.2, 0, 0, 1],
+                                    [0, 1.2, 0, 2],
+                                    [0, 0, 1.2, 3]])
+    >>> xn = th_affine_3d(x, matrix, mode='nearest')
+    >>> xb = th_affine_3d(x, matrix, mode='bilinear')
+
+    >>> x = torch.zeros(2,20,20,20)
+    >>> x[:,5:15,5:15,5:15] = torch.randn(2,10,10,10)
+    >>> matrix = torch.FloatTensor([[1., 0, 0, 1.3],
+                                    [0, 1., 0, 2.4],
+                                    [0, 0, 1., 3.2]])
+    >>> matrix = torch.stack([matrix,matrix])
     >>> xn = th_affine_3d(x, matrix, mode='nearest')
     >>> xb = th_affine_3d(x, matrix, mode='bilinear')
 
     """
-    # grab A and b weights from 2x3 matrix
-    A = matrix[:3,:3]
-    b = matrix[:3,3]
+    if matrix.dim() == 2:
+        matrix = matrix.unsqueeze(0).repeat(x.size(0),1,1)
+
+    A = matrix[:,:3,:3]
+    b = matrix[:,:3,3].unsqueeze(1)
 
     # make a meshgrid of normal coordinates
     coords = th_iterproduct(x.size(1),x.size(2),x.size(3)).float()
+    coords = coords.unsqueeze(0).repeat(x.size(0),1,1)
 
     if center:
         # shift the coordinates so center is the origin
-        coords[:,0] = coords[:,0] - (x.size(1) / 2. + 0.5)
-        coords[:,1] = coords[:,1] - (x.size(2) / 2. + 0.5)
-        coords[:,2] = coords[:,2] - (x.size(3) / 2. + 0.5)
+        coords[:,:,0] = coords[:,:,0] - (x.size(1) / 2. + 0.5)
+        coords[:,:,1] = coords[:,:,1] - (x.size(2) / 2. + 0.5)
+        coords[:,:,2] = coords[:,:,2] - (x.size(3) / 2. + 0.5)
 
     # apply the coordinate transformation
-    new_coords = coords.mm(A.t().contiguous()) + b.expand_as(coords)
+    new_coords = coords.bmm(A.transpose(1,2).contiguous()) + b.expand_as(coords)
 
     if center:
         # shift the coordinates back so origin is origin
-        new_coords[:,0] = new_coords[:,0] + (x.size(1) / 2. + 0.5)
-        new_coords[:,1] = new_coords[:,1] + (x.size(2) / 2. + 0.5)
-        new_coords[:,2] = new_coords[:,2] + (x.size(3) / 2. + 0.5)
+        new_coords[:,:,0] = new_coords[:,:,0] + (x.size(1) / 2. + 0.5)
+        new_coords[:,:,1] = new_coords[:,:,1] + (x.size(2) / 2. + 0.5)
+        new_coords[:,:,2] = new_coords[:,:,2] + (x.size(3) / 2. + 0.5)
 
     # map new coordinates using bilinear interpolation
     if mode == 'nearest':
@@ -265,15 +286,22 @@ def th_nearest_interp_3d(input, coords):
     """
     2d nearest neighbor interpolation torch.Tensor
     """
-    xc = torch.clamp(coords[:,0], 0, input.size(1)-1)
-    yc = torch.clamp(coords[:,1], 0, input.size(2)-1)
-    zc = torch.clamp(coords[:,2], 0, input.size(3)-1)
+    # repeat coords along channel dim if not given that way
+    if coords.dim() == 2:
+        coords = coords.unsqueeze(0).repeat(input.size(0),1,1)
 
+    # take clamp of coords so they're in the image bounds
+    xc = torch.clamp(coords[:,:,0], 0, input.size(1)-1)
+    yc = torch.clamp(coords[:,:,1], 0, input.size(2)-1)
+    zc = torch.clamp(coords[:,:,2], 0, input.size(3)-1)
+
+    # round to nearest coordinate
     coords = torch.stack([xc.round().long(),
                           yc.round().long(),
-                          zc.round().long()], 1)
+                          zc.round().long()], 2)
 
-    mapped_vals = torch.stack([th_gather_nd(input[i], coords)
+    # gather image values at coordinates
+    mapped_vals = torch.stack([th_gather_nd(input[i], coords[i])
                     for i in range(input.size(0))], 0)
 
     return mapped_vals.view_as(input)
@@ -281,50 +309,79 @@ def th_nearest_interp_3d(input, coords):
 
 def th_bilinear_interp_3d(input, coords):
     """
-    trilinear interpolation of 3D image
+    trilinear interpolation of 3D torch.Tensor image
+
+    >>> x = torch.zeros(2,20,20,20)
+    >>> x[:,5:15,5:15,5:15] = 1
+    >>> matrix = torch.FloatTensor([[1.2, 0, 0, 0],
+                                    [0, 1.2, 0, 0],
+                                    [0, 0, 1.2, 0]])
+    >>> matrix = torch.stack([matrix,matrix],0)
+    >>> xb = th_affine_3d(x, matrix, mode='bilinear')
     """
-    x = torch.clamp(coords[:,0], 0, input.size(1)-1.00001)
-    x0 = x.floor().long()
+    # repeat coords along channel dim if not given that way
+    if coords.dim() == 2:
+        coords = coords.unsqueeze(0).repeat(input.size(0),1,1)
+
+    # take clamp then floor/ceil of x coords
+    x = torch.clamp(coords[:,:,0], 0, input.size(1)-1.00001)
+    x0 = x.floor()
     x1 = x0 + 1
 
-    y = torch.clamp(coords[:,1], 0, input.size(2)-1.00001)
-    y0 = y.floor().long()
+    # take clamp then floor/ceil of y coords
+    y = torch.clamp(coords[:,:,1], 0, input.size(2)-1.00001)
+    y0 = y.floor()
     y1 = y0 + 1
 
-    z = torch.clamp(coords[:,2], 0, input.size(3)-1.00001)
-    z0 = z.floor().long()
+    # take clamp then floor/ceil of z coords
+    z = torch.clamp(coords[:,:,2], 0, input.size(3)-1.00001)
+    z0 = z.floor()
     z1 = z0 + 1
 
-    c_000 = torch.stack([x0,y0,z0])
-    c_111 = torch.stack([x1,y1,z1])
-    c_001 = torch.stack([x0,y0,z1])
-    c_010 = torch.stack([x0,y1,z0])
-    c_011 = torch.stack([x0,y1,z1])
-    c_100 = torch.stack([x1,y0,z0])
-    c_110 = torch.stack([x1,y1,z0])
-    c_101 = torch.stack([x1,y0,z1])
+    # create the 8 different 3D coordinate positions
+    c_000 = torch.stack([x0,y0,z0],2).long()
+    c_111 = torch.stack([x1,y1,z1],2).long()
+    c_001 = torch.stack([x0,y0,z1],2).long()
+    c_010 = torch.stack([x0,y1,z0],2).long()
+    c_011 = torch.stack([x0,y1,z1],2).long()
+    c_100 = torch.stack([x1,y0,z0],2).long()
+    c_110 = torch.stack([x1,y1,z0],2).long()
+    c_101 = torch.stack([x1,y0,z1],2).long()
 
-    vals_000 = th_gather_nd(input, c_000)
-    vals_111 = th_gather_nd(input, c_111)
-    vals_001 = th_gather_nd(input, c_001)
-    vals_010 = th_gather_nd(input, c_010)
-    vals_011 = th_gather_nd(input, c_011)
-    vals_100 = th_gather_nd(input, c_100)
-    vals_110 = th_gather_nd(input, c_110)
-    vals_101 = th_gather_nd(input, c_101)
+    # gather image values at the 8 different 3D coordinate positions
+    vals_000 = torch.stack([th_gather_nd(input[i], c_000[i])
+                    for i in range(input.size(0))], 0)
+    vals_111 = torch.stack([th_gather_nd(input[i], c_111[i])
+                    for i in range(input.size(0))], 0)
+    vals_001 = torch.stack([th_gather_nd(input[i], c_001[i])
+                    for i in range(input.size(0))], 0)
+    vals_010 = torch.stack([th_gather_nd(input[i], c_010[i])
+                    for i in range(input.size(0))], 0)
+    vals_011 = torch.stack([th_gather_nd(input[i], c_011[i])
+                    for i in range(input.size(0))], 0)
+    vals_100 = torch.stack([th_gather_nd(input[i], c_100[i])
+                    for i in range(input.size(0))], 0)
+    vals_110 = torch.stack([th_gather_nd(input[i], c_110[i])
+                    for i in range(input.size(0))], 0)
+    vals_101 = torch.stack([th_gather_nd(input[i], c_101[i])
+                    for i in range(input.size(0))], 0)
 
-    xd = ((x-x0)/(x1-x0))
-    yd = (y-y0)/(y1-y0)
-    zd = (z-z0)/(z1-z0)
+    # coordinate distances for linear interpolation
+    xd = (x-x0) / (x1-x0)
+    yd = (y-y0) / (y1-y0)
+    zd = (z-z0) / (z1-z0)
 
+    # linear interpolate along x axis
     c00 = vals_000*(1-xd) + vals_100*xd
     c01 = vals_001*(1-xd) + vals_101*xd
     c10 = vals_010*(1-xd) + vals_110*xd
     c11 = vals_011*(1-xd) + vals_111*xd
 
+    # linear interpolate along y axis
     c0 = c00*(1-yd) + c10*yd
     c1 = c01*(1-yd) + c11*yd
 
+    # linear interpolate along z axis
     c = c0*(1-zd) + c1*zd
 
     return c.view_as(input)
