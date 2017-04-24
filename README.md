@@ -43,6 +43,14 @@ model.fit(x_train, y_train,
           verbose=1)
 ```
 
+You can also fit directly on a `DataLoader` :
+
+```python
+dataset = TensorDataset(x_train, y_train)
+loader = DataLoader(dataset, batch_size=32)
+model.fit_loader(loader, nb_epoch=100)
+```
+
 ## Utility Functions
 Finally, torchsample provides a few utility functions not commonly found:
 
