@@ -49,7 +49,7 @@ Finally, torchsample provides a few utility functions not commonly found:
 ### Tensor Functions
 - `th_meshgrid` (mimics itertools.product and np.meshgrid)
 
-  - ```python
+  - ```
     >>> grid = th_meshgrid(2,3,2)
           0     0     0
           0     0     1
