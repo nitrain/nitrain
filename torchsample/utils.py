@@ -72,19 +72,21 @@ def th_affine_2d(x, matrix, mode='bilinear', center=True):
         of the image rather than the origin
 
     Example
-    ------- 289
-    >>> x = torch.zeros(1,2000,2000)
-    >>> x[:,100:1500,100:500] = 10*torch.rand(1,1400,400)
-    >>> matrix = torch.FloatTensor([[1.,0,-300],
-    ...                             [0,1.,-300]])
-    >>> #xn = th_affine_2d(x, matrix, mode='nearest')
+    ------- 
+    >>> import torch
+    >>> from torchsample.utils import *
+    >>> x = torch.zeros(2,1000,1000)
+    >>> x[:,100:1500,100:500] = 10
+    >>> matrix = torch.FloatTensor([[1.,0,-50],
+    ...                             [0,1.,-50]])
+    >>> xn = th_affine_2d(x, matrix, mode='nearest')
     >>> xb = th_affine_2d(x, matrix, mode='bilinear')
-
     """
     A = matrix[:2,:2]
     b = matrix[:2,2]
 
     # make a meshgrid of normal coordinates
+    #coords = th_iterproduct_like(x).float()
     coords = th_iterproduct(x.size(1),x.size(2)).float()
 
     if center:
@@ -117,34 +119,30 @@ def th_nearest_interp_2d(input, coords):
     coords[:,0] = torch.clamp(coords[:,0], 0, input.size(1)-1).round()
     coords[:,1] = torch.clamp(coords[:,1], 0, input.size(2)-1).round()
 
-    stride = torch.FloatTensor(input.stride())[1:]
+    stride = torch.LongTensor(input.stride())[1:].float()
     idx = coords.mv(stride).long()
 
-    input_flat = th_c_flatten(input)
+    input_flat = th_flatten(input)
 
-    mapped_vals = torch.stack([input_flat[i][idx] 
-                    for i in range(input.size(0))], 0)
+    mapped_vals = input_flat[idx]
 
     return mapped_vals.view_as(input)
 
 
 def th_bilinear_interp_2d(input, coords):
     """
-    trilinear interpolation of 3D torch.Tensor image
+    bilinear interpolation in 2d
     """
     # take clamp then floor/ceil of x coords
-    x = torch.clamp(coords[:,0], 0, input.size(1)-2)
+    x = torch.clamp(coords[:,0], 0, input.size(1)-2).contiguous().view(-1)
     x0 = x.floor()
     x1 = x0 + 1
     # take clamp then floor/ceil of y coords
-    y = torch.clamp(coords[:,1], 0, input.size(2)-2)
+    y = torch.clamp(coords[:,1], 0, input.size(2)-2).contiguous().view(-1)
     y0 = y.floor()
     y1 = y0 + 1
 
-    xd = x - x0
-    yd = y - y0
-
-    stride = torch.LongTensor(input.stride())[1:]
+    stride = torch.LongTensor(input.stride()[1:])
     x0_ix = x0.mul(stride[0]).long()
     x1_ix = x1.mul(stride[0]).long()
     y0_ix = y0.mul(stride[1]).long()
@@ -157,7 +155,8 @@ def th_bilinear_interp_2d(input, coords):
     vals_01 = input_flat[x0_ix+y1_ix]
     vals_11 = input_flat[x1_ix+y1_ix]
 
-
+    xd = x - x0
+    yd = y - y0
     xm1 = 1 - xd
     ym1 = 1 - yd
 
@@ -190,7 +189,6 @@ def th_affine_3d(x, matrix, mode='trilinear', center=True):
     # apply the coordinate transformation
     new_coords = coords.mm(A.t().contiguous()) + b.expand_as(coords)
 
-    #print(e-s)
     if center:
         # shift the coordinates back so origin is origin
         new_coords[:,0] = new_coords[:,0] + (x.size(1) / 2. + 0.5)
@@ -201,6 +199,8 @@ def th_affine_3d(x, matrix, mode='trilinear', center=True):
     if mode == 'nearest':
         x_transformed = th_nearest_interp_3d(x, new_coords)
     elif mode == 'trilinear':
+        x_transformed = th_trilinear_interp_3d(x, new_coords)
+    else:
         x_transformed = th_trilinear_interp_3d(x, new_coords)
 
     return x_transformed
@@ -216,14 +216,13 @@ def th_nearest_interp_3d(input, coords):
     coords[:,2] = torch.clamp(coords[:,2], 0, input.size(3)-1).round()
 
     stride = torch.LongTensor(input.stride())[1:].float()
-    idx = coords.mv(stride)
+    idx = coords.mv(stride).long()
 
     input_flat = th_flatten(input)
 
-    mapped_vals = input_flat[idx.long()]
+    mapped_vals = input_flat[idx]
 
     return mapped_vals.view_as(input)
-
 
 
 def th_trilinear_interp_3d(input, coords):
@@ -242,10 +241,6 @@ def th_trilinear_interp_3d(input, coords):
     z = torch.clamp(coords[:,2], 0, input.size(3)-2)
     z0 = z.floor()
     z1 = z0 + 1
-
-    xd = x - x0
-    yd = y - y0
-    zd = z - z0
 
     stride = torch.LongTensor(input.stride())[1:]
     x0_ix = x0.mul(stride[0]).long()
@@ -266,6 +261,9 @@ def th_trilinear_interp_3d(input, coords):
     vals_110 = input_flat[x1_ix+y1_ix+z0_ix]
     vals_111 = input_flat[x1_ix+y1_ix+z1_ix]
 
+    xd = x - x0
+    yd = y - y0
+    zd = z - z0
     xm1 = 1 - xd
     ym1 = 1 - yd
     zm1 = 1 - zd
