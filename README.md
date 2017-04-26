@@ -86,25 +86,28 @@ and <b>constraints</b>:
 
 ```python
 UnitNorm(frequency=1, 
-            unit='batch',
-            lagrangian=False,
-            scale=0.,
-            module_filter='*')
+         unit='batch',
+         lagrangian=False,
+         scale=0.,
+         module_filter='*')
 ```
 
 ```python
 MaxNorm(value, 
-           axis=1, 
-           frequency=1, 
-           unit='batch',
-           lagrangian=False,
-           scale=0.,
-           module_filter='*')```
-- `NonNeg(frequency=1, 
-          unit='batch',
-          lagrangian=False,
-          scale=0.,
-          module_filter='*')`
+        axis=1, 
+        frequency=1, 
+        unit='batch',
+        lagrangian=False,
+        scale=0.,
+        module_filter='*')
+```
+```python
+NonNeg(frequency=1, 
+       unit='batch',
+       lagrangian=False,
+       scale=0.,
+       module_filter='*')
+```
 
 Both regularizers and constraints can be selectively applied on layers using regular expressions and the `module_filter`
 argument. Constraints can be explicit (hard) constraints applied at an arbitrary batch or
