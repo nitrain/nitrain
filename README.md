@@ -70,7 +70,9 @@ where the the constraint deviation is added as a penalty to the total model loss
 from torchsample.constraints import MaxNorm, NonNeg
 from torchsample.regularizers import L1Regularizer
 
+# hard constraint applied every 5 batches
 hard_constraint = MaxNorm(value=2., frequency=5, unit='batch', module_filter='*fc*')
+# implicit constraint added as a penalty term to model loss
 soft_constraint = NonNeg(lagrangian=True, scale=1e-3, module_filter='*fc*')
 constraints = [hard_constraint, soft_constraint]
 model.set_constraints(constraints)
