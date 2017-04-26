@@ -150,6 +150,7 @@ class History(Callback):
     """
     def __init__(self):
         self.loss = 0.
+        self.reg_loss = 0.
         self.samples_seen = 0.
         super(History, self).__init__()
 
@@ -161,6 +162,7 @@ class History(Callback):
 
     def on_epoch_begin(self, epoch, logs=None):
         self.loss = 0.
+        self.reg_loss = 0.
         self.samples_seen = 0.
 
     def on_batch_end(self, batch, logs=None):

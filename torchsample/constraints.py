@@ -73,12 +73,12 @@ class MaxNorm(Constraint):
     """
 
     def __init__(self, 
-                 m, 
+                 value, 
                  axis=1, 
                  frequency=1, 
                  unit='batch',
                  module_filter='*'):
-        self.m = float(m)
+        self.value = float(value)
         self.axis = axis
 
         self.frequency = frequency
@@ -88,7 +88,7 @@ class MaxNorm(Constraint):
     def __call__(self, module):
         if hasattr(module, 'weight'):
             w = module.weight.data
-            norm = torch.norm(w,2,self.axis).expand_as(w) / self.m
+            norm = torch.norm(w,2,self.axis).expand_as(w) / self.value
             norm[norm<1.] = 1.
             w.div_(norm)
 
