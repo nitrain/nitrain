@@ -49,16 +49,24 @@ class UnitNorm(Constraint):
     def __init__(self, 
                  frequency=1, 
                  unit='batch',
+                 lagrangian=False,
+                 scale=0.,
                  module_filter='*'):
 
         self.frequency = frequency
         self.unit = unit
+        self.lagrangian = lagrangian
         self.module_filter = module_filter
 
     def __call__(self, module):
         if hasattr(module, 'weight'):
-            w = module.weight.data
-            w.div_(torch.norm(w, 2, 1).expand_as(w))
+            if self.lagrangian:
+                w = module.weight.data
+                norm = torch.norm(w, 2, 1)
+                return self.scale * torch.sum(torch.clamp(norm-1,0,1e15))
+            else:
+                w = module.weight.data
+                w.div_(torch.norm(w, 2, 1).expand_as(w))
 
 
 class MaxNorm(Constraint):
@@ -77,20 +85,29 @@ class MaxNorm(Constraint):
                  axis=1, 
                  frequency=1, 
                  unit='batch',
+                 lagrangian=False,
+                 scale=0.,
                  module_filter='*'):
         self.value = float(value)
         self.axis = axis
 
         self.frequency = frequency
         self.unit = unit
+        self.lagrangian = lagrangian
+        self.scale = scale
         self.module_filter = module_filter
 
     def __call__(self, module):
         if hasattr(module, 'weight'):
-            w = module.weight.data
-            norm = torch.norm(w,2,self.axis).expand_as(w) / self.value
-            norm[norm<1.] = 1.
-            w.div_(norm)
+            if self.lagrangian:
+                w = module.weight.data
+                norm = torch.norm(w,2,self.axis)
+                return self.scale * torch.sum(torch.clamp(norm-self.value,0,1e-15))
+            else:
+                w = module.weight.data
+                norm = torch.norm(w,2,self.axis).expand_as(w) / self.value
+                norm = torch.clamp(norm, -1e15, 1)
+                w.div_(norm)
 
 
 class NonNeg(Constraint):
@@ -100,6 +117,8 @@ class NonNeg(Constraint):
     def __init__(self, 
                  frequency=1, 
                  unit='batch',
+                 lagrangian=False,
+                 scale=0.,
                  module_filter='*'):
         self.frequency = frequency
         self.unit = unit
@@ -107,9 +126,12 @@ class NonNeg(Constraint):
 
     def __call__(self, module):
         if hasattr(module, 'weight'):
-            w = module.weight.data
-            w.mul_(w.ge(0.).float())
-
+            if self.lagrangian:
+                w = module.weight.data
+                return -1 * self.scale * torch.sum(torch.clamp(w,-1e15,0))
+            else:
+                w = module.weight.data
+                w.clamp_(0,1e-15)
 
 
 
