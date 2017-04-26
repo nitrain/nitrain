@@ -17,7 +17,7 @@ import math
 import random
 import torch
 
-from ..utils import th_iterproduct, th_affine_2d
+from ..utils import th_iterproduct, th_affine2d
 
 
 class Affine(object):
@@ -96,12 +96,12 @@ class Affine(object):
         for tform in self.transforms[1:]:
             tform_matrix = torch.mm(tform_matrix, tform(x)) 
 
-        x = th_affine_2d(x, tform_matrix)
+        x = th_affine2d(x, tform_matrix)
 
         self.tform_matrix = tform_matrix
 
         if y is not None:
-            y = th_affine_2d(y, tform_matrix)
+            y = th_affine2d(y, tform_matrix)
             return x, y
         else:
             return x
@@ -151,10 +151,10 @@ class AffineCompose(object):
         for tform in self.transforms[1:]:
             tform_matrix = torch.mm(tform_matrix, tform(x)) 
 
-        x = th_affine_2d(x, tform_matrix, self.coords)
+        x = th_affine2d(x, tform_matrix, self.coords)
 
         if y is not None:
-            y = th_affine_2d(y, tform_matrix, self.coords)
+            y = th_affine2d(y, tform_matrix, self.coords)
             return x, y
         else:
             return x
@@ -201,9 +201,9 @@ class Rotate(object):
         if self.lazy:
             return rotation_matrix
         else:
-            x_transformed = th_affine_2d(x, rotation_matrix, self.coords)
+            x_transformed = th_affine2d(x, rotation_matrix, self.coords)
             if y is not None:
-                y_transformed = th_affine_2d(y, rotation_matrix, self.coords)
+                y_transformed = th_affine2d(y, rotation_matrix, self.coords)
                 return x_transformed, y_transformed
             else:
                 return x_transformed
@@ -270,9 +270,9 @@ class Translate(object):
         if self.lazy:
             return translation_matrix
         else:
-            x_transformed = th_affine_2d(x, translation_matrix, self.coords)
+            x_transformed = th_affine2d(x, translation_matrix, self.coords)
             if y is not None:
-                y_transformed = th_affine_2d(y, translation_matrix, self.coords)
+                y_transformed = th_affine2d(y, translation_matrix, self.coords)
                 return x_transformed, y_transformed
             else:
                 return x_transformed
@@ -317,9 +317,9 @@ class Shear(object):
         if self.lazy:
             return shear_matrix
         else:
-            x_transformed = th_affine_2d(x, shear_matrix, self.coords)
+            x_transformed = th_affine2d(x, shear_matrix, self.coords)
             if y is not None:
-                y_transformed = th_affine_2d(y, shear_matrix, self.coords)
+                y_transformed = th_affine2d(y, shear_matrix, self.coords)
                 return x_transformed, y_transformed
             else:
                 return x_transformed
@@ -373,9 +373,9 @@ class Zoom(object):
         if self.lazy:
             return zoom_matrix
         else:
-            x_transformed = th_affine_2d(x, zoom_matrix, self.coords)
+            x_transformed = th_affine2d(x, zoom_matrix, self.coords)
             if y is not None:
-                y_transformed = th_affine_2d(y, zoom_matrix, self.coords)
+                y_transformed = th_affine2d(y, zoom_matrix, self.coords)
                 return x_transformed, y_transformed
             else:
                 return x_transformed

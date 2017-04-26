@@ -51,7 +51,7 @@ def th_gather_nd(x, coords):
     return x_gather
 
 
-def th_affine_2d(x, matrix, mode='bilinear', center=True):
+def th_affine2d(x, matrix, mode='bilinear', center=True):
     """
     2D Affine image transform on torch.Tensor
     
@@ -79,8 +79,8 @@ def th_affine_2d(x, matrix, mode='bilinear', center=True):
     >>> x[:,100:1500,100:500] = 10
     >>> matrix = torch.FloatTensor([[1.,0,-50],
     ...                             [0,1.,-50]])
-    >>> xn = th_affine_2d(x, matrix, mode='nearest')
-    >>> xb = th_affine_2d(x, matrix, mode='bilinear')
+    >>> xn = th_affine2d(x, matrix, mode='nearest')
+    >>> xb = th_affine2d(x, matrix, mode='bilinear')
     """
     A = matrix[:2,:2]
     b = matrix[:2,2]
@@ -104,14 +104,14 @@ def th_affine_2d(x, matrix, mode='bilinear', center=True):
 
     # map new coordinates using bilinear interpolation
     if mode == 'nearest':
-        x_transformed = th_nearest_interp_2d(x, new_coords)
+        x_transformed = th_nearest_interp2d(x, new_coords)
     elif mode == 'bilinear':
-        x_transformed = th_bilinear_interp_2d(x, new_coords)
+        x_transformed = th_bilinear_interp2d(x, new_coords)
 
     return x_transformed
 
 
-def th_nearest_interp_2d(input, coords):
+def th_nearest_interp2d(input, coords):
     """
     2d nearest neighbor interpolation torch.Tensor
     """
@@ -124,12 +124,14 @@ def th_nearest_interp_2d(input, coords):
 
     input_flat = th_flatten(input)
 
+    print(idx.min(), '-',idx.max())
+    print(input_flat.size())
     mapped_vals = input_flat[idx]
 
     return mapped_vals.view_as(input)
 
 
-def th_bilinear_interp_2d(input, coords):
+def th_bilinear_interp2d(input, coords):
     """
     bilinear interpolation in 2d
     """
@@ -168,7 +170,7 @@ def th_bilinear_interp_2d(input, coords):
     return x_mapped.view_as(input)
 
 
-def th_affine_3d(x, matrix, mode='trilinear', center=True):
+def th_affine3d(x, matrix, mode='trilinear', center=True):
     """
     3D Affine image transform on torch.Tensor
     """
@@ -197,16 +199,16 @@ def th_affine_3d(x, matrix, mode='trilinear', center=True):
 
     # map new coordinates using bilinear interpolation
     if mode == 'nearest':
-        x_transformed = th_nearest_interp_3d(x, new_coords)
+        x_transformed = th_nearest_interp3d(x, new_coords)
     elif mode == 'trilinear':
-        x_transformed = th_trilinear_interp_3d(x, new_coords)
+        x_transformed = th_trilinear_interp3d(x, new_coords)
     else:
-        x_transformed = th_trilinear_interp_3d(x, new_coords)
+        x_transformed = th_trilinear_interp3d(x, new_coords)
 
     return x_transformed
 
 
-def th_nearest_interp_3d(input, coords):
+def th_nearest_interp3d(input, coords):
     """
     2d nearest neighbor interpolation torch.Tensor
     """
@@ -225,7 +227,7 @@ def th_nearest_interp_3d(input, coords):
     return mapped_vals.view_as(input)
 
 
-def th_trilinear_interp_3d(input, coords):
+def th_trilinear_interp3d(input, coords):
     """
     trilinear interpolation of 3D torch.Tensor image
     """
