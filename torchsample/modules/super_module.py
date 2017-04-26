@@ -155,6 +155,12 @@ class SuperModule(nn.Module):
                     reg_loss = regularizers(self)
                     loss += reg_loss
                     batch_logs['reg_loss'] = reg_loss
+
+                if constraints is not None and constraints.has_lagrangian:
+                    constraint_loss = constraints(self)
+                    loss += constraint_loss
+                    batch_logs['constraint_loss'] = constraint_loss
+
                 batch_logs['loss'] = loss.data[0]
 
                 # make backward pass
@@ -172,7 +178,8 @@ class SuperModule(nn.Module):
             epoch_logs['loss'] = self.history.loss / self.history.samples_seen
             if regularizers is not None:
                 epoch_logs['reg_loss'] = self.history.reg_loss / self.history.samples_seen
-
+            if constraints is not None and constraints.has_lagrangian:
+                epoch_logs['constraint_loss'] = self.history.constraint_loss / self.history.samples_seen
             callbacks.on_epoch_end(epoch_idx, epoch_logs)
             constraints.on_epoch_end(epoch_idx)
             if self.stop_training:
@@ -360,7 +367,7 @@ class SuperModule(nn.Module):
         if regularizers is not None:
             reg_loss = regularizers(self)
             loss += reg_loss
-        
+
         # make backward pass
         loss.backward()
         # make optimizer step to update weights

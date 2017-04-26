@@ -151,6 +151,7 @@ class History(Callback):
     def __init__(self):
         self.loss = 0.
         self.reg_loss = 0.
+        self.constraint_loss = 0.
         self.samples_seen = 0.
         super(History, self).__init__()
 
@@ -159,10 +160,12 @@ class History(Callback):
         self.losses = []
         self.val_losses = []
         self.reg_losses = []
+        self.constraint_losses = []
 
     def on_epoch_begin(self, epoch, logs=None):
         self.loss = 0.
         self.reg_loss = 0.
+        self.constraint_loss = 0.
         self.samples_seen = 0.
 
     def on_batch_end(self, batch, logs=None):
@@ -170,6 +173,9 @@ class History(Callback):
         if 'reg_loss' in logs:
             self.reg_loss += logs['reg_loss']*logs['batch_samples']
             self.loss += self.reg_loss
+        if 'constraint_loss' in logs:
+            self.constraint_loss += logs['constraint_loss']*logs['batch_samples']
+            self.loss += self.constraint_loss
         self.samples_seen += logs['batch_samples']
 
     def on_epoch_end(self, epoch, logs=None):
@@ -179,6 +185,8 @@ class History(Callback):
             self.val_losses.append(logs['val_loss'])
         if 'reg_loss' in logs:
             self.reg_losses.append(logs['reg_loss'])
+        if 'constraint_loss' in logs:
+            self.constraint_losses.append(logs['constraint_loss'])
 
 
 class ModelCheckpoint(Callback):
