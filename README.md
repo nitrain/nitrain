@@ -43,6 +43,38 @@ model.fit(x_train, y_train,
           verbose=1)
 ```
 
+Torchsample provides a wide range of <b>callbacks</b>, generally mimicking the interface
+found in `Keras`:
+
+- EarlyStopping
+- ModelCheckpoint
+- LearningRateScheduler
+- ReduceLROnPlateau
+- CSVLogger
+
+
+```python
+from torchsample.callbacks import EarlyStopping
+
+callbacks = [EarlyStopping(monitor='val_loss', patience=5)]
+model.set_callbacks(callbacks)
+```
+
+Torchsample also provides <b>regularizers</b> and <b>constraints</b>. These can
+be selectively applied on layers using regular expressions and the `module_filter`
+argument:
+
+```python
+from torchsample.constraints import MaxNorm
+from torchsample.regularizers import L1Regularizer
+
+constraints = [MaxNorm(value=2., frequency=5, unit='batch', module_filter='*fc*')]
+model.set_constraints(constraints)
+
+regularizers = [L1Regularizer(scale=1e-4, module_filter='*conv*')]
+model.set_regularizers(regularizers)
+```
+
 You can also fit directly on a `torch.utils.data.DataLoader` and can have
 a validation set as well :
 
