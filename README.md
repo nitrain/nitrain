@@ -89,8 +89,10 @@ UnitNorm(frequency=1,
             unit='batch',
             lagrangian=False,
             scale=0.,
-            module_filter='*')```
-- ```python
+            module_filter='*')
+```
+
+```python
 MaxNorm(value, 
            axis=1, 
            frequency=1, 
