@@ -46,11 +46,26 @@ model.fit(x_train, y_train,
 Torchsample provides a wide range of <b>callbacks</b>, generally mimicking the interface
 found in `Keras`:
 
-- EarlyStopping
-- ModelCheckpoint
-- LearningRateScheduler
-- ReduceLROnPlateau
-- CSVLogger
+- `EarlyStopping(file, 
+                 monitor='val_loss', 
+                 save_best_only=False, 
+                 save_weights_only=True,
+                 max_checkpoints=-1,
+                 verbose=0)`
+- `ModelCheckpoint(monitor='val_loss',
+                   min_delta=0,
+                   patience=0)`
+- `LearningRateScheduler(schedule)`
+- `ReduceLROnPlateau(monitor='val_loss', 
+                     factor=0.1, 
+                     patience=10,
+                     epsilon=0, 
+                     cooldown=0, 
+                     min_lr=0,
+                     verbose=0)`
+- `CSVLogger(file, 
+             separator=',', 
+             append=False)`
 
 
 ```python
@@ -60,8 +75,34 @@ callbacks = [EarlyStopping(monitor='val_loss', patience=5)]
 model.set_callbacks(callbacks)
 ```
 
-Torchsample also provides <b>regularizers</b> and <b>constraints</b>. These can
-be selectively applied on layers using regular expressions and the `module_filter`
+Torchsample also provides <b>regularizers</b>:
+
+- `L1Regularizer(scale=0.0, module_filter='*')`
+- `L2Regularizer(scale=0.0, module_filter='*')`
+- `L1L2Regularizer(l1_scale=0.0, l2_scale=0.0, module_filter='*')`
+
+
+and <b>constraints</b>:
+
+- `UnitNorm(frequency=1, 
+            unit='batch',
+            lagrangian=False,
+            scale=0.,
+            module_filter='*')`
+- `MaxNorm(value, 
+           axis=1, 
+           frequency=1, 
+           unit='batch',
+           lagrangian=False,
+           scale=0.,
+           module_filter='*')`
+- `NonNeg(frequency=1, 
+          unit='batch',
+          lagrangian=False,
+          scale=0.,
+          module_filter='*')`
+
+Both regularizers and constraints can be selectively applied on layers using regular expressions and the `module_filter`
 argument. Constraints can be explicit (hard) constraints applied at an arbitrary batch or
 epoch frequency, or they can be implicit (soft) constraints similar to regularizers
 where the the constraint deviation is added as a penalty to the total model loss.
