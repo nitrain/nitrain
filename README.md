@@ -62,13 +62,17 @@ model.set_callbacks(callbacks)
 
 Torchsample also provides <b>regularizers</b> and <b>constraints</b>. These can
 be selectively applied on layers using regular expressions and the `module_filter`
-argument:
+argument. Constraints can be explicit (hard) constraints applied at an arbitrary batch or
+epoch frequency, or they can be implicit (soft) constraints similar to regularizers
+where the the constraint deviation is added as a penalty to the total model loss.
 
 ```python
-from torchsample.constraints import MaxNorm
+from torchsample.constraints import MaxNorm, NonNeg
 from torchsample.regularizers import L1Regularizer
 
-constraints = [MaxNorm(value=2., frequency=5, unit='batch', module_filter='*fc*')]
+hard_constraint = MaxNorm(value=2., frequency=5, unit='batch', module_filter='*fc*')
+soft_constraint = NonNeg(lagrangian=True, scale=1e-3, module_filter='*fc*')
+constraints = [hard_constraint, soft_constraint]
 model.set_constraints(constraints)
 
 regularizers = [L1Regularizer(scale=1e-4, module_filter='*conv*')]
