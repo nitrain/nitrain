@@ -84,12 +84,14 @@ Torchsample also provides <b>regularizers</b>:
 
 and <b>constraints</b>:
 
-- ```pythonUnitNorm(frequency=1, 
+```python
+UnitNorm(frequency=1, 
             unit='batch',
             lagrangian=False,
             scale=0.,
             module_filter='*')```
-- ```pythonMaxNorm(value, 
+- ```python
+MaxNorm(value, 
            axis=1, 
            frequency=1, 
            unit='batch',
