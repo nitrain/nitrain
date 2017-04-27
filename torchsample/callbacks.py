@@ -119,20 +119,6 @@ class TQDM(Callback):
         self.progbar.set_description('Epoch %i/%i' % 
                         (epoch+1, logs['nb_epoch']))
 
-    def _on_epoch_end(self, epoch, logs=None):
-        log_data = {key: '%.04f' % value for (key, value) in logs.items() if not key.startswith('nb_')}
-        self.progbar.set_postfix(log_data)
-        self.progbar.update()
-        self.progbar.close()
-
-    def _on_batch_begin(self, batch, logs=None):
-        self.progbar.update(1)
-
-    def _on_batch_end(self, batch, logs=None):
-        self.progbar.set_postfix({
-            'Loss': '%.04f' % 
-            (self.model.history.batch_metrics['loss'])})# / self.model.history.seen)})
-
     def on_epoch_end(self, epoch, logs=None):
         log_data = {key: '%.04f' % value for key, value in self.model.history.batch_metrics.items()}
         for k, v in logs.items():
