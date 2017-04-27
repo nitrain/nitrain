@@ -9,14 +9,13 @@ import math
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from torch.utils.data import DataLoader
 
 # local imports
-from ..datasets import TensorDataset, MultiTensorDataset
-from ..samplers import SequentialSampler, RandomSampler
 from ..callbacks import CallbackModule, History, TQDM
 from ..constraints import ConstraintModule
 from ..regularizers import RegularizerModule
+
+from ..metrics import (MetricsModule, LossMetric, AccuracyMetric)
 
 
 class SuperModule(nn.Module):

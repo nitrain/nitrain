@@ -309,5 +309,3 @@ class TensorDataset(torch.utils.data.Dataset):
         return self.inputs.size(0)
 
 
-class MetaDataset(torch.utils.data.Dataset):
-    pass
