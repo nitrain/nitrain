@@ -326,16 +326,22 @@ class SuperModule(nn.Module):
         self._optimizer.step()
 
     def predict(self, 
-                x, 
+                inputs, 
                 batch_size=32,
                 cuda_device=-1, 
                 verbose=1):
-        dataset = TensorDataset(x)
-        loader = DataLoader(dataset, batch_size=batch_size)
-        preds = self.predict_loader(loader, 
-                                    cuda_device=cuda_device,
-                                    verbose=verbose)
-        return preds
+        if not isinstance(inputs, list):
+            inputs = [inputs]
+
+        nb_batches = int(math.ceil(inputs[0].size(0) / batch_size))
+        for batch_idx in range(nb_batches):
+            input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size]) for x in inputs]
+
+            if cuda_device > 0:
+                input_batch = [ins.cuda(cuda_device) for ins in input_batch]
+
+            outputs = self(*input_batch)
+        return outputs
 
     def predict_loader(self,
                        loader,
@@ -447,17 +453,52 @@ class SuperModule(nn.Module):
         return total_loss / total_samples
 
     def evaluate_on_batch(self, 
-                          x, 
-                          y, 
+                          inputs, 
+                          targets, 
                           cuda_device=-1):
         self.eval()
-        x = Variable(x)
-        y = Variable(y)
+        if not isinstance(inputs, list):
+            inputs = [inputs]
+
+        if targets is None:
+            has_target = False
+        else:
+            has_target = True
+            if not isinstance(targets, list):
+                targets = [targets]
+            nb_targets = len(targets)
+
+        if len(self._loss_fns) > 1:
+            has_multiple_loss_fns = True
+        else:
+            has_multiple_loss_fns = False
+
+        input_batch = [Variable(x) for x in inputs]
+        if has_target:
+            target_batch = [Variable(y) for y in targets]
+
         if cuda_device > 0:
-            x = x.cuda(cuda_device)
-            y = y.cuda(cuda_device)
-        y_pred = self(y)
-        loss = self._loss(y_pred, y)
+            input_batch = [ins.cuda(cuda_device) for ins in input_batch]
+            if has_target:
+                target_batch = [targs.cuda(cuda_device) for targs in target_batch]
+
+        outputs = self(*input_batch)
+        if not isinstance(outputs, list) and not isinstance(outputs, tuple):
+            outputs = [outputs]
+        if has_target:
+            loss = self._loss_fns[0](outputs[0], target_batch[0])
+            for loss_idx in range(1,nb_targets):
+                if has_multiple_loss_fns:
+                    loss += self._loss_fns[loss_idx](outputs[loss_idx], target_batch[loss_idx])
+                else:
+                    loss += self._loss_fns[0](outputs[loss_idx], target_batch[loss_idx])
+        else:
+            loss = self._loss_fns[0](outputs[0])
+            for loss_idx in range(1,nb_targets):
+                if has_multiple_loss_fns:
+                    loss += self._loss_fns[loss_idx](outputs[loss_idx])
+                else:
+                    loss += self._loss_fns[0](outputs[loss_idx])
         self.train()
         return loss.data[0]
 
