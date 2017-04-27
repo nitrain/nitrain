@@ -90,7 +90,7 @@ class SuperModule(nn.Module):
 
     def fit(self,
             inputs, 
-            targets,
+            targets=None,
             validation_data=None,
             nb_epoch=100, 
             batch_size=32,
@@ -199,8 +199,11 @@ class SuperModule(nn.Module):
                     constraints.on_batch_end(batch_idx)
 
                 # last batch - do validation
-                if batch_idx == (nb_batches - 1):
-                    pass
+                if batch_idx == (nb_batches - 1) and validation_data is not None:
+                    val_loss = self.evaluate(*validation_data, 
+                                             batch_size=batch_size,
+                                             cuda_device=cuda_device)
+                    epoch_logs['val_loss'] = val_loss
 
             epoch_logs['loss'] = self.history.loss / self.history.samples_seen
             if regularizers is not None:

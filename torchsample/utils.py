@@ -124,8 +124,6 @@ def th_nearest_interp2d(input, coords):
 
     input_flat = th_flatten(input)
 
-    print(idx.min(), '-',idx.max())
-    print(input_flat.size())
     mapped_vals = input_flat[idx]
 
     return mapped_vals.view_as(input)
