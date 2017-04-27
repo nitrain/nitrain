@@ -24,8 +24,10 @@ class SuperModule(nn.Module):
         SuperModule for high-level training of Pytorch models
 
         TODO:
-            - allow metrics
-                - e.g. for validation accuracy instead of loss
+            - allow string inputs for set_*() functions
+            - allow string inputs + metrics args in fit()
+            - add more metrics
+            - fix all the *_loader() functions with new format
         """
         super(SuperModule, self).__init__()
 
