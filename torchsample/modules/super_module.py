@@ -40,9 +40,6 @@ class SuperModule(nn.Module):
         # regularizers
         self._regularizers = []
         self._has_regularizers = False
-        # metrics
-        self._metrics = []
-        self._has_metrics = False
         # losses
         self._loss_fns = []
 
