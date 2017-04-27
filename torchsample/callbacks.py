@@ -322,7 +322,7 @@ class EarlyStopping(Callback):
             else:
                 if self.wait >= self.patience:
                     self.stopped_epoch = epoch + 1
-                    self.model.stop_training = True
+                    self.model._stop_training = True
                 self.wait += 1
 
     def on_train_end(self, logs):

@@ -31,11 +31,20 @@ class SuperModule(nn.Module):
         """
         super(SuperModule, self).__init__()
 
+        # callbacks
         self.history = History()
         self._callbacks = [self.history]
+        # constraints
         self._constraints = []
+        self._has_constraints = False
+        # regularizers
         self._regularizers = []
-        self.stop_training = False
+        self._has_regularizers = False
+        # losses
+        self._loss_fns = []
+
+        # other properties
+        self._stop_training = False
 
     def forward(self, *input):
         """
@@ -46,6 +55,9 @@ class SuperModule(nn.Module):
 
     def set_loss(self, loss):
         self._loss = loss
+        if not isinstance(loss, list) and not isinstance(loss, tuple):
+            loss = [loss]
+        self._loss_fns = loss
 
     def set_optimizer(self, optimizer, **kwargs):
         if 'parameters' in kwargs:
@@ -55,50 +67,153 @@ class SuperModule(nn.Module):
         self._optimizer = optimizer(parameters, **kwargs)
 
     def set_regularizers(self, regularizers):
+        self._has_regularizers = True
         self._regularizers = regularizers
 
+    def add_regularizer(self, regularizer):
+        self._has_regularizers = True
+        self._regularizers.append(regularizer)
+
     def set_constraints(self, constraints):
+        self._has_constraints = True
         self._constraints = constraints
+
+    def add_constraint(self, constraint):
+        self._has_constraints = True
+        self._constraints.append(constraint)
 
     def set_callbacks(self, callbacks):
         self._callbacks += callbacks
 
+    def add_callback(self, callback):
+        self._callbacks.append(callback)
+
     def fit(self,
-            x, 
-            y,
-            validation_data=None, 
+            inputs, 
+            targets,
+            validation_data=None,
             nb_epoch=100, 
             batch_size=32,
             shuffle=False,
             cuda_device=None,
             verbose=1):
-        """
-        Fit a model on torch tensors
-        """
-        # MAKE TRAIN LOADER
-        train_dataset = TensorDataset(x, y)
-        if shuffle:
-            sampler = RandomSampler(len(x))
+        if not isinstance(inputs, list):
+            inputs = [inputs]
+
+        if targets is None:
+            has_target = False
         else:
-            sampler = SequentialSampler(len(x))
-        train_loader = DataLoader(train_dataset, 
-                                  sampler=sampler,
-                                  batch_size=batch_size)
-        # MAKE VAL LOADER
-        if validation_data is not None:
-            val_dataset = TensorDataset(validation_data[0], validation_data[1])
-            if shuffle:
-                sampler = RandomSampler(x.size(0))
-            else:
-                sampler = SequentialSampler(x.size(0))
-            val_loader = DataLoader(val_dataset, 
-                                    sampler=sampler,
-                                    batch_size=batch_size)
+            has_target = True
+            if not isinstance(targets, list):
+                targets = [targets]
+            nb_targets = len(targets)
+
+        if len(self._loss_fns) > 1:
+            has_multiple_loss_fns = True
         else:
-            val_loader = None
-        self.fit_loader(loader=train_loader, val_loader=val_loader,
-                        nb_epoch=nb_epoch, cuda_device=cuda_device,
-                        verbose=verbose)
+            has_multiple_loss_fns = False
+
+        ## create regularizers
+        if self._has_regularizers:
+            regularizers = RegularizerModule(self._regularizers)
+        else:
+            regularizers = None
+
+        ## create constraints
+        if self._has_constraints:
+            constraints = ConstraintModule(self._constraints)
+            constraints.set_model(self)
+        else:
+            constraints = None
+
+        ## create callbacks
+        if verbose > 0:
+            self._callbacks += [TQDM()]
+        callbacks = CallbackModule(self._callbacks)
+        callbacks.set_model(self)
+
+        callbacks.on_train_begin()
+
+        nb_batches = int(math.ceil(inputs[0].size(0) / batch_size))
+        for epoch_idx in range(nb_epoch):
+            epoch_logs = {
+                'nb_batches': nb_batches,
+                'nb_epoch': nb_epoch
+            }
+            callbacks.on_epoch_begin(epoch_idx, epoch_logs)
+
+            for batch_idx in range(nb_batches):
+                input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size]) for x in inputs]
+                if has_target:
+                    target_batch = [Variable(y[batch_idx*batch_size:(batch_idx+1)*batch_size]) for y in targets]
+
+                if cuda_device > 0:
+                    input_batch = [ins.cuda(cuda_device) for ins in input_batch]
+                    if has_target:
+                        target_batch = [targs.cuda(cuda_device) for targs in target_batch]
+
+                batch_logs = {
+                    'batch_idx': batch_idx,
+                    'batch_samples': len(input_batch[0])
+                }                
+                callbacks.on_batch_begin(batch_idx, batch_logs)
+
+                self._optimizer.zero_grad()
+                outputs = self(*input_batch)
+                if not isinstance(outputs, list) and not isinstance(outputs, tuple):
+                    outputs = [outputs]
+                if has_target:
+                    loss = self._loss_fns[0](outputs[0], target_batch[0])
+                    for loss_idx in range(1,nb_targets):
+                        if has_multiple_loss_fns:
+                            loss += self._loss_fns[loss_idx](outputs[loss_idx], target_batch[loss_idx])
+                        else:
+                            loss += self._loss_fns[0](outputs[loss_idx], target_batch[loss_idx])
+                else:
+                    loss = self._loss_fns[0](outputs[0])
+                    for loss_idx in range(1,nb_targets):
+                        if has_multiple_loss_fns:
+                            loss += self._loss_fns[loss_idx](outputs[loss_idx])
+                        else:
+                            loss += self._loss_fns[0](outputs[loss_idx])
+                
+                if regularizers is not None:
+                    reg_loss = regularizers(self)
+                    loss += reg_loss
+                    batch_logs['reg_loss'] = reg_loss
+
+                if constraints is not None and constraints.has_lagrangian:
+                    constraint_loss = constraints(self)
+                    loss += constraint_loss
+                    batch_logs['constraint_loss'] = constraint_loss
+
+                batch_logs['loss'] = loss.data[0]
+
+                # make backward pass
+                loss.backward()
+                # make optimizer step to update weights
+                self._optimizer.step()
+
+                callbacks.on_batch_end(batch_idx, batch_logs)
+                if self._has_constraints:
+                    constraints.on_batch_end(batch_idx)
+
+                # last batch - do validation
+                if batch_idx == (nb_batches - 1):
+                    pass
+
+            epoch_logs['loss'] = self.history.loss / self.history.samples_seen
+            if regularizers is not None:
+                epoch_logs['reg_loss'] = self.history.reg_loss / self.history.samples_seen
+            if constraints is not None and constraints.has_lagrangian:
+                epoch_logs['constraint_loss'] = self.history.constraint_loss / self.history.samples_seen
+            callbacks.on_epoch_end(epoch_idx, epoch_logs)
+            if self._has_constraints:
+                constraints.on_epoch_end(epoch_idx)
+            if self._stop_training:
+                break
+
+        callbacks.on_train_end()
 
     def fit_loader(self, 
                    loader, 
@@ -134,7 +249,7 @@ class SuperModule(nn.Module):
             }
             callbacks.on_epoch_begin(epoch_idx, epoch_logs)
 
-            for batch_idx,(x_batch, y_batch) in enumerate(loader):
+            for batch_idx, (x_batch, y_batch) in enumerate(loader):
                 batch_logs = {
                     'batch_idx': batch_idx,
                     'batch_samples': len(x_batch)
@@ -182,12 +297,12 @@ class SuperModule(nn.Module):
                 epoch_logs['constraint_loss'] = self.history.constraint_loss / self.history.samples_seen
             callbacks.on_epoch_end(epoch_idx, epoch_logs)
             constraints.on_epoch_end(epoch_idx)
-            if self.stop_training:
+            if self._stop_training:
                 break
 
         callbacks.on_train_end()
 
-    def fit_on_batch(self, 
+    def train_on_batch(self, 
                      x, 
                      y, 
                      cuda_device=None):
@@ -209,170 +324,6 @@ class SuperModule(nn.Module):
         total_loss.backward()
         # make optimizer step to update weights
         self._optimizer.step()
-
-    def multi_fit(self,
-                  x, 
-                  y,
-                  validation_data=None, 
-                  nb_epoch=100, 
-                  batch_size=32,
-                  shuffle=False,
-                  cuda_device=-1,
-                  verbose=1):
-        """
-        Fit a SuperModule on data with multiple inputs and/or
-        multiple outputs
-
-        x should be a list
-        y should be a list or None
-        """
-        if not isinstance(x, list):
-            raise ValueError('x should be a list')
-        if y is not None and not isinstance(y, list):
-            raise ValueError('y should be a list or None')
-
-        # MAKE TRAIN LOADER
-        if y is None:
-            self._multi_has_target = False
-            train_dataset = MultiTensorDataset(x)
-        else:
-            train_dataset = MultiTensorDataset(x, y)
-        if shuffle:
-            sampler = RandomSampler(x[0].size(0))
-        else:
-            sampler = SequentialSampler(x[0].size(0))
-        train_loader = DataLoader(train_dataset, 
-                                  sampler=sampler,
-                                  batch_size=batch_size)
-        # No val_loader support right now
-        val_loader = None
-        self.multi_fit_loader(loader=train_loader, val_loader=val_loader,
-                        nb_epoch=nb_epoch, cuda_device=cuda_device,
-                        verbose=verbose)
-
-    def multi_fit_loader(self, 
-                         loader, 
-                         val_loader=None, 
-                         nb_epoch=100,
-                         cuda_device=-1,
-                         verbose=1):
-        ## create regularizers
-        if len(self._regularizers) > 0:
-            regularizers = RegularizerModule(self._regularizers)
-        else:
-            regularizers = None
-
-        ## create constraints
-        constraints = ConstraintModule(self._constraints)
-        constraints.set_model(self)
-
-        ## create callbacks
-        if verbose > 0:
-            self._callbacks += [TQDM()]
-        callbacks = CallbackModule(self._callbacks)
-        callbacks.set_model(self)
-
-        callbacks.on_train_begin()
-
-        for epoch_idx in range(nb_epoch):
-            epoch_logs = {
-                'nb_batches': int(math.ceil(len(loader.dataset.inputs[0])/loader.batch_size)),
-                'nb_epoch': nb_epoch
-            }
-            callbacks.on_epoch_begin(epoch_idx, epoch_logs)
-
-            for batch_idx, batch_data in enumerate(loader):
-                batch_logs = {
-                    'batch_idx': batch_idx,
-                    'batch_samples': len(batch_data[0])
-                }                
-                callbacks.on_batch_begin(batch_idx, batch_logs)
-                
-                inputs = [Variable(xb) for xb in batch_data[0]]
-                if len(batch_data) > 1:
-                    targets = [Variable(yb) for yb in batch_data[1]]
-                if cuda_device > 0:
-                    inputs = [inp.cuda(cuda_device) for inp in inputs]
-                    targets = [targ.cuda(cuda_device) for targ in targets]
-
-                self._optimizer.zero_grad()
-                outputs = self(*inputs)
-
-                if len(batch_data) > 1:
-                    loss = self._loss(outputs, targets)
-                else:
-                    loss = self._loss(*outputs)
-                
-                if regularizers is not None:
-                    reg_loss = regularizers(self)
-                    loss += reg_loss
-                    batch_logs['reg_loss'] = reg_loss
-                batch_logs['loss'] = loss.data[0]
-
-                # make backward pass
-                loss.backward()
-                # make optimizer step to update weights
-                self._optimizer.step()
-
-                callbacks.on_batch_end(batch_idx, batch_logs)
-                constraints.on_batch_end(batch_idx)
-
-            if val_loader is not None:
-                val_loss = self.evaluate_loader(val_loader, 
-                                                cuda_device=cuda_device)
-                epoch_logs['val_loss'] = val_loss
-            epoch_logs['loss'] = self.history.loss / self.history.samples_seen
-            if regularizers is not None:
-                epoch_logs['reg_loss'] = self.history.reg_loss / self.history.samples_seen
-
-            callbacks.on_epoch_end(epoch_idx, epoch_logs)
-            constraints.on_epoch_end(epoch_idx)
-            if self.stop_training:
-                break
-
-        callbacks.on_train_end()
-
-    def multi_fit_on_batch(self, 
-                           x, 
-                           y, 
-                           cuda_device=None):
-        if not isinstance(x, list):
-            raise ValueError('x must be list')
-        if y is not None and not isinstance(y, list):
-            raise ValueError('y must be list or None')
-
-        inputs = [Variable(xv) for xv in x]
-        if y is not None:
-            targets = [Variable(yv) for yv in y]
-        if cuda_device is not None:
-            inputs = [inp.cuda(cuda_device) for inp in inputs]
-            if y is not None:
-                targets = [targ.cuda(cuda_device) for targ in targets]
-
-        if len(self._regularizers) > 0:
-            regularizers = RegularizerModule(self._regularizers)
-        else:
-            regularizers = None
-
-        # zero the gradients
-        self._optimizer.zero_grad()
-        # make forward pass
-        outputs = self(*inputs)
-        # compute model loss
-        if y is None:
-            loss = self._loss(*outputs)
-        else:
-            loss = self._loss(outputs, targets)
-        
-        if regularizers is not None:
-            reg_loss = regularizers(self)
-            loss += reg_loss
-
-        # make backward pass
-        loss.backward()
-        # make optimizer step to update weights
-        self._optimizer.step()
-
 
     def predict(self, 
                 x, 
@@ -415,16 +366,65 @@ class SuperModule(nn.Module):
         return preds
 
     def evaluate(self, 
-                 x, 
-                 y, 
+                 inputs, 
+                 targets=None, 
                  batch_size=32,
                  cuda_device=-1, 
                  verbose=1):
-        dataset = TensorDataset(x,y)
-        loader = DataLoader(dataset, batch_size=batch_size)
-        loss = self.evaluate_loader(loader, 
-                                    cuda_device=cuda_device)
-        return loss
+        # put model in evaluation mode
+        self.eval()
+        if not isinstance(inputs, list):
+            inputs = [inputs]
+
+        if targets is None:
+            has_target = False
+        else:
+            has_target = True
+            if not isinstance(targets, list):
+                targets = [targets]
+            nb_targets = len(targets)
+
+        if len(self._loss_fns) > 1:
+            has_multiple_loss_fns = True
+        else:
+            has_multiple_loss_fns = False
+
+        total_loss = 0.
+        total_samples = 0.
+        nb_batches = int(math.ceil(inputs[0].size(0) / batch_size))
+        for batch_idx in range(nb_batches):
+            input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size]) for x in inputs]
+            if has_target:
+                target_batch = [Variable(y[batch_idx*batch_size:(batch_idx+1)*batch_size]) for y in targets]
+
+            if cuda_device > 0:
+                input_batch = [ins.cuda(cuda_device) for ins in input_batch]
+                if has_target:
+                    target_batch = [targs.cuda(cuda_device) for targs in target_batch]
+
+            outputs = self(*input_batch)
+            if not isinstance(outputs, list) and not isinstance(outputs, tuple):
+                outputs = [outputs]
+            if has_target:
+                loss = self._loss_fns[0](outputs[0], target_batch[0])
+                for loss_idx in range(1,nb_targets):
+                    if has_multiple_loss_fns:
+                        loss += self._loss_fns[loss_idx](outputs[loss_idx], target_batch[loss_idx])
+                    else:
+                        loss += self._loss_fns[0](outputs[loss_idx], target_batch[loss_idx])
+            else:
+                loss = self._loss_fns[0](outputs[0])
+                for loss_idx in range(1,nb_targets):
+                    if has_multiple_loss_fns:
+                        loss += self._loss_fns[loss_idx](outputs[loss_idx])
+                    else:
+                        loss += self._loss_fns[0](outputs[loss_idx])
+
+            total_loss += loss.data[0]*len(input_batch[0])
+            total_samples += len(input_batch[0])
+        # put model back in training mode
+        self.train()
+        return total_loss / total_samples
 
     def evaluate_loader(self, 
                         loader, 

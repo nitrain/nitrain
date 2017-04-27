@@ -12,7 +12,6 @@ class STN2d(nn.Module):
 
     def forward(self, x):
         params = self.local_net(x)
-        print(x.stride())
         x_transformed = F_affine2d(x[0], params.view(2,3))
         return x_transformed
 
