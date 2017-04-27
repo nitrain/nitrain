@@ -120,15 +120,8 @@ class TQDM(Callback):
                         (epoch+1, logs['nb_epoch']))
 
     def on_epoch_end(self, epoch, logs=None):
-        if 'val_loss' in logs:
-            self.progbar.set_postfix({
-                'Loss': '%.04f' % logs['loss'],
-                'Val_Loss': '%.04f' % (logs['val_loss'])
-                })
-        else:
-            self.progbar.set_postfix({
-                'Loss': '%.04f' % logs['loss']
-                })
+        log_data = {key: '%.04f' % value for (key, value) in logs.items() if not key.startswith('nb_')}
+        self.progbar.set_postfix(log_data)
         self.progbar.update()
         self.progbar.close()
 

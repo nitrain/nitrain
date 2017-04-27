@@ -40,6 +40,9 @@ class SuperModule(nn.Module):
         # regularizers
         self._regularizers = []
         self._has_regularizers = False
+        # metrics
+        self._metrics = []
+        self._has_metrics = False
         # losses
         self._loss_fns = []
 
@@ -95,7 +98,7 @@ class SuperModule(nn.Module):
             nb_epoch=100, 
             batch_size=32,
             shuffle=False,
-            cuda_device=None,
+            cuda_device=-1,
             verbose=1):
         if not isinstance(inputs, list):
             inputs = [inputs]
@@ -222,7 +225,7 @@ class SuperModule(nn.Module):
                    loader, 
                    val_loader=None, 
                    nb_epoch=100,
-                   cuda_device=None,
+                   cuda_device=-1,
                    verbose=1):
         """
         Fit a model on a DataLoader
@@ -305,10 +308,10 @@ class SuperModule(nn.Module):
 
         callbacks.on_train_end()
 
-    def train_on_batch(self, 
+    def fit_on_batch(self, 
                      x, 
                      y, 
-                     cuda_device=None):
+                     cuda_device=-1):
         inputs = Variable(x)
         targets = Variable(y)
         if cuda_device is not None:
