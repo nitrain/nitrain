@@ -119,8 +119,25 @@ class TQDM(Callback):
         self.progbar.set_description('Epoch %i/%i' % 
                         (epoch+1, logs['nb_epoch']))
 
-    def on_epoch_end(self, epoch, logs=None):
+    def _on_epoch_end(self, epoch, logs=None):
         log_data = {key: '%.04f' % value for (key, value) in logs.items() if not key.startswith('nb_')}
+        self.progbar.set_postfix(log_data)
+        self.progbar.update()
+        self.progbar.close()
+
+    def _on_batch_begin(self, batch, logs=None):
+        self.progbar.update(1)
+
+    def _on_batch_end(self, batch, logs=None):
+        self.progbar.set_postfix({
+            'Loss': '%.04f' % 
+            (self.model.history.batch_metrics['loss'])})# / self.model.history.seen)})
+
+    def on_epoch_end(self, epoch, logs=None):
+        log_data = {key: '%.04f' % value for key, value in self.model.history.batch_metrics.items()}
+        for k, v in logs.items():
+            if k.endswith('metric'):
+                log_data[k.split('_metric')[0]] = '%.02f' % v
         self.progbar.set_postfix(log_data)
         self.progbar.update()
         self.progbar.close()
@@ -129,9 +146,11 @@ class TQDM(Callback):
         self.progbar.update(1)
 
     def on_batch_end(self, batch, logs=None):
-        self.progbar.set_postfix({
-            'Loss': '%.04f' % 
-            (self.model.history.loss / self.model.history.samples_seen)})
+        log_data = {key: '%.04f' % value for key, value in self.model.history.batch_metrics.items()}
+        for k, v in logs.items():
+            if k.endswith('metric'):
+                log_data[k.split('_metric')[0]] = '%.02f' % v
+        self.progbar.set_postfix(log_data)
 
 
 class History(Callback):
@@ -142,45 +161,34 @@ class History(Callback):
     every SuperModule.
     """
     def __init__(self):
-        self.loss = 0.
-        self.reg_loss = 0.
-        self.constraint_loss = 0.
-        self.samples_seen = 0.
         super(History, self).__init__()
+        self.seen = 0.
 
     def on_train_begin(self, logs=None):
-        self.epochs = []
-        self.losses = []
-        self.val_losses = []
-        self.reg_losses = []
-        self.constraint_losses = []
+        self.epoch_metrics = {
+            'epochs': [],
+            'losses': [],
+            'regularizer_losses': [],
+            'constraint_losses': [],
+            'val_losses': []
+        }
+        #if logs['has_validation_data']:
+        #    self.batch_metrics['val_loss'] = 0.
 
     def on_epoch_begin(self, epoch, logs=None):
-        self.loss = 0.
-        self.reg_loss = 0.
-        self.constraint_loss = 0.
-        self.samples_seen = 0.
+        self.batch_metrics = {
+            'loss': 0.
+        }
+        if self.model._has_regularizers:
+            self.batch_metrics['regularizer_loss'] = 0.
+        if self.model._has_constraints:
+            self.batch_metrics['constraint_loss'] = 0.
+        self.seen = 0.
 
     def on_batch_end(self, batch, logs=None):
-        self.loss += logs['loss']*logs['batch_samples']
-        if 'reg_loss' in logs:
-            self.reg_loss += logs['reg_loss']*logs['batch_samples']
-            self.loss += self.reg_loss
-        if 'constraint_loss' in logs:
-            self.constraint_loss += logs['constraint_loss']*logs['batch_samples']
-            self.loss += self.constraint_loss
-        self.samples_seen += logs['batch_samples']
-
-    def on_epoch_end(self, epoch, logs=None):
-        self.epochs.append(epoch)
-        self.losses.append(logs['loss'])
-        if 'val_loss' in logs:
-            self.val_losses.append(logs['val_loss'])
-        if 'reg_loss' in logs:
-            self.reg_losses.append(logs['reg_loss'])
-        if 'constraint_loss' in logs:
-            self.constraint_losses.append(logs['constraint_loss'])
-
+        for k in self.batch_metrics:
+            self.batch_metrics[k] = (self.seen*self.batch_metrics[k] + logs[k]*logs['batch_samples']) / (self.seen+logs['batch_samples'])
+        self.seen += logs['batch_samples']
 
 class ModelCheckpoint(Callback):
     """

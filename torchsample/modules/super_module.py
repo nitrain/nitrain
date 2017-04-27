@@ -13,9 +13,8 @@ from torch.autograd import Variable
 # local imports
 from ..callbacks import CallbackModule, History, TQDM
 from ..constraints import ConstraintModule
+from ..metrics import MetricsModule
 from ..regularizers import RegularizerModule
-
-from ..metrics import (MetricsModule, LossMetric, AccuracyMetric)
 
 
 class SuperModule(nn.Module):
@@ -39,8 +38,12 @@ class SuperModule(nn.Module):
         # regularizers
         self._regularizers = []
         self._has_regularizers = False
+        # metrics
+        self._metrics = []
+        self._has_metrics = False
         # losses
         self._loss_fns = []
+        self._has_multiple_loss_fns = False
 
         # other properties
         self._stop_training = False
@@ -56,6 +59,8 @@ class SuperModule(nn.Module):
         self._loss = loss
         if not isinstance(loss, list) and not isinstance(loss, tuple):
             loss = [loss]
+        if len(loss) > 0:
+            self._has_multiple_loss_fns = True
         self._loss_fns = loss
 
     def set_optimizer(self, optimizer, **kwargs):
@@ -87,6 +92,14 @@ class SuperModule(nn.Module):
     def add_callback(self, callback):
         self._callbacks.append(callback)
 
+    def set_metrics(self, metrics):
+        self._has_metrics = True
+        self._metrics = metrics
+
+    def add_metric(self, metric):
+        self._has_metrics = True
+        self._metrics.append(metric)
+
     def fit(self,
             inputs, 
             targets=None,
@@ -107,23 +120,23 @@ class SuperModule(nn.Module):
                 targets = [targets]
             nb_targets = len(targets)
 
-        if len(self._loss_fns) > 1:
-            has_multiple_loss_fns = True
+        if validation_data is None:
+            has_validation_data = False
         else:
-            has_multiple_loss_fns = False
+            has_validation_data = True
 
         ## create regularizers
         if self._has_regularizers:
             regularizers = RegularizerModule(self._regularizers)
-        else:
-            regularizers = None
 
         ## create constraints
         if self._has_constraints:
             constraints = ConstraintModule(self._constraints)
             constraints.set_model(self)
-        else:
-            constraints = None
+
+        ## create metrics
+        if self._has_metrics:
+            metrics = MetricsModule(self._metrics)
 
         ## create callbacks
         if verbose > 0:
@@ -137,7 +150,8 @@ class SuperModule(nn.Module):
         for epoch_idx in range(nb_epoch):
             epoch_logs = {
                 'nb_batches': nb_batches,
-                'nb_epoch': nb_epoch
+                'nb_epoch': nb_epoch,
+                'has_validation_data': has_validation_data
             }
             callbacks.on_epoch_begin(epoch_idx, epoch_logs)
 
@@ -157,61 +171,68 @@ class SuperModule(nn.Module):
                 }                
                 callbacks.on_batch_begin(batch_idx, batch_logs)
 
+                ## ZERO GRAD AND FORWARD PASS
                 self._optimizer.zero_grad()
                 outputs = self(*input_batch)
+
                 if not isinstance(outputs, list) and not isinstance(outputs, tuple):
                     outputs = [outputs]
                 if has_target:
                     loss = self._loss_fns[0](outputs[0], target_batch[0])
                     for loss_idx in range(1,nb_targets):
-                        if has_multiple_loss_fns:
+                        if self._has_multiple_loss_fns:
                             loss += self._loss_fns[loss_idx](outputs[loss_idx], target_batch[loss_idx])
                         else:
                             loss += self._loss_fns[0](outputs[loss_idx], target_batch[loss_idx])
                 else:
                     loss = self._loss_fns[0](outputs[0])
                     for loss_idx in range(1,nb_targets):
-                        if has_multiple_loss_fns:
+                        if self._has_multiple_loss_fns:
                             loss += self._loss_fns[loss_idx](outputs[loss_idx])
                         else:
                             loss += self._loss_fns[0](outputs[loss_idx])
                 
-                if regularizers is not None:
-                    reg_loss = regularizers(self)
-                    loss += reg_loss
-                    batch_logs['reg_loss'] = reg_loss
+                if self._has_regularizers:
+                    regularizer_loss = regularizers(self)
+                    loss += regularizer_loss
+                    batch_logs['regularizer_loss'] = regularizer_loss
 
-                if constraints is not None and constraints.has_lagrangian:
+                if self._has_constraints and constraints.has_lagrangian:
                     constraint_loss = constraints(self)
                     loss += constraint_loss
                     batch_logs['constraint_loss'] = constraint_loss
 
                 batch_logs['loss'] = loss.data[0]
 
-                # make backward pass
+                if self._has_metrics:
+                    metric_logs = metrics(outputs[0], target_batch[0])
+                    batch_logs.update(metric_logs)
+
+                # BACKWARD PASS AND OPTIMIZER STEP
                 loss.backward()
-                # make optimizer step to update weights
                 self._optimizer.step()
 
                 callbacks.on_batch_end(batch_idx, batch_logs)
                 if self._has_constraints:
                     constraints.on_batch_end(batch_idx)
 
-                # last batch - do validation
-                if batch_idx == (nb_batches - 1) and validation_data is not None:
-                    val_loss = self.evaluate(*validation_data, 
-                                             batch_size=batch_size,
-                                             cuda_device=cuda_device)
-                    epoch_logs['val_loss'] = val_loss
+            if has_validation_data:
+                val_loss = self.evaluate(*validation_data, 
+                                         batch_size=batch_size,
+                                         cuda_device=cuda_device)
+                epoch_logs['val_loss'] = val_loss
 
-            epoch_logs['loss'] = self.history.loss / self.history.samples_seen
-            if regularizers is not None:
-                epoch_logs['reg_loss'] = self.history.reg_loss / self.history.samples_seen
-            if constraints is not None and constraints.has_lagrangian:
-                epoch_logs['constraint_loss'] = self.history.constraint_loss / self.history.samples_seen
+            # END OF EPOCH
+            epoch_logs.update(self.history.batch_metrics)
+            if self._has_metrics:
+                epoch_logs.update(metrics.get_logs())
+
             callbacks.on_epoch_end(epoch_idx, epoch_logs)
+
             if self._has_constraints:
                 constraints.on_epoch_end(epoch_idx)
+            if self._has_metrics:
+                metrics.reset()
             if self._stop_training:
                 break
 
@@ -254,7 +275,7 @@ class SuperModule(nn.Module):
             for batch_idx, (x_batch, y_batch) in enumerate(loader):
                 batch_logs = {
                     'batch_idx': batch_idx,
-                    'batch_samples': len(x_batch)
+                    'batch_samples': len(x_batch),
                 }                
                 callbacks.on_batch_begin(batch_idx, batch_logs)
 
@@ -336,14 +357,15 @@ class SuperModule(nn.Module):
             inputs = [inputs]
 
         nb_batches = int(math.ceil(inputs[0].size(0) / batch_size))
+        output_list = []
         for batch_idx in range(nb_batches):
             input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size]) for x in inputs]
 
             if cuda_device > 0:
                 input_batch = [ins.cuda(cuda_device) for ins in input_batch]
 
-            outputs = self(*input_batch)
-        return outputs
+            output_list.append(self(*input_batch))
+        return torch.cat(output_list,0)
 
     def predict_loader(self,
                        loader,
@@ -392,11 +414,6 @@ class SuperModule(nn.Module):
                 targets = [targets]
             nb_targets = len(targets)
 
-        if len(self._loss_fns) > 1:
-            has_multiple_loss_fns = True
-        else:
-            has_multiple_loss_fns = False
-
         total_loss = 0.
         total_samples = 0.
         nb_batches = int(math.ceil(inputs[0].size(0) / batch_size))
@@ -416,14 +433,14 @@ class SuperModule(nn.Module):
             if has_target:
                 loss = self._loss_fns[0](outputs[0], target_batch[0])
                 for loss_idx in range(1,nb_targets):
-                    if has_multiple_loss_fns:
+                    if self._has_multiple_loss_fns:
                         loss += self._loss_fns[loss_idx](outputs[loss_idx], target_batch[loss_idx])
                     else:
                         loss += self._loss_fns[0](outputs[loss_idx], target_batch[loss_idx])
             else:
                 loss = self._loss_fns[0](outputs[0])
                 for loss_idx in range(1,nb_targets):
-                    if has_multiple_loss_fns:
+                    if self._has_multiple_loss_fns:
                         loss += self._loss_fns[loss_idx](outputs[loss_idx])
                     else:
                         loss += self._loss_fns[0](outputs[loss_idx])
