@@ -25,9 +25,10 @@ class SuperModule(nn.Module):
         SuperModule for high-level training of Pytorch models
 
         TODO:
-            - add more metrics
             - fix all the *_loader() functions with new format
             - actually do something when shuffle=True on fit()
+        OTHER:
+            - add more metrics
         """
         super(SuperModule, self).__init__()
 
@@ -174,7 +175,7 @@ class SuperModule(nn.Module):
                 if has_target:
                     target_batch = [Variable(y[batch_idx*batch_size:(batch_idx+1)*batch_size]) for y in targets]
 
-                if cuda_device > 0:
+                if cuda_device > -1:
                     input_batch = [ins.cuda(cuda_device) for ins in input_batch]
                     if has_target:
                         target_batch = [targs.cuda(cuda_device) for targs in target_batch]
@@ -317,7 +318,7 @@ class SuperModule(nn.Module):
                     target_batch = [Variable(targs) for targs in target_batch]
                     nb_targets = len(target_batch)
 
-                if cuda_device > 0:
+                if cuda_device > -1:
                     input_batch = [ins.cuda(cuda_device) for ins in input_batch]
                     if has_target:
                         target_batch = [targs.cuda(cuda_device) for targs in target_batch]
@@ -415,7 +416,7 @@ class SuperModule(nn.Module):
         if has_target:
             target_batch = [Variable(y) for y in targets]
 
-        if cuda_device > 0:
+        if cuda_device > -1:
             input_batch = [ins.cuda(cuda_device) for ins in input_batch]
             if has_target:
                 target_batch = [targs.cuda(cuda_device) for targs in target_batch]
@@ -462,42 +463,42 @@ class SuperModule(nn.Module):
             inputs = [inputs]
 
         nb_batches = int(math.ceil(inputs[0].size(0) / batch_size))
-        output_list = []
+        prediction_list = []
         for batch_idx in range(nb_batches):
             input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size]) for x in inputs]
 
-            if cuda_device > 0:
+            if cuda_device > -1:
                 input_batch = [ins.cuda(cuda_device) for ins in input_batch]
 
-            output_list.append(self(*input_batch))
-        return torch.cat(output_list,0)
+            prediction_list.append(self(*input_batch))
+        return torch.cat(prediction_list,0)
 
     def predict_loader(self,
                        loader,
                        cuda_device=-1,
                        verbose=1):
-        self.eval()
-        preds = []
-        for batch_idx, batch in enumerate(loader):
-            if loader.dataset.has_target:
-                batch = batch[0]
-            x_batch = Variable(batch)
-            if cuda_device is not None:
-                x_batch = x_batch.cuda(cuda_device)
-            batch_pred = self(x_batch)
-            preds.append(batch_pred.data)
-        self.train()
-        return Variable(torch.cat(preds))
+        prediction_list = []
+        for batch_idx, batch_data in enumerate(loader):
+            if not isinstance(batch_data, (tuple,list)):
+                batch_data = [batch_data]
+            input_batch = batch_data[0]
+            if not isinstance(input_batch, (list,tuple)):
+                input_batch = [input_batch]
+            input_batch = [Variable(ins) for ins in input_batch]
+            if cuda_device > -1:
+                input_batch = [ins.cuda(cuda_device) for ins in input_batch]
+
+            prediction_list.append(self(*input_batch))
+        return torch.cat(prediction_list,0)
 
     def predict_on_batch(self, 
-                         x, 
+                         inputs, 
                          cuda_device=-1):
-        self.eval()
-        x = Variable(x)
-        if cuda_device > 0:
-            x = x.cuda(cuda_device)
-        preds = self(x)
-        self.train()
+        if not isinstance(inputs, (list,tuple)):
+            inputs = [inputs]
+        if cuda_device > -1:
+            inputs = [ins.cuda(cuda_device) for ins in inputs]
+        preds = self(*inputs)
         return preds
 
     def evaluate(self, 
@@ -530,7 +531,7 @@ class SuperModule(nn.Module):
             if has_target:
                 target_batch = [Variable(y[batch_idx*batch_size:(batch_idx+1)*batch_size]) for y in targets]
 
-            if cuda_device > 0:
+            if cuda_device > -1:
                 input_batch = [ins.cuda(cuda_device) for ins in input_batch]
                 if has_target:
                     target_batch = [targs.cuda(cuda_device) for targs in target_batch]
@@ -568,21 +569,64 @@ class SuperModule(nn.Module):
                         loader, 
                         cuda_device=-1):
         self.eval()
+        if self._has_metrics:
+            metrics = MetricsModule(self._metrics, prefix='val_')
+
         total_loss = 0.
         total_samples = 0.
-        for batch_idx, (x_batch, y_batch) in enumerate(loader):
-            x_batch = Variable(x_batch)
-            y_batch = Variable(y_batch)
-            if cuda_device > 0:
-                x_batch = x_batch.cuda(cuda_device)
-                y_batch = y_batch.cuda(cuda_device)
+        for batch_idx, batch_data in enumerate(loader):
+            if len(batch_data) == 1:
+                # no target
+                input_batch = batch_data[0]
+                has_target = False
+            elif len(batch_data) == 2:
+                input_batch = batch_data[0]
+                target_batch = batch_data[1]
+                has_target = True
+            if not isinstance(input_batch, (list,tuple)):
+                input_batch = [input_batch]
+            input_batch = [Variable(ins) for ins in input_batch]
+            if has_target:
+                if not isinstance(target_batch, (list,tuple)):
+                    target_batch = [target_batch]
+                target_batch = [Variable(targs) for targs in target_batch]
+                nb_targets = len(target_batch)
 
-            y_pred = self(x_batch)
-            loss = self._loss(y_pred, y_batch)
-            total_loss += loss.data[0]*len(x_batch)
-            total_samples += len(x_batch)
+            if cuda_device > -1:
+                input_batch = [ins.cuda(cuda_device) for ins in input_batch]
+                if has_target:
+                    target_batch = [targs.cuda(cuda_device) for targs in target_batch]
+
+            outputs = self(*input_batch)
+
+            if not isinstance(outputs, (list,tuple)):
+                outputs = [outputs]
+            if has_target:
+                loss = self._loss_fns[0](outputs[0], target_batch[0])
+                for loss_idx in range(1,nb_targets):
+                    if self._has_multiple_loss_fns:
+                        loss += self._loss_fns[loss_idx](outputs[loss_idx], target_batch[loss_idx])
+                    else:
+                        loss += self._loss_fns[0](outputs[loss_idx], target_batch[loss_idx])
+            else:
+                loss = self._loss_fns[0](outputs[0])
+                for loss_idx in range(1,nb_targets):
+                    if self._has_multiple_loss_fns:
+                        loss += self._loss_fns[loss_idx](outputs[loss_idx])
+                    else:
+                        loss += self._loss_fns[0](outputs[loss_idx])
+
+            if self._has_metrics:
+                metric_logs = metrics(outputs[0], target_batch[0])
+
+            total_loss += loss.data[0]*len(input_batch[0])
+            total_samples += len(input_batch[0])
+
         self.train()
-        return total_loss / total_samples
+        if self._has_metrics:
+            return total_loss / float(total_samples), metric_logs
+        else:
+            return total_loss / float(total_samples)
 
     def evaluate_on_batch(self, 
                           inputs, 
@@ -609,7 +653,7 @@ class SuperModule(nn.Module):
         if has_target:
             target_batch = [Variable(y) for y in targets]
 
-        if cuda_device > 0:
+        if cuda_device > -1:
             input_batch = [ins.cuda(cuda_device) for ins in input_batch]
             if has_target:
                 target_batch = [targs.cuda(cuda_device) for targs in target_batch]
