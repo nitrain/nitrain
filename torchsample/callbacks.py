@@ -112,6 +112,14 @@ class TQDM(Callback):
         every SuperModule if verbose > 0
         """
         super(TQDM, self).__init__()
+        
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # make sure the dbconnection gets closed
+        if self.progbar:
+            self.progbar.close()
 
     def on_epoch_begin(self, epoch, logs=None):
         self.progbar = tqdm(total=logs['nb_batches'],
