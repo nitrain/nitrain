@@ -12,6 +12,7 @@ import warnings
 import os
 import csv
 import time
+
 from tqdm import tqdm
 
 import torch
@@ -111,7 +112,16 @@ class TQDM(Callback):
         This callback is automatically applied to 
         every SuperModule if verbose > 0
         """
+        self.progbar = None
         super(TQDM, self).__init__()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # make sure the dbconnection gets closed
+        if self.progbar is not None:
+            self.progbar.close()
 
     def on_epoch_begin(self, epoch, logs=None):
         self.progbar = tqdm(total=logs['nb_batches'],
@@ -137,7 +147,6 @@ class TQDM(Callback):
             if k.endswith('metric'):
                 log_data[k.split('_metric')[0]] = '%.02f' % v
         self.progbar.set_postfix(log_data)
-
 
 class History(Callback):
     """
