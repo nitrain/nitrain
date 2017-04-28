@@ -168,6 +168,12 @@ class SuperModule(nn.Module):
                 }
                 callbacks.on_epoch_begin(epoch_idx, epoch_logs)
 
+                # shuffle inputs and targets if necessary
+                if shuffle:
+                    rand_idx = torch.randperm(len(inputs[0]))
+                    inputs = [ins[rand_idx] for ins in inputs]
+                    targets = [tars[rand_idx] for tars in targets]
+
                 for batch_idx in range(nb_batches):
                     batch_logs = {'batch_idx': batch_idx}  
                     callbacks.on_batch_begin(batch_idx, batch_logs) 
