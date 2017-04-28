@@ -238,7 +238,8 @@ class SuperModule(nn.Module):
             
             # END OF EPOCH
             epoch_logs.update(self.history.batch_metrics)
-            epoch_logs.update(metric_logs)
+            if self._has_metrics:
+                epoch_logs.update(metric_logs)
 
             callbacks.on_epoch_end(epoch_idx, epoch_logs)
 
@@ -320,7 +321,7 @@ class SuperModule(nn.Module):
                     input_batch = [ins.cuda(cuda_device) for ins in input_batch]
                     if has_target:
                         target_batch = [targs.cuda(cuda_device) for targs in target_batch]
-                
+
                 batch_logs['batch_samples'] = len(input_batch[0])
 
                 ## ZERO GRAD AND FORWARD PASS
@@ -379,7 +380,8 @@ class SuperModule(nn.Module):
             
             # END OF EPOCH
             epoch_logs.update(self.history.batch_metrics)
-            epoch_logs.update(metric_logs)
+            if self._has_metrics:
+                epoch_logs.update(metric_logs)
 
             callbacks.on_epoch_end(epoch_idx, epoch_logs)
 
