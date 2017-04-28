@@ -286,8 +286,8 @@ class RandomCrop(object):
         self.crop_size = crop_size
 
     def __call__(self, x, y=None):
-        h_idx = random.randint(0,x.size(1)-self.crop_size[0]+1)
-        w_idx = random.randint(0,x.size(2)-self.crop_size[1]+1)
+        h_idx = random.randint(0,x.size(1)-self.crop_size[0])
+        w_idx = random.randint(0,x.size(2)-self.crop_size[1])
         x = x[:, h_idx:(h_idx+self.crop_size[0]),w_idx:(w_idx+self.crop_size[1])]
         if y is not None:
             y = y[:, h_idx:(h_idx+self.crop_size[0]),w_idx:(w_idx+self.crop_size[1])] 
