@@ -25,7 +25,6 @@ class SuperModule(nn.Module):
         SuperModule for high-level training of Pytorch models
 
         TODO:
-            - actually do something when shuffle=True on fit()
         OTHER:
             - add more metrics
         """
