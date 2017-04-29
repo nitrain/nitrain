@@ -164,3 +164,10 @@ We provide the following datasets which provide general structure and iterators 
 
 - `FolderDataset()` 
 
+
+## Acknowledgements
+Thank you to the following people and contributors:
+- All Keras contributors
+- @deallynomore
+- @recastrodiaz
+
