@@ -24,11 +24,7 @@ class ModelTrainer(object):
 
     def __init__(self, model):
         """
-        SuperModule for high-level training of Pytorch models
-
-        TODO:
-        OTHER:
-            - add more metrics
+        ModelTrainer for high-level training of Pytorch models
         """
         self.model = model
 
