@@ -76,9 +76,15 @@ class Normal(Initializer):
 
 class Uniform(Initializer):
 
-    def __init__(self, a=0, b=1):
+    def __init__(self, a=0, b=1, bias=False, bias_only=False, module_filter='*'):
         self.a = a
         self.b = b
+
+        self.bias = bias
+        self.bias_only = bias_only
+        self.module_filter = module_filter
+
+        super(Uniform, self).__init__()
 
     def __call__(self, module):
         if self.bias_only:
@@ -91,10 +97,16 @@ class Uniform(Initializer):
 
 class Constant(Initializer):
 
-    def __init__(self, val):
+    def __init__(self, val, bias=False, bias_only=False, module_filter='*'):
         self.val = val
 
-    def __call__(self, module):
+        self.bias = bias
+        self.bias_only = bias_only
+        self.module_filter = module_filter
+
+        super(Constant, self).__init__()
+
+    def __call__(self, module, bias=False, bias_only=False, module_filter='*'):
         if self.bias_only:
             torch.nn.init.constant(module.bias.data, val=self.val)
         else:
@@ -105,8 +117,14 @@ class Constant(Initializer):
 
 class XavierUniform(Initializer):
 
-    def __init__(self, gain=1):
+    def __init__(self, gain=1, bias=False, bias_only=False, module_filter='*'):
         self.gain = gain
+
+        self.bias = bias
+        self.bias_only = bias_only
+        self.module_filter = module_filter
+
+        super(XavierUniform, self).__init__()
 
     def __call__(self, module):
         if self.bias_only:
@@ -119,8 +137,14 @@ class XavierUniform(Initializer):
 
 class XavierNormal(Initializer):
 
-    def __init__(self, gain=1):
+    def __init__(self, gain=1, bias=False, bias_only=False, module_filter='*'):
         self.gain = gain
+        
+        self.bias = bias
+        self.bias_only = bias_only
+        self.module_filter = module_filter
+
+        super(XavierNormal, self).__init__()
 
     def __call__(self, module):
         if self.bias_only:
@@ -133,9 +157,15 @@ class XavierNormal(Initializer):
 
 class KaimingUniform(Initializer):
 
-    def __init__(self, a=0, mode='fan_in'):
+    def __init__(self, a=0, mode='fan_in', bias=False, bias_only=False, module_filter='*'):
         self.a = a
         self.mode = mode
+        
+        self.bias = bias
+        self.bias_only = bias_only
+        self.module_filter = module_filter
+
+        super(KaimingUniform, self).__init__()
 
     def __call__(self, module):
         if self.bias_only:
@@ -148,9 +178,15 @@ class KaimingUniform(Initializer):
 
 class KaimingNormal(Initializer):
 
-    def __init__(self, a=0, mode='fan_in'):
+    def __init__(self, a=0, mode='fan_in', bias=False, bias_only=False, module_filter='*'):
         self.a = a
         self.mode = mode
+        
+        self.bias = bias
+        self.bias_only = bias_only
+        self.module_filter = module_filter
+
+        super(KaimingNormal, self).__init__()
 
     def __call__(self, module):
         if self.bias_only:
@@ -163,8 +199,14 @@ class KaimingNormal(Initializer):
 
 class Orthogonal(Initializer):
 
-    def __init__(self, gain=1):
+    def __init__(self, gain=1, bias=False, bias_only=False, module_filter='*'):
         self.gain = gain
+        
+        self.bias = bias
+        self.bias_only = bias_only
+        self.module_filter = module_filter
+
+        super(Orthogonal, self).__init__()
 
     def __call__(self, module):
         if self.bias_only:
@@ -177,9 +219,15 @@ class Orthogonal(Initializer):
 
 class Sparse(Initializer):
 
-    def __init__(self, sparsity, std=0.01):
+    def __init__(self, sparsity, std=0.01, bias=False, bias_only=False, module_filter='*'):
         self.sparsity = sparsity
         self.std = std
+        
+        self.bias = bias
+        self.bias_only = bias_only
+        self.module_filter = module_filter
+
+        super(Sparse, self).__init__()
 
     def __call__(self, module):
         if self.bias_only:
