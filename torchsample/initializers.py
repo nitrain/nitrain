@@ -39,6 +39,12 @@ def _validate_initializer_string(init):
 
 class Initializer(object):
 
+    def __call__(self, module):
+        raise NotImplementedError('Initializer must implement this method')
+
+
+class GeneralInitializer(object):
+
     def __init__(self, initializer, bias=False, bias_only=False, **kwargs):
         self._initializer = _validate_initializer_string(initializer)
         self.kwargs = kwargs
