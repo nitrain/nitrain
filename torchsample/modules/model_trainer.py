@@ -5,14 +5,13 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import math
-
 import torch
-
 from torch.autograd import Variable
 
 # local imports
 from ._utils import (validate_loss_input, validate_metric_input, 
                      validate_optimizer_input, validate_initializer_input)
+
 from ..callbacks import CallbackModule, History, TQDM
 from ..constraints import ConstraintModule
 from ..initializers import InitializerModule
@@ -126,18 +125,23 @@ class ModelTrainer(object):
     def compile(self,
                 optimizer,
                 loss,
-                regularizers,
-                initializers,
-                callbacks,
-                constraints,
-                metrics):
+                regularizers=None,
+                initializers=None,
+                callbacks=None,
+                constraints=None,
+                metrics=None):
         self.set_optimizer(optimizer)
         self.set_loss(loss)
-        self.set_regularizers(regularizers)
-        self.set_initializers(initializers)
-        self.set_callbacks(callbacks)
-        self.set_constraints(constraints)
-        self.set_metrics(metrics)
+        if regularizers is not None:
+            self.set_regularizers(regularizers)
+        if initializers is not None:
+            self.set_initializers(initializers)
+        if callbacks is not None:
+            self.set_callbacks(callbacks)
+        if constraints is not None:
+            self.set_constraints(constraints)
+        if metrics is not None:
+            self.set_metrics(metrics)
 
     def fit(self,
             inputs, 
@@ -192,7 +196,7 @@ class ModelTrainer(object):
             if verbose > 0:
                 progressbar = [pbar]
             callbacks = CallbackModule(self._callbacks + progressbar)
-            callbacks.set_model(self.model)
+            callbacks.set_model(self)
 
             callbacks.on_train_begin()
 
