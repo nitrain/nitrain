@@ -5,6 +5,9 @@ This package provides a few things:
 - Comprehensive data augmentation, transforms, sampling, and loading
 - Utility tensor and variable functions so you don't need numpy as often
 
+<b>Want to contribute?</b> Check the [issues page](https://github.com/ncullen93/torchsample/issues)
+ for those tagged with [contributions welcome].
+
 ## SuperModule
 The `SuperModule` class provides a high-level training interface which abstracts
 away the training loop while providing callbacks, constraints, and regularizers. 
