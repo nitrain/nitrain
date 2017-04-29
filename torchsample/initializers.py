@@ -22,6 +22,7 @@ class InitializerModule(object):
         for initializer in self._initializers:
             self._apply(model, initializer)
 
+
 def _validate_initializer_string(init):
     dir_f = dir(torch.nn.init)
     loss_fns = [d.lower() for d in dir_f]
@@ -43,7 +44,7 @@ class Initializer(object):
         raise NotImplementedError('Initializer must implement this method')
 
 
-class GeneralInitializer(object):
+class GeneralInitializer(Initializer):
 
     def __init__(self, initializer, bias=False, bias_only=False, **kwargs):
         self._initializer = _validate_initializer_string(initializer)

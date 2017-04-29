@@ -12,11 +12,13 @@ from torch.autograd import Variable
 
 # local imports
 from ._utils import (validate_loss_input, validate_metric_input, 
-                     validate_optimizer_input)
+                     validate_optimizer_input, validate_initializer_input)
 from ..callbacks import CallbackModule, History, TQDM
 from ..constraints import ConstraintModule
+from ..initializers import InitializerModule
 from ..metrics import MetricsModule
 from ..regularizers import RegularizerModule
+
 
 class SuperModule(nn.Module):
 
@@ -45,6 +47,9 @@ class SuperModule(nn.Module):
         # losses
         self._loss_fns = []
         self._has_multiple_loss_fns = False
+        # initializers
+        self._initializers = []
+        self._has_initializers = False
 
         # other properties
         self._stop_training = False
@@ -75,20 +80,24 @@ class SuperModule(nn.Module):
         self._optimizer = optimizer(parameters, **kwargs)
 
     def set_regularizers(self, regularizers):
-        self._has_regularizers = True
+        if not isinstance(regularizers, (list,tuple)):
+            regularizers = [regularizers]
         self._regularizers = regularizers
+        self._has_regularizers = True
 
     def add_regularizer(self, regularizer):
-        self._has_regularizers = True
         self._regularizers.append(regularizer)
+        self._has_regularizers = True
 
     def set_constraints(self, constraints):
-        self._has_constraints = True
+        if not isinstance(constraints, (list,tuple)):
+            constraints = [constraints]
         self._constraints = constraints
+        self._has_constraints = True
 
     def add_constraint(self, constraint):
-        self._has_constraints = True
         self._constraints.append(constraint)
+        self._has_constraints = True
 
     def set_callbacks(self, callbacks):
         self._callbacks += callbacks
@@ -104,8 +113,35 @@ class SuperModule(nn.Module):
         self._metrics = metrics
 
     def add_metric(self, metric):
-        self._has_metrics = True
         self._metrics.append(validate_metric_input(metric))
+        self._has_metrics = True
+
+    def set_initializers(self, initializers):
+        if not isinstance(initializers, (list,tuple)):
+            initializers = [initializers]
+        initializers = [validate_initializer_input(it) for it in initializers]
+        self._has_initializers = True
+        self._initializers = initializers
+
+    def add_initializer(self, initializer):
+        self._initializers.append(validate_initializer_input(initializer))
+        self._has_initializers = True
+
+    def compile(self,
+                optimizer,
+                loss,
+                regularizers,
+                initializers,
+                callbacks,
+                constraints,
+                metrics):
+        self.set_optimizer(optimizer)
+        self.set_loss(loss)
+        self.set_regularizers(regularizers)
+        self.set_initializers(initializers)
+        self.set_callbacks(callbacks)
+        self.set_constraints(constraints)
+        self.set_metrics(metrics)
 
     def fit(self,
             inputs, 
@@ -148,8 +184,14 @@ class SuperModule(nn.Module):
         if self._has_metrics:
             metrics = MetricsModule(self._metrics)
 
-        ## create callbacks
+        ## create initializers
+        if self._has_initializers:
+            initializers = InitializerModule(self._initializers)
+            # initialize model
+            initializers(self)
+
         with TQDM() as pbar:
+            ## create callbacks
             progressbar = []
             if verbose > 0:
                 progressbar = [pbar]
@@ -285,6 +327,12 @@ class SuperModule(nn.Module):
             self.set_metrics(metrics)
         if self._has_metrics:
             metrics = MetricsModule(self._metrics)
+
+        ## create initializers
+        if self._has_initializers:
+            initializers = InitializerModule(self._initializers)
+            # initialize model
+            initializers(self)
 
         ## create callbacks
         if verbose > 0:

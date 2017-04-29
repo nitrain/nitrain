@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from ..metrics import Metric, CategoricalAccuracy, BinaryAccuracy
+from ..initializers import GeneralInitializer, Initializer
 
 def validate_metric_input(metric):
     if isinstance(metric, str):
@@ -43,5 +44,17 @@ def validate_optimizer_input(optimizer):
         return getattr(optim, dir_optim[str_idx])
     elif hasattr(optimizer, 'step') and hasattr(optimizer, 'zero_grad'):
         return optimizer
+    else:
+        raise ValueError('Invalid optimizer input')
+
+def validate_initializer_input(initializer):
+    if isinstance(initializer, str):
+        try:
+            initializer = GeneralInitializer(initializer)
+        except:
+            raise ValueError('Invalid initializer string input - must match pytorch function.')
+        return initializer
+    elif callable(initializer):
+        return initializer
     else:
         raise ValueError('Invalid optimizer input')
