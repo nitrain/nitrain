@@ -1,12 +1,13 @@
 
+import datetime
 
 import torch.nn.functional as F
 import torch.optim as optim
 
 from ..metrics import Metric, CategoricalAccuracy, BinaryAccuracy
-from ..initializers import GeneralInitializer, Initializer
+from ..initializers import GeneralInitializer
 
-def validate_metric_input(metric):
+def _validate_metric_input(metric):
     if isinstance(metric, str):
         if metric.upper() == 'CATEGORICAL_ACCURACY' or metric.upper() == 'ACCURACY':
             return CategoricalAccuracy()
@@ -19,7 +20,7 @@ def validate_metric_input(metric):
     else:
         raise ValueError('Invalid metric input')
 
-def validate_loss_input(loss):
+def _validate_loss_input(loss):
     dir_f = dir(F)
     loss_fns = [d.lower() for d in dir_f]
     if isinstance(loss, str):
@@ -33,7 +34,7 @@ def validate_loss_input(loss):
     else:
         raise ValueError('Invalid loss input')
 
-def validate_optimizer_input(optimizer):
+def _validate_optimizer_input(optimizer):
     dir_optim = dir(optim)
     opts = [o.lower() for o in dir_optim]
     if isinstance(optimizer, str):
@@ -47,7 +48,7 @@ def validate_optimizer_input(optimizer):
     else:
         raise ValueError('Invalid optimizer input')
 
-def validate_initializer_input(initializer):
+def _validate_initializer_input(initializer):
     if isinstance(initializer, str):
         try:
             initializer = GeneralInitializer(initializer)
@@ -58,3 +59,6 @@ def validate_initializer_input(initializer):
         return initializer
     else:
         raise ValueError('Invalid optimizer input')
+
+def _get_current_time():
+    return datetime.datetime.now().strftime("%B %d, %Y - %I:%M%p")

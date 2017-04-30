@@ -148,6 +148,7 @@ class TQDM(Callback):
                 log_data[k.split('_metric')[0]] = '%.02f' % v
         self.progbar.set_postfix(log_data)
 
+
 class History(Callback):
     """
     Callback that records events into a `History` object.
@@ -160,15 +161,13 @@ class History(Callback):
         self.seen = 0.
 
     def on_train_begin(self, logs=None):
-        self.epoch_metrics = {
-            'epochs': [],
-            'losses': [],
-            'regularizer_losses': [],
-            'constraint_losses': [],
-            'val_losses': []
-        }
-        #if logs['has_validation_data']:
-        #    self.batch_metrics['val_loss'] = 0.
+        self.losses = []
+        if self.model._has_regularizers:
+            self.regularizer_losses = []
+        if self.model._has_constraints:
+            self.constraint_losses = []
+        if logs['has_validation_data']:
+            self.val_losses = []
 
     def on_epoch_begin(self, epoch, logs=None):
         self.batch_metrics = {
@@ -180,10 +179,20 @@ class History(Callback):
             self.batch_metrics['constraint_loss'] = 0.
         self.seen = 0.
 
+    def on_epoch_end(self, epoch, logs=None):
+        self.losses.append(logs['loss'])
+        if self.model._has_regularizers:
+            self.regularizer_losses.append(logs['regularizer_loss'])
+        if self.model._has_constraints:
+            self.constraint_losses.append(logs['constraint_loss'])
+        if logs['has_validation_data']:
+            self.val_losses.append(logs['val_loss'])
+
     def on_batch_end(self, batch, logs=None):
         for k in self.batch_metrics:
             self.batch_metrics[k] = (self.seen*self.batch_metrics[k] + logs[k]*logs['batch_samples']) / (self.seen+logs['batch_samples'])
         self.seen += logs['batch_samples']
+
 
 class ModelCheckpoint(Callback):
     """
@@ -519,6 +528,102 @@ class CSVLogger(Callback):
     def on_train_end(self, logs=None):
         self.csv_file.close()
         self.writer = None
+
+
+class ExperimentLogger(Callback):
+
+    def __init__(self,
+                 directory,
+                 filename='Experiment_Logger.csv',
+                 save_prefix='Model_', 
+                 separator=',', 
+                 append=True):
+        """
+        Logs experiment runs to a single file. Useful for
+        tracking multiple model runs over time. Can record
+        start and end times, key metrics of model performance, 
+        and location of saved model state dicts and architectures.
+
+        Arguments
+        ---------
+        """
+        self.directory = directory
+        self.filename = filename
+        self.file = os.path.join(self.directory, self.filename)
+        self.save_prefix = save_prefix
+        self.sep = separator
+        self.append = append
+        self.writer = None
+        self.keys = None
+        self.append_header = True
+        super(ExperimentLogger, self).__init__()
+
+    def on_train_begin(self, logs=None):
+        """
+        Write the following when training starts:
+            - model name
+            - start time (year, month, day, hour, minute)
+            - model archecture (model.__repr__()) to separate file
+            - path to separate model architecture file
+        """
+        if self.append:
+            if os.path.exists(self.file):
+                with open(self.file) as f:
+                    self.append_header = not bool(len(f.readline()))
+
+        REJECT_KEYS={'has_validation_data'}
+        MODEL_NAME = self.save_prefix + '0' # figure out how to get model name
+        self.row_dict = OrderedDict({'model': MODEL_NAME})
+        self.keys = sorted(logs.keys())
+        for k in self.keys:
+            if k not in REJECT_KEYS:
+                self.row_dict[k] = logs[k]
+
+
+    def on_train_end(self, logs=None):
+        """
+        Write the following when training ends:
+            - end time (year, month, day, hour, minute)
+            - loss for train set and val set if possible
+            - all additional metrics for train set and val set if possible
+            - path to state_dict saved if possible
+        """
+        if self.append:
+            self.csv_file = open(self.file, 'a')
+        else:
+            self.csv_file = open(self.file, 'w')
+
+        logs = logs or {}
+        REJECT_KEYS = {}
+
+        def handle_value(k):
+            is_zero_dim_tensor = isinstance(k, torch.Tensor) and k.dim() == 0
+            if isinstance(k, Iterable) and not is_zero_dim_tensor:
+                return '"[%s]"' % (', '.join(map(str, k)))
+            else:
+                return k
+
+        if not self.writer:
+            self.keys = list(sorted(logs.keys()))+list(self.row_dict.keys())
+
+            class CustomDialect(csv.excel):
+                delimiter = self.sep
+
+            self.writer = csv.DictWriter(self.csv_file,
+                    fieldnames=['model'] + [k for k in self.keys if k not in REJECT_KEYS], 
+                    dialect=CustomDialect)
+            if self.append_header:
+                self.writer.writeheader()
+
+        row_dict = self.row_dict
+        for k in sorted(logs.keys()):
+            if k not in REJECT_KEYS:
+                row_dict[k] = logs[k]
+        self.writer.writerow(row_dict)
+        self.csv_file.flush()
+
+        self.csv_file.close()
+        self.writer = None        
 
 
 class LambdaCallback(Callback):

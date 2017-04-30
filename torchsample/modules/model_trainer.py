@@ -9,9 +9,9 @@ import torch
 from torch.autograd import Variable
 
 # local imports
-from ._utils import (validate_loss_input, validate_metric_input, 
-                     validate_optimizer_input, validate_initializer_input)
-
+from ._utils import (_validate_loss_input, _validate_metric_input, 
+                     _validate_optimizer_input, _validate_initializer_input,
+                     _get_current_time)
 from ..callbacks import CallbackModule, History, TQDM
 from ..constraints import ConstraintModule
 from ..initializers import InitializerModule
@@ -60,7 +60,7 @@ class ModelTrainer(object):
         self._loss = loss
         if not isinstance(loss, (list,tuple)):
             loss = [loss]
-        loss = [validate_loss_input(l) for l in loss]
+        loss = [_validate_loss_input(l) for l in loss]
         if len(loss) > 0:
             self._has_multiple_loss_fns = True
         self._loss_fns = loss
@@ -71,7 +71,7 @@ class ModelTrainer(object):
         else:
             parameters = self.model.parameters()
 
-        optimizer = validate_optimizer_input(optimizer)
+        optimizer = _validate_optimizer_input(optimizer)
         self._optimizer = optimizer(parameters, **kwargs)
 
     def set_regularizers(self, regularizers):
@@ -103,23 +103,23 @@ class ModelTrainer(object):
     def set_metrics(self, metrics):
         if not isinstance(metrics, (list,tuple)):
             metrics = [metrics]
-        metrics = [validate_metric_input(m) for m in metrics]
+        metrics = [_validate_metric_input(m) for m in metrics]
         self._has_metrics = True
         self._metrics = metrics
 
     def add_metric(self, metric):
-        self._metrics.append(validate_metric_input(metric))
+        self._metrics.append(_validate_metric_input(metric))
         self._has_metrics = True
 
     def set_initializers(self, initializers):
         if not isinstance(initializers, (list,tuple)):
             initializers = [initializers]
-        initializers = [validate_initializer_input(it) for it in initializers]
+        initializers = [_validate_initializer_input(it) for it in initializers]
         self._has_initializers = True
         self._initializers = initializers
 
     def add_initializer(self, initializer):
-        self._initializers.append(validate_initializer_input(initializer))
+        self._initializers.append(_validate_initializer_input(initializer))
         self._has_initializers = True
 
     def compile(self,
@@ -151,7 +151,6 @@ class ModelTrainer(object):
             batch_size=32,
             shuffle=False,
             cuda_device=-1,
-            metrics=None,
             verbose=1):
         if not isinstance(inputs, (list,tuple)):
             inputs = [inputs]
@@ -179,15 +178,12 @@ class ModelTrainer(object):
             constraints.set_model(self.model)
 
         ## create metrics
-        if metrics is not None:
-            self.set_metrics(metrics)
         if self._has_metrics:
             metrics = MetricsModule(self._metrics)
 
         ## create initializers
         if self._has_initializers:
             initializers = InitializerModule(self._initializers)
-            # initialize model
             initializers(self.model)
 
         with TQDM() as pbar:
@@ -198,7 +194,11 @@ class ModelTrainer(object):
             callbacks = CallbackModule(self._callbacks + progressbar)
             callbacks.set_model(self)
 
-            callbacks.on_train_begin()
+            train_begin_logs = {
+                'start_time': _get_current_time(),
+                'has_validation_data': has_validation_data
+            }
+            callbacks.on_train_begin(logs=train_begin_logs)
 
             nb_batches = int(math.ceil(inputs[0].size(0) / batch_size))
             for epoch_idx in range(nb_epoch):
@@ -299,7 +299,16 @@ class ModelTrainer(object):
                 if self._stop_training:
                     break
 
-            callbacks.on_train_end()
+        train_logs = {
+            'final_loss': self.history.losses[-1],
+            'best_loss': min(self.history.losses),
+            'end_time': _get_current_time()
+        }
+        if has_validation_data:
+            train_logs['final_val_loss'] = self.history.val_losses[-1]
+            train_logs['best_val_loss'] = min(self.history.val_losses)
+
+        callbacks.on_train_end(logs=train_logs)
 
     def fit_loader(self, 
                    loader, 
