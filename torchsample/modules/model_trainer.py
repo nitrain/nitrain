@@ -45,6 +45,9 @@ class ModelTrainer(object):
         # initializers
         self._initializers = []
         self._has_initializers = False
+        # transforms
+        self._transforms = []
+        self._has_transforms = False
 
         # other properties
         self._stop_training = False
@@ -122,6 +125,24 @@ class ModelTrainer(object):
         self._initializers.append(_validate_initializer_input(initializer))
         self._has_initializers = True
 
+    def set_transforms(self, transforms):
+        if not isinstance(transforms, (list,tuple)):
+            transforms = [transforms, None, None]
+        if len(transforms) == 1:
+            transforms = [transforms, None, None]
+        elif len(transforms) == 2:
+            transforms = [transforms, transforms, None]
+
+        if transforms[0] is not None:
+            self._has_input_transform = True
+        if transforms[1] is not None:
+            self._has_target_transform = True
+        if transforms[2] is not None:
+            self._has_co_transform = True
+
+        self._has_transforms = True
+        self._transforms = transforms
+
     def compile(self,
                 optimizer,
                 loss,
@@ -129,8 +150,11 @@ class ModelTrainer(object):
                 initializers=None,
                 callbacks=None,
                 constraints=None,
-                metrics=None):
-        self.set_optimizer(optimizer)
+                metrics=None,
+                transforms=None,
+                **kwargs):
+        opt_kwargs = {k.split('optimizer_')[1]:v for k,v in kwargs.items() if 'optimizer_' in k}
+        self.set_optimizer(optimizer, **opt_kwargs)
         self.set_loss(loss)
         if regularizers is not None:
             self.set_regularizers(regularizers)
@@ -142,6 +166,8 @@ class ModelTrainer(object):
             self.set_constraints(constraints)
         if metrics is not None:
             self.set_metrics(metrics)
+        if transforms is not None:
+            self.set_transforms(transforms)
 
     def fit(self,
             inputs, 
@@ -152,9 +178,12 @@ class ModelTrainer(object):
             shuffle=False,
             cuda_device=-1,
             verbose=1):
+        # convert inputs to a list if not already
         if not isinstance(inputs, (list,tuple)):
             inputs = [inputs]
 
+        # determine whether targets were given
+        # and convert targets to list if not already
         if targets is None:
             has_target = False
         else:
@@ -163,32 +192,35 @@ class ModelTrainer(object):
                 targets = [targets]
             nb_targets = len(targets)
 
+        # store whether validation data was given
         if validation_data is None:
             has_validation_data = False
         else:
-            has_validation_data = True            
+            has_validation_data = True      
 
-        ## create regularizers
+        # create regularizers
         if self._has_regularizers:
             regularizers = RegularizerModule(self._regularizers)
 
-        ## create constraints
+        # create constraints
         if self._has_constraints:
             constraints = ConstraintModule(self._constraints)
             constraints.set_model(self.model)
 
-        ## create metrics
+        # create metrics
         if self._has_metrics:
             metrics = MetricsModule(self._metrics)
 
-        ## create initializers
+        # create initializers
         if self._has_initializers:
             initializers = InitializerModule(self._initializers)
             initializers(self.model)
 
+        # enter context-manager for progress bar
         with TQDM() as pbar:
-            ## create callbacks
+            # create callbacks
             progressbar = []
+            # add progress bar if necessary
             if verbose > 0:
                 progressbar = [pbar]
             callbacks = CallbackModule(self._callbacks + progressbar)
@@ -200,7 +232,10 @@ class ModelTrainer(object):
             }
             callbacks.on_train_begin(logs=train_begin_logs)
 
+            # calculate total number of batches
             nb_batches = int(math.ceil(inputs[0].size(0) / batch_size))
+
+            # loop through each epoch
             for epoch_idx in range(nb_epoch):
                 epoch_logs = {
                     'nb_batches': nb_batches,
@@ -215,25 +250,37 @@ class ModelTrainer(object):
                     inputs = [ins[rand_idx] for ins in inputs]
                     targets = [tars[rand_idx] for tars in targets]
 
+                # loop through each batch
                 for batch_idx in range(nb_batches):
                     batch_logs = {'batch_idx': batch_idx}  
                     callbacks.on_batch_begin(batch_idx, batch_logs) 
 
+                    # grab an input batch and a target batch if necessary
                     input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size]) for x in inputs]
                     if has_target:
                         target_batch = [Variable(y[batch_idx*batch_size:(batch_idx+1)*batch_size]) for y in targets]
 
+                    # move batch to GPU if necessary
                     if cuda_device > -1:
                         input_batch = [ins.cuda(cuda_device) for ins in input_batch]
                         if has_target:
                             target_batch = [targs.cuda(cuda_device) for targs in target_batch]
 
+                    # apply input, target, and input+target transforms if necessary
+                    if self._has_input_transform:
+                        input_batch = [self._transforms[0](ins) for ins in input_batch]
+                    if self._has_target_transform:
+                        target_batch = [self._transforms[1](tars) for tars in target_batch]
+                    if self._has_co_transform:
+                        input_batch, target_batch = zip(*[self._transforms[2](ins, tars) for ins, tars in zip(input_batch, target_batch)])
+                    
                     batch_logs['batch_samples'] = len(input_batch[0])
 
-                    ## ZERO GRAD AND FORWARD PASS
+                    # zero grads and forward pass
                     self._optimizer.zero_grad()
                     outputs = self.model(*input_batch)
 
+                    # apply multiple loss functions if necessary
                     if not isinstance(outputs, (list,tuple)):
                         outputs = [outputs]
                     if has_target:
@@ -251,11 +298,13 @@ class ModelTrainer(object):
                             else:
                                 loss += self._loss_fns[0](outputs[loss_idx])
                     
+                    # add regularizers to loss if necessary
                     if self._has_regularizers:
                         regularizer_loss = regularizers(self.model)
                         loss += regularizer_loss
                         batch_logs['regularizer_loss'] = regularizer_loss
 
+                    # add lagrangian constraints to loss if necessary
                     if self._has_constraints and constraints.has_lagrangian:
                         constraint_loss = constraints(self.model)
                         loss += constraint_loss
@@ -263,18 +312,22 @@ class ModelTrainer(object):
 
                     batch_logs['loss'] = loss.data[0]
 
+                    # calculate custom/special batch metrics if necessary
                     if self._has_metrics:
                         metric_logs = metrics(outputs[0], target_batch[0])
                         batch_logs.update(metric_logs)
 
-                    # BACKWARD PASS AND OPTIMIZER STEP
+                    # backward pass and optimizer step
                     loss.backward()
                     self._optimizer.step()
 
                     callbacks.on_batch_end(batch_idx, batch_logs)
+
+                    # apply explicit constraints if necessary
                     if self._has_constraints:
                         constraints.on_batch_end(batch_idx)
 
+                # validation evaluation if necessary
                 if has_validation_data:
                     val_loss = self.evaluate(*validation_data, 
                                              batch_size=batch_size,
@@ -292,10 +345,13 @@ class ModelTrainer(object):
 
                 callbacks.on_epoch_end(epoch_idx, epoch_logs)
 
+                # apply Epoch-level constraints if necessary
                 if self._has_constraints:
                     constraints.on_epoch_end(epoch_idx)
+                # reset all metric counters
                 if self._has_metrics:
                     metrics.reset()
+                # exit the training loop if necessary (e.g. EarlyStopping)
                 if self._stop_training:
                     break
 
