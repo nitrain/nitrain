@@ -19,7 +19,7 @@ from ..metrics import MetricsModule
 from ..regularizers import RegularizerModule
 
 
-class ModelTrainer(object):
+class ModuleTrainer(object):
 
     def __init__(self, model):
         """
@@ -322,7 +322,8 @@ class ModelTrainer(object):
                         
                     # add regularizers to loss if necessary
                     if self._has_regularizers:
-                        regularizer_loss = regularizers(self.model)
+                        regularizer_loss = regularizers(model=self.model, 
+                                                        model_loss=loss.data[0])
                         loss += regularizer_loss
                         batch_logs['regularizer_loss'] = regularizer_loss.data[0]
 

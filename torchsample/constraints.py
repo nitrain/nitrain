@@ -87,8 +87,8 @@ class UnitNorm(Constraint):
             return self.scale * th.sum(th.clamp(norm-1,0,1e15))
         else:
             w = module.weight
-            w.div_(th.norm(w, 2, 1).expand_as(w))
-
+           # w.div_(th.norm(w, 2, 1).expand_as(w))
+            w = w.div(th.norm(w,2,1).expand_as(w))
 
 class MaxNorm(Constraint):
     """
@@ -127,7 +127,7 @@ class MaxNorm(Constraint):
             w = module.weight
             norm = th.norm(w,2,self.axis).expand_as(w) / float(self.value)
             norm = th.clamp(norm, -1e25, 1)
-            w.div_(norm)
+            w = w.div(norm)
 
 
 class NonNeg(Constraint):
