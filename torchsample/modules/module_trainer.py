@@ -322,8 +322,7 @@ class ModuleTrainer(object):
                         
                     # add regularizers to loss if necessary
                     if self._has_regularizers:
-                        regularizer_loss = regularizers(model=self.model, 
-                                                        model_loss=loss.data[0])
+                        regularizer_loss = regularizers(model=self.model)
                         loss += regularizer_loss
                         batch_logs['regularizer_loss'] = regularizer_loss.data[0]
 
