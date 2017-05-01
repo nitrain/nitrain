@@ -170,10 +170,10 @@ class ModelTrainer(object):
             self.set_transforms(transforms)
 
     def fit(self,
-            inputs, 
+            inputs,
             targets=None,
             validation_data=None,
-            nb_epoch=100, 
+            nb_epoch=100,
             batch_size=32,
             shuffle=False,
             cuda_device=-1,
