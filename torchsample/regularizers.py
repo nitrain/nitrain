@@ -9,16 +9,16 @@ class RegularizerModule(object):
         self.regularizers = regularizers
         self.loss = 0.
 
-    def _apply(self, module, regularizer, model_loss):
+    def _apply(self, module, regularizer):
         for name, module in module.named_children():
             if fnmatch(name, regularizer.module_filter) and hasattr(module, 'weight'):
-                self.loss += regularizer(module, model_loss)
+                self.loss += regularizer(module)
                 self._apply(module, regularizer)
 
-    def __call__(self, model, model_loss):
+    def __call__(self, model):
         self.loss = 0.
         for regularizer in self.regularizers:
-            self._apply(model, regularizer, model_loss)
+            self._apply(model, regularizer)
         return self.loss
 
     def __len__(self):
@@ -27,45 +27,37 @@ class RegularizerModule(object):
 
 class L1Regularizer(object):
 
-    def __init__(self, scale=0, relative=False, module_filter='*'):
+    def __init__(self, scale=0, module_filter='*'):
         self.scale = float(scale)
-        self.relative = relative
         self.module_filter = module_filter
 
-    def __call__(self, module, model_loss):
+    def __call__(self, module):
         w = module.weight
         value = th.sum(th.abs(w))
-        if self.relative:
-            loss = (self.scale * model_loss) * value
-        else:
-            loss = self.scale * value
+        loss = self.scale * value
         return loss
 
 
 class L2Regularizer(object):
 
-    def __init__(self, scale=0, relative=False, module_filter='*'):
+    def __init__(self, scale=0, module_filter='*'):
         self.scale = float(scale)
-        self.relative = relative
         self.module_filter = module_filter
 
-    def __call__(self, module, model_loss):
+    def __call__(self, module):
         w = module.weight
         value = th.sum(th.pow(w,2)) * self.scale
-        if self.relative:
-            loss = (self.scale * model_loss) * value
-        else:
-            loss = self.scale * value
+        loss = self.scale * value
         return loss
 
 
 class L1L2Regularizer(object):
 
-    def __init__(self, l1_scale=0, l2_scale=0, relative=False, module_filter='*'):
-        self.l1 = L1Regularizer(l1_scale, relative=relative)
-        self.l2 = L2Regularizer(l2_scale, relative=relative)
+    def __init__(self, l1_scale=0, l2_scale=0, module_filter='*'):
+        self.l1 = L1Regularizer(l1_scale)
+        self.l2 = L2Regularizer(l2_scale)
         self.module_filter = module_filter
 
-    def __call__(self, module, **kwargs):
+    def __call__(self, module):
         return self.l1(module) + self.l2(module)
 
