@@ -69,13 +69,16 @@ class ModelTrainer(object):
         self._loss_fns = loss
 
     def set_optimizer(self, optimizer, **kwargs):
-        if 'parameters' in kwargs:
-            parameters = kwargs['parameters']
-        else:
-            parameters = self.model.parameters()
+        if type(optimizer) is type:
+            if 'parameters' in kwargs:
+                parameters = kwargs['parameters']
+            else:
+                parameters = self.model.parameters()
 
-        optimizer = _validate_optimizer_input(optimizer)
-        self._optimizer = optimizer(parameters, **kwargs)
+            optimizer = _validate_optimizer_input(optimizer)
+            self._optimizer = optimizer(parameters, **kwargs)
+        else:
+            self._optimizer = optimizer
 
     def set_regularizers(self, regularizers):
         if not isinstance(regularizers, (list,tuple)):
