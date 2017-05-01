@@ -4,7 +4,7 @@ from __future__ import absolute_import
 
 from fnmatch import fnmatch
 
-import torch
+import torch as th
 
 
 class ConstraintModule(object):
@@ -82,12 +82,12 @@ class UnitNorm(Constraint):
 
     def __call__(self, module):
         if self.lagrangian:
-            w = module.weight.data
-            norm = torch.norm(w, 2, 1)
-            return self.scale * torch.sum(torch.clamp(norm-1,0,1e15))
+            w = module.weight
+            norm = th.norm(w, 2, 1)
+            return self.scale * th.sum(th.clamp(norm-1,0,1e15))
         else:
-            w = module.weight.data
-            w.div_(torch.norm(w, 2, 1).expand_as(w))
+            w = module.weight
+            w.div_(th.norm(w, 2, 1).expand_as(w))
 
 
 class MaxNorm(Constraint):
@@ -120,13 +120,13 @@ class MaxNorm(Constraint):
 
     def __call__(self, module):
         if self.lagrangian:
-            w = module.weight.data
-            norm = torch.norm(w,2,self.axis)
-            return self.scale * torch.sum(torch.clamp(norm-self.value,0,1e-15))
+            w = module.weight
+            norm = th.norm(w,2,self.axis)
+            return self.scale * th.sum(th.clamp(norm-self.value,0,1e-15))
         else:
-            w = module.weight.data
-            norm = torch.norm(w,2,self.axis).expand_as(w) / self.value
-            norm = torch.clamp(norm, -1e15, 1)
+            w = module.weight
+            norm = th.norm(w,2,self.axis).expand_as(w) / float(self.value)
+            norm = th.clamp(norm, -1e25, 1)
             w.div_(norm)
 
 
@@ -146,10 +146,10 @@ class NonNeg(Constraint):
 
     def __call__(self, module):
         if self.lagrangian:
-            w = module.weight.data
-            return -1 * self.scale * torch.sum(torch.clamp(w,-1e15,0))
+            w = module.weight
+            return -1 * self.scale * th.sum(th.clamp(w,-1e15,0))
         else:
-            w = module.weight.data
+            w = module.weight
             w.clamp_(0,1e-15)
 
 

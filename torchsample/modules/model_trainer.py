@@ -73,7 +73,7 @@ class ModelTrainer(object):
         self._loss_fns = loss
 
     def set_optimizer(self, optimizer, **kwargs):
-        if type(optimizer) is type:
+        if type(optimizer) is type or isinstance(optimizer, str):
             if 'parameters' in kwargs:
                 parameters = kwargs['parameters']
             else:
@@ -99,13 +99,13 @@ class ModelTrainer(object):
             constraints = [constraints]
         self._constraints = constraints
         self._has_constraints = True
-        if any([c.has_lagrangian for c in self._constraints]):
+        if any([c.lagrangian for c in self._constraints]):
             self._has_lagrangian_constraints = True
 
     def add_constraint(self, constraint):
         self._constraints.append(constraint)
         self._has_constraints = True
-        if constraint.has_lagrangian:
+        if constraint.lagrangian:
             self._has_lagrangian_constraints = True
 
     def set_callbacks(self, callbacks):
@@ -308,8 +308,10 @@ class ModelTrainer(object):
                             else:
                                 loss += self._loss_fns[0](outputs[loss_idx], target_batch[loss_idx])
                     else:
+                        # multiple outputs, but they all go into one loss functions
                         if len(outputs) == _nb_function_args(self._loss_fns[0]):
                             loss = self._loss_fns[0](*outputs)
+                        # multiple outputs, each with their own loss function
                         else:
                             loss = self._loss_fns[0](outputs[0])
                             for loss_idx in range(1,len(outputs)):
@@ -322,13 +324,13 @@ class ModelTrainer(object):
                     if self._has_regularizers:
                         regularizer_loss = regularizers(self.model)
                         loss += regularizer_loss
-                        batch_logs['regularizer_loss'] = regularizer_loss
+                        batch_logs['regularizer_loss'] = regularizer_loss.data[0]
 
                     # add lagrangian constraints to loss if necessary
                     if self._has_lagrangian_constraints:
                         constraint_loss = constraints(self.model)
                         loss += constraint_loss
-                        batch_logs['constraint_loss'] = constraint_loss
+                        batch_logs['constraint_loss'] = constraint_loss.data[0]
 
                     batch_logs['loss'] = loss.data[0]
 

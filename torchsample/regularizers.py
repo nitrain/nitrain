@@ -1,5 +1,5 @@
 
-import torch
+import torch as th
 from fnmatch import fnmatch
 
 
@@ -32,8 +32,8 @@ class L1Regularizer(object):
         self.module_filter = module_filter
 
     def __call__(self, module):
-        w = module.weight.data
-        return torch.sum(torch.abs(w)) * self.scale
+        w = module.weight
+        return th.sum(th.abs(w)) * self.scale
 
 
 class L2Regularizer(object):
@@ -43,8 +43,8 @@ class L2Regularizer(object):
         self.module_filter = module_filter
 
     def __call__(self, module):
-        w = module.weight.data
-        return torch.sum(torch.pow(w,2)) * self.scale
+        w = module.weight
+        return th.sum(th.pow(w,2)) * self.scale
 
 
 class L1L2Regularizer(object):

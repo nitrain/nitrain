@@ -126,10 +126,13 @@ class TQDM(Callback):
             self.progbar.close()
 
     def on_epoch_begin(self, epoch, logs=None):
-        self.progbar = tqdm(total=logs['nb_batches'],
-                            unit=' batches')
-        self.progbar.set_description('Epoch %i/%i' % 
-                        (epoch+1, logs['nb_epoch']))
+        try:
+            self.progbar = tqdm(total=logs['nb_batches'],
+                                unit=' batches')
+            self.progbar.set_description('Epoch %i/%i' % 
+                            (epoch+1, logs['nb_epoch']))
+        except:
+            pass
 
     def on_epoch_end(self, epoch, logs=None):
         log_data = {key: '%.04f' % value for key, value in self.model.history.batch_metrics.items()}
