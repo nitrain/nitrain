@@ -166,7 +166,7 @@ class History(Callback):
         self.losses = []
         if self.model._has_regularizers:
             self.regularizer_losses = []
-        if self.model._has_constraints:
+        if self.model._has_lagrangian_constraints:
             self.constraint_losses = []
         if logs['has_validation_data']:
             self.val_losses = []
@@ -177,7 +177,7 @@ class History(Callback):
         }
         if self.model._has_regularizers:
             self.batch_metrics['regularizer_loss'] = 0.
-        if self.model._has_constraints:
+        if self.model._has_lagrangian_constraints:
             self.batch_metrics['constraint_loss'] = 0.
         self.seen = 0.
 
@@ -185,7 +185,7 @@ class History(Callback):
         self.losses.append(logs['loss'])
         if self.model._has_regularizers:
             self.regularizer_losses.append(logs['regularizer_loss'])
-        if self.model._has_constraints:
+        if self.model._has_lagrangian_constraints:
             self.constraint_losses.append(logs['constraint_loss'])
         if logs['has_validation_data']:
             self.val_losses.append(logs['val_loss'])

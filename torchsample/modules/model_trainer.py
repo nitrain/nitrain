@@ -11,7 +11,7 @@ from torch.autograd import Variable
 # local imports
 from ._utils import (_validate_loss_input, _validate_metric_input, 
                      _validate_optimizer_input, _validate_initializer_input,
-                     _get_current_time)
+                     _get_current_time, _nb_function_args)
 from ..callbacks import CallbackModule, History, TQDM
 from ..constraints import ConstraintModule
 from ..initializers import InitializerModule
@@ -33,6 +33,7 @@ class ModelTrainer(object):
         # constraints
         self._constraints = []
         self._has_constraints = False
+        self._has_lagrangian_constraints = False
         # regularizers
         self._regularizers = []
         self._has_regularizers = False
@@ -48,6 +49,9 @@ class ModelTrainer(object):
         # transforms
         self._transforms = []
         self._has_transforms = False
+        self._has_input_transform = False
+        self._has_target_transform = False
+        self._has_co_transform = False
 
         # other properties
         self._stop_training = False
@@ -95,10 +99,14 @@ class ModelTrainer(object):
             constraints = [constraints]
         self._constraints = constraints
         self._has_constraints = True
+        if any([c.has_lagrangian for c in self._constraints]):
+            self._has_lagrangian_constraints = True
 
     def add_constraint(self, constraint):
         self._constraints.append(constraint)
         self._has_constraints = True
+        if constraint.has_lagrangian:
+            self._has_lagrangian_constraints = True
 
     def set_callbacks(self, callbacks):
         self._callbacks += callbacks
@@ -138,10 +146,16 @@ class ModelTrainer(object):
 
         if transforms[0] is not None:
             self._has_input_transform = True
+        else:
+            self._has_input_transform = False
         if transforms[1] is not None:
             self._has_target_transform = True
+        else:
+            self._has_target_transform = False
         if transforms[2] is not None:
             self._has_co_transform = True
+        else:
+            self._has_co_transform = False
 
         self._has_transforms = True
         self._transforms = transforms
@@ -294,13 +308,16 @@ class ModelTrainer(object):
                             else:
                                 loss += self._loss_fns[0](outputs[loss_idx], target_batch[loss_idx])
                     else:
-                        loss = self._loss_fns[0](outputs[0])
-                        for loss_idx in range(1,nb_targets):
-                            if self._has_multiple_loss_fns:
-                                loss += self._loss_fns[loss_idx](outputs[loss_idx])
-                            else:
-                                loss += self._loss_fns[0](outputs[loss_idx])
-                    
+                        if len(outputs) == _nb_function_args(self._loss_fns[0]):
+                            loss = self._loss_fns[0](*outputs)
+                        else:
+                            loss = self._loss_fns[0](outputs[0])
+                            for loss_idx in range(1,len(outputs)):
+                                if self._has_multiple_loss_fns:
+                                    loss += self._loss_fns[loss_idx](outputs[loss_idx])
+                                else:
+                                    loss += self._loss_fns[0](outputs[loss_idx])
+                        
                     # add regularizers to loss if necessary
                     if self._has_regularizers:
                         regularizer_loss = regularizers(self.model)
@@ -308,7 +325,7 @@ class ModelTrainer(object):
                         batch_logs['regularizer_loss'] = regularizer_loss
 
                     # add lagrangian constraints to loss if necessary
-                    if self._has_constraints and constraints.has_lagrangian:
+                    if self._has_lagrangian_constraints:
                         constraint_loss = constraints(self.model)
                         loss += constraint_loss
                         batch_logs['constraint_loss'] = constraint_loss
@@ -368,6 +385,8 @@ class ModelTrainer(object):
             train_logs['best_val_loss'] = min(self.history.val_losses)
 
         callbacks.on_train_end(logs=train_logs)
+
+        #return self.history
 
     def fit_loader(self, 
                    loader, 

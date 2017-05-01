@@ -1,5 +1,12 @@
 
 import datetime
+import warnings
+
+try:
+    from inspect import signature
+except:
+    warnings.warn('inspect.signature not available... '
+        'you should upgrade to Python 3.x')
 
 import torch.nn.functional as F
 import torch.optim as optim
@@ -62,3 +69,6 @@ def _validate_initializer_input(initializer):
 
 def _get_current_time():
     return datetime.datetime.now().strftime("%B %d, %Y - %I:%M%p")
+
+def _nb_function_args(fn):
+    return len(signature(fn).parameters)
