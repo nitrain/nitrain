@@ -216,19 +216,31 @@ class ModuleTrainer(object):
             has_validation_data = True      
 
         # create regularizers
+        if hasattr(self.model, 'regularizers'):
+            for reg in self.model.regularizers:
+                self.add_regularizer(reg)
         if self._has_regularizers:
             regularizers = RegularizerModule(self._regularizers)
 
         # create constraints
+        if hasattr(self.model, 'constraints'):
+            for constraint in self.model.constraints:
+                self.add_constraint(constraint)
         if self._has_constraints:
             constraints = ConstraintModule(self._constraints)
             constraints.set_model(self.model)
 
         # create metrics
+        if hasattr(self.model, 'metrics'):
+            for metric in self.model.metrics:
+                self.add_metric(metric)
         if self._has_metrics:
             metrics = MetricsModule(self._metrics)
 
         # create initializers
+        if hasattr(self.model, 'initializers'):
+            for initializer in self.model.initializers:
+                self.add_initializer(initializer)
         if self._has_initializers:
             initializers = InitializerModule(self._initializers)
             initializers(self.model)
@@ -322,7 +334,7 @@ class ModuleTrainer(object):
                         
                     # add regularizers to loss if necessary
                     if self._has_regularizers:
-                        regularizer_loss = regularizers(model=self.model)
+                        regularizer_loss = regularizers(self.model)
                         loss += regularizer_loss
                         batch_logs['regularizer_loss'] = regularizer_loss.data[0]
 

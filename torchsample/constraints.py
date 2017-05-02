@@ -83,11 +83,10 @@ class UnitNorm(Constraint):
     def __call__(self, module):
         if self.lagrangian:
             w = module.weight
-            norm = th.norm(w, 2, 1)
-            return self.scale * th.sum(th.clamp(norm-1,0,1e15))
+            norm_diff = th.norm(w, 2, 1).sub(1.)
+            return self.scale * th.sum(norm_diff.gt(0).float().mul(norm_diff))
         else:
             w = module.weight
-           # w.div_(th.norm(w, 2, 1).expand_as(w))
             w = w.div(th.norm(w,2,1).expand_as(w))
 
 class MaxNorm(Constraint):
@@ -103,7 +102,7 @@ class MaxNorm(Constraint):
 
     def __init__(self, 
                  value, 
-                 axis=1, 
+                 axis=0, 
                  frequency=1, 
                  unit='batch',
                  lagrangian=False,
@@ -121,14 +120,10 @@ class MaxNorm(Constraint):
     def __call__(self, module):
         if self.lagrangian:
             w = module.weight
-            norm = th.norm(w,2,self.axis)
-            return self.scale * th.sum(th.clamp(norm-self.value,0,1e-15))
+            norm_diff = th.norm(w,2,self.axis).sub(self.value)
+            return self.scale * th.sum(norm_diff.gt(0).float().mul(norm_diff))
         else:
-            w = module.weight
-            norm = th.norm(w,2,self.axis).expand_as(w) / float(self.value)
-            norm = th.clamp(norm, -1e25, 1)
-            w = w.div(norm)
-
+            module.weight.data = th.renorm(module.weight.data, 2, self.axis, self.value)
 
 class NonNeg(Constraint):
     """
@@ -147,10 +142,10 @@ class NonNeg(Constraint):
     def __call__(self, module):
         if self.lagrangian:
             w = module.weight
-            return -1 * self.scale * th.sum(th.clamp(w,-1e15,0))
+            return -1 * self.scale * th.sum(w.gt(0).float().mul(w))
         else:
             w = module.weight
-            w.clamp_(0,1e-15)
+            w = w.gt(0).float().mul(w)
 
 
 
