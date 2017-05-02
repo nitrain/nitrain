@@ -66,7 +66,12 @@ model.fit(x_train, y_train,
           batch_size=128,
           verbose=1)
 ```
+You also have access to the standard evaluation and prediction functions:
 
+```python
+loss = model.evaluate(x_train, y_train)
+y_pred = model.predict(x_train)
+```
 Torchsample provides a wide range of <b>callbacks</b>, generally mimicking the interface
 found in `Keras`:
 
