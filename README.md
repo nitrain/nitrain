@@ -16,9 +16,15 @@ from `nn.Module`.
 
 Example:
 ```python
-from torchsample.modules import SuperModule
+from torchsample.modules import ModuleTrainer
+from torchsample.callbacks import *
+from torchsample.regularizers import *
+from torchsample.constraints import *
+from torchsample.initializers import *
+from torchsample.metrics import *
+
 # Define your model EXACTLY as if you were using nn.Module
-class Network(SuperModule):
+class Network(nn.Module):
     def __init__(self):
         super(Network, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3)
@@ -36,8 +42,23 @@ class Network(SuperModule):
         return F.log_softmax(x)
 
 model = Network()
-model.set_loss(F.nll_loss)
-model.set_optimizer(optim.Adadelta, lr=1.0)
+trainer = ModuleTrainer(model)
+
+callbacks = [EarlyStopping(patience=10),
+             ReduceLROnPlateau(factor=0.5, patience=5)]
+regularizers = [L1Regularizer(scale=1e-3, module_filter='conv*'),
+                L2Regularizer(scale=1e-5, module_filter='fc*')]
+constraints = [UnitNorm(frequency=3, unit='batch', module_filter='fc*'),
+               MaxNorm(lagrangian=True, scale=1e-2, module_filter='conv*')]
+initializers = [XavierUniform(bias=False, module_filter='fc*')]
+metrics = [CategoricalAccuracy(top_k=3)]
+
+trainer.compile(loss='nll_loss',
+                optimizer='adadelta',
+                regularizers=regularizers
+                constraints=constraints
+                initializers=initializers,
+                metrics=metrics)
 
 model.fit(x_train, y_train, 
           validation_data=(x_test, y_test),
