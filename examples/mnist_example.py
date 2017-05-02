@@ -52,6 +52,7 @@ class Network(nn.Module):
         x = self.fc2(x)
         return F.log_softmax(x)
 
+
 model = Network()
 trainer = ModuleTrainer(model)
 
