@@ -3,7 +3,7 @@ import os
 import random
 import math
 import numpy as np
-import torch
+import torch as th
 
 
 class Compose(object):
@@ -35,13 +35,13 @@ class Compose(object):
 
 class ToTensor(object):
     """
-    Converts a numpy array to torch.Tensor
+    Converts a numpy array to th.Tensor
     """
     
     def __call__(self, x, y=None):
-        x = torch.from_numpy(x)
+        x = th.from_numpy(x)
         if y is not None:
-            y = torch.from_numpy(y)
+            y = th.from_numpy(y)
             return x, y
         return x
 
@@ -99,19 +99,19 @@ class TypeCast(object):
         self.dtype = dtype
 
     def __call__(self, x):
-        if self.dtype == torch.ByteTensor:
+        if self.dtype == th.ByteTensor:
             x = x.byte()
-        elif self.dtype == torch.CharTensor:
+        elif self.dtype == th.CharTensor:
             x = x.char()
-        elif self.dtype == torch.DoubleTensor:
+        elif self.dtype == th.DoubleTensor:
             x = x.double()
-        elif self.dtype == torch.FloatTensor:
+        elif self.dtype == th.FloatTensor:
             x = x.float()
-        elif self.dtype == torch.IntTensor:
+        elif self.dtype == th.IntTensor:
             x = x.int()
-        elif self.dtype == torch.LongTensor:
+        elif self.dtype == th.LongTensor:
             x = x.long()
-        elif self.dtype == torch.ShortTensor:
+        elif self.dtype == th.ShortTensor:
             x = x.short()
         else:
             raise Exception('Not a valid Tensor Type')
@@ -139,9 +139,9 @@ class Transpose(object):
         self.dim2 = dim2
 
     def __call__(self, x, y=None):
-        x = torch.tranpose(x, self.dim1, self.dim2)
+        x = th.transpose(x, self.dim1, self.dim2)
         if y is not None:
-            y = torch.tranpose(y, self.dim1, self.dim2)
+            y = th.transpose(y, self.dim1, self.dim2)
             return x, y
         else:
             return x
@@ -150,7 +150,7 @@ class Transpose(object):
 class RangeNormalize(object):
     """
     Given min_val: (R, G, B) and max_val: (R,G,B),
-    will normalize each channel of the torch.*Tensor to
+    will normalize each channel of the th.*Tensor to
     the provided min and max values.
 
     Works by calculating :
@@ -161,12 +161,12 @@ class RangeNormalize(object):
     and min & max are observed min/max for each channel
     
     Example:
-        >>> x = torch.rand(3,5,5)
+        >>> x = th.rand(3,5,5)
         >>> rn = RangeNormalize((0,0,10),(1,1,11))
         >>> x_norm = rn(x)
 
     Also works with just one value for min/max:
-        >>> x = torch.rand(3,5,5)
+        >>> x = th.rand(3,5,5)
         >>> rn = RangeNormalize(0,1)
         >>> x_norm = rn(x)
     """
@@ -181,11 +181,11 @@ class RangeNormalize(object):
         if self.fixed_min is not None:
             min_val = self.fixed_min
         else:
-            min_val = torch.min(x)
+            min_val = th.min(x)
         if self.fixed_max is not None:
             max_val = self.fixed_max
         else:
-            max_val = torch.max(x)
+            max_val = th.max(x)
         if min_val == max_val:
             min_val += 1e-07
 
@@ -196,8 +196,8 @@ class RangeNormalize(object):
         if y is None:
             return x
         else:
-            min_val = torch.min(y)
-            max_val = torch.max(y)
+            min_val = th.min(y)
+            max_val = th.max(y)
             a = (self.max_range - self.min_range) / (max_val - min_val)
             b = self.max_range - a * max_val
             y.mul_(a).add_(b)
@@ -216,12 +216,12 @@ class StdNormalize(object):
     def __call__(self, x, y=None):
         if y is not None:
             for t, u in zip(x, y):
-                t.sub_(torch.mean(t)).div_(torch.std(t))
-                u.sub_(torch.mean(u)).div_(torch.std(u))
+                t.sub_(th.mean(t)).div_(th.std(t))
+                u.sub_(th.mean(u)).div_(th.std(u))
             return x, y
         else:
             for t in x:
-                t.sub_(torch.mean(t)).div_(torch.std(t))
+                t.sub_(th.mean(t)).div_(th.std(t))
             return x         
 
 
@@ -262,9 +262,9 @@ class Slice2D(object):
             if not self.reject_zeros:
                 break
             else:
-                if y is not None and torch.sum(slice_y) > 0:
+                if y is not None and th.sum(slice_y) > 0:
                         break
-                elif torch.sum(slice_x) > 0:
+                elif th.sum(slice_x) > 0:
                         break
         if y is not None:
             return slice_x, slice_y
@@ -371,9 +371,9 @@ class Pad(object):
         if y is not None:
             y = y.numpy()
             y = np.pad(y, pad_sizes, mode='constant')
-            return torch.from_numpy(x), torch.from_numpy(y)
+            return th.from_numpy(x), th.from_numpy(y)
         else:
-            return torch.from_numpy(x)
+            return th.from_numpy(x)
 
 
 class RandomFlip(object):
@@ -424,8 +424,8 @@ class RandomFlip(object):
                     y = y.swapaxes(0, 1)
         if y is None:
             # must copy because torch doesnt current support neg strides
-            return torch.from_numpy(x.copy())
+            return th.from_numpy(x.copy())
         else:
-            return torch.from_numpy(x.copy()),torch.from_numpy(y.copy())
+            return th.from_numpy(x.copy()),th.from_numpy(y.copy())
 
 
