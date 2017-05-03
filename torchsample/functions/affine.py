@@ -10,26 +10,30 @@ def F_affine2d(x, matrix, center=True):
     """
     2D Affine image transform on torch.autograd.Variable
     """
-    A = matrix[:2,:2]
-    b = matrix[:2,2]
+    if matrix.dim() == 2:
+        matrix = matrix.view(-1,2,3)
+
+    A_batch = matrix[:,:,:2]
+    if A_batch.size(0) != x.size(0):
+        A_batch = A_batch.repeat(x.size(0),1,1)
+    b_batch = matrix[:,:,2].unsqueeze(1)
 
     # make a meshgrid of normal coordinates
-    #coords = th_iterproduct_like(x).float()
-    coords = Variable(th_iterproduct(x.size(1),x.size(2)).float(), 
-                requires_grad=False)
-
+    _coords = th_iterproduct(x.size(1),x.size(2))
+    coords = Variable(_coords.unsqueeze(0).repeat(x.size(0),1,1).float(),
+                    requires_grad=False)
     if center:
         # shift the coordinates so center is the origin
-        coords[:,0] = coords[:,0] - (x.size(1) / 2. + 0.5)
-        coords[:,1] = coords[:,1] - (x.size(2) / 2. + 0.5)
-    
+        coords[:,:,0] = coords[:,:,0] - (x.size(1) / 2. + 0.5)
+        coords[:,:,1] = coords[:,:,1] - (x.size(2) / 2. + 0.5)
+
     # apply the coordinate transformation
-    new_coords = F.linear(coords, A, b)
+    new_coords = coords.bmm(A_batch.transpose(1,2)) + b_batch.expand_as(coords)
 
     if center:
         # shift the coordinates back so origin is origin
-        new_coords[:,0] = new_coords[:,0] + (x.size(1) / 2. + 0.5)
-        new_coords[:,1] = new_coords[:,1] + (x.size(2) / 2. + 0.5)
+        new_coords[:,:,0] = new_coords[:,:,0] + (x.size(1) / 2. + 0.5)
+        new_coords[:,:,1] = new_coords[:,:,1] + (x.size(2) / 2. + 0.5)
 
     # map new coordinates using bilinear interpolation
     x_transformed = F_bilinear_interp2d(x, new_coords)
@@ -41,28 +45,26 @@ def F_bilinear_interp2d(input, coords):
     """
     bilinear interpolation of 2d torch.autograd.Variable
     """
-    # take clamp then floor/ceil of x coords
-    x = torch.clamp(coords[:,0], 0, input.size(1)-2).contiguous().view(-1)
+    x = torch.clamp(coords[:,:,0], 0, input.size(1)-2)
     x0 = x.floor()
     x1 = x0 + 1
-    # take clamp then floor/ceil of y coords
-    y = torch.clamp(coords[:,1], 0, input.size(2)-2).contiguous().view(-1)
+    y = torch.clamp(coords[:,:,1], 0, input.size(2)-2)
     y0 = y.floor()
     y1 = y0 + 1
 
-    stride = torch.LongTensor(input.stride()[1:])
-    x0_ix = x0.mul(stride[0]).long()
-    x1_ix = x1.mul(stride[0]).long()
-    y0_ix = y0.mul(stride[1]).long()
-    y1_ix = y1.mul(stride[1]).long()
+    stride = torch.LongTensor(input.stride())
+    x0_ix = x0.mul(stride[1]).long()
+    x1_ix = x1.mul(stride[1]).long()
+    y0_ix = y0.mul(stride[2]).long()
+    y1_ix = y1.mul(stride[2]).long()
 
-    input_flat = th_flatten(input)
+    input_flat = input.view(input.size(0),-1).contiguous()
 
-    vals_00 = input_flat.index_select(0, x0_ix.add(y0_ix).detach())
-    vals_10 = input_flat.index_select(0, x1_ix.add(y0_ix).detach())
-    vals_01 = input_flat.index_select(0, x0_ix.add(y1_ix).detach())
-    vals_11 = input_flat.index_select(0, x1_ix.add(y1_ix).detach())
-
+    vals_00 = input_flat.gather(1, x0_ix.add(y0_ix).detach())
+    vals_10 = input_flat.gather(1, x1_ix.add(y0_ix).detach())
+    vals_01 = input_flat.gather(1, x0_ix.add(y1_ix).detach())
+    vals_11 = input_flat.gather(1, x1_ix.add(y1_ix).detach())
+    
     xd = x - x0
     yd = y - y0
     xm = 1 - xd
