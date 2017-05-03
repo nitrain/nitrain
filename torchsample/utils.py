@@ -85,7 +85,7 @@ def th_affine2d(x, matrix, mode='bilinear', center=True):
 
     if matrix.dim() == 2:
         matrix = matrix[:2,:]
-        matrix = matrix.view(-1,2,3)
+        matrix = matrix.unsqueeze(0)
     elif matrix.dim() == 3:
         if matrix.size()[1:] == (3,3):
             matrix = matrix[:,:2,:]
