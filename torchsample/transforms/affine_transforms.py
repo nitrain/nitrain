@@ -138,12 +138,12 @@ class AffineCompose(object):
         for t in self.transforms:
             t.lazy = True
 
-        self.coords = None
-        if fixed_size is not None:
-            if len(fixed_size) == 3:
-                # assume channel is first dim
-                fixed_size = fixed_size[1:]
-            self.coords = th_iterproduct(fixed_size[0], fixed_size[1])
+        #self.coords = None
+        #if fixed_size is not None:
+        #    if len(fixed_size) == 3:
+        #        # assume channel is first dim
+        #        fixed_size = fixed_size[1:]
+        #    self.coords = th_iterproduct(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         # collect all of the lazily returned tform matrices
@@ -151,10 +151,10 @@ class AffineCompose(object):
         for tform in self.transforms[1:]:
             tform_matrix = torch.mm(tform_matrix, tform(x)) 
 
-        x = th_affine2d(x, tform_matrix, self.coords)
+        x = th_affine2d(x, tform_matrix)#, self.coords)
 
         if y is not None:
-            y = th_affine2d(y, tform_matrix, self.coords)
+            y = th_affine2d(y, tform_matrix)#, self.coords)
             return x, y
         else:
             return x
@@ -188,9 +188,9 @@ class Rotate(object):
         self.rotation_range = rotation_range
         self.lazy = lazy
         
-        self.coords = None
-        if not self.lazy and fixed_size is not None:
-            self.coords = th_iterproduct(fixed_size[0], fixed_size[1])
+        #self.coords = None
+        #if not self.lazy and fixed_size is not None:
+        #    self.coords = th_iterproduct(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         degree = random.uniform(-self.rotation_range, self.rotation_range)
@@ -201,9 +201,9 @@ class Rotate(object):
         if self.lazy:
             return rotation_matrix
         else:
-            x_transformed = th_affine2d(x, rotation_matrix, self.coords)
+            x_transformed = th_affine2d(x, rotation_matrix)#, self.coords)
             if y is not None:
-                y_transformed = th_affine2d(y, rotation_matrix, self.coords)
+                y_transformed = th_affine2d(y, rotation_matrix)#, self.coords)
                 return x_transformed, y_transformed
             else:
                 return x_transformed
@@ -248,9 +248,9 @@ class Translate(object):
         self.width_range = translation_range[1]
         self.lazy = lazy
         
-        self.coords = None
-        if not self.lazy and fixed_size is not None:
-            self.coords = th_iterproduct(fixed_size[0], fixed_size[1])
+        #self.coords = None
+        #if not self.lazy and fixed_size is not None:
+        #    self.coords = th_iterproduct(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         # height shift
@@ -270,9 +270,9 @@ class Translate(object):
         if self.lazy:
             return translation_matrix
         else:
-            x_transformed = th_affine2d(x, translation_matrix, self.coords)
+            x_transformed = th_affine2d(x, translation_matrix)#, self.coords)
             if y is not None:
-                y_transformed = th_affine2d(y, translation_matrix, self.coords)
+                y_transformed = th_affine2d(y, translation_matrix)#, self.coords)
                 return x_transformed, y_transformed
             else:
                 return x_transformed
@@ -305,9 +305,9 @@ class Shear(object):
         self.shear_range = shear_range
         self.lazy = lazy
         
-        self.coords = None
-        if not self.lazy and fixed_size is not None:
-            self.coords = th_iterproduct(fixed_size[0], fixed_size[1])
+        #self.coords = None
+        #if not self.lazy and fixed_size is not None:
+        #    self.coords = th_iterproduct(fixed_size[0], fixed_size[1])
 
     def __call__(self, x, y=None):
         shear = random.uniform(-self.shear_range, self.shear_range)
@@ -317,9 +317,9 @@ class Shear(object):
         if self.lazy:
             return shear_matrix
         else:
-            x_transformed = th_affine2d(x, shear_matrix, self.coords)
+            x_transformed = th_affine2d(x, shear_matrix)#, self.coords)
             if y is not None:
-                y_transformed = th_affine2d(y, shear_matrix, self.coords)
+                y_transformed = th_affine2d(y, shear_matrix)#, self.coords)
                 return x_transformed, y_transformed
             else:
                 return x_transformed
@@ -359,9 +359,9 @@ class Zoom(object):
         self.zoom_range = zoom_range
         self.lazy = lazy
 
-        self.coords = None
-        if not self.lazy and fixed_size is not None:
-            self.coords = th_iterproduct(fixed_size[0], fixed_size[1])
+        #self.coords = None
+        #if not self.lazy and fixed_size is not None:
+        #    self.coords = th_iterproduct(fixed_size[0], fixed_size[1])
         
 
     def __call__(self, x, y=None):
@@ -373,9 +373,9 @@ class Zoom(object):
         if self.lazy:
             return zoom_matrix
         else:
-            x_transformed = th_affine2d(x, zoom_matrix, self.coords)
+            x_transformed = th_affine2d(x, zoom_matrix)#, self.coords)
             if y is not None:
-                y_transformed = th_affine2d(y, zoom_matrix, self.coords)
+                y_transformed = th_affine2d(y, zoom_matrix)#, self.coords)
                 return x_transformed, y_transformed
             else:
                 return x_transformed
