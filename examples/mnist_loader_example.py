@@ -3,6 +3,8 @@ import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 
+from torch.utils.data import DataLoader, TensorDataset
+
 from torchsample.modules import ModuleTrainer
 from torchsample.callbacks import *
 from torchsample.regularizers import *
@@ -14,8 +16,8 @@ import os
 from torchvision import datasets
 ROOT = '/users/ncullen/data'
 dataset = datasets.MNIST(ROOT, train=True, download=True)
-x_train, y_train = torch.load(os.path.join(dataset.root, 'processed/training.pt'))
-x_test, y_test = torch.load(os.path.join(dataset.root, 'processed/test.pt'))
+x_train, y_train = th.load(os.path.join(dataset.root, 'processed/training.pt'))
+x_test, y_test = th.load(os.path.join(dataset.root, 'processed/test.pt'))
 
 x_train = x_train.float()
 y_train = y_train.long()
@@ -33,6 +35,10 @@ y_train = y_train[:10000]
 x_test = x_test[:1000]
 y_test = y_test[:1000]
 
+train_dataset = TensorDataset(x_train, y_train)
+train_loader = DataLoader(train_dataset, batch_size=32)
+val_dataset = TensorDataset(x_test, y_test)
+val_loader = DataLoader(val_dataset, batch_size=32)
 
 # Define your model EXACTLY as if you were using nn.Module
 class Network(nn.Module):
@@ -56,8 +62,8 @@ class Network(nn.Module):
 model = Network()
 trainer = ModuleTrainer(model)
 
-#callbacks = [EarlyStopping(patience=10),
-#             ReduceLROnPlateau(factor=0.5, patience=5)]
+callbacks = [EarlyStopping(patience=10),
+             ReduceLROnPlateau(factor=0.5, patience=5)]
 regularizers = [L1Regularizer(scale=1e-3, module_filter='conv*'),
                 L2Regularizer(scale=1e-5, module_filter='fc*')]
 constraints = [UnitNorm(frequency=3, unit='batch', module_filter='fc*'),
@@ -70,10 +76,10 @@ trainer.compile(loss='nll_loss',
                 #regularizers=regularizers,
                 #constraints=constraints,
                 #initializers=initializers,
-                #metrics=metrics)
+                #metrics=metrics, 
+                #callbacks=callbacks)
 
-trainer.fit(x_train, y_train, 
-          validation_data=(x_test, y_test),
-          nb_epoch=20, 
-          batch_size=128,
-          verbose=1)
+trainer.fit_loader(train_loader, val_loader, nb_epoch=20, verbose=1)
+
+
+

@@ -161,9 +161,10 @@ class History(Callback):
     This callback is automatically applied to
     every SuperModule.
     """
-    def __init__(self):
+    def __init__(self, model):
         super(History, self).__init__()
         self.seen = 0.
+        self.model = model
 
     def on_train_begin(self, logs=None):
         self.losses = []
