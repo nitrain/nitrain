@@ -82,8 +82,13 @@ def th_affine2d(x, matrix, mode='bilinear', center=True):
     >>> xn = th_affine2d(x, matrix, mode='nearest')
     >>> xb = th_affine2d(x, matrix, mode='bilinear')
     """
+
     if matrix.dim() == 2:
+        matrix = matrix[:2,:]
         matrix = matrix.view(-1,2,3)
+    elif matrix.dim() == 3:
+        if matrix.size()[1:] == (3,3):
+            matrix = matrix[:,:2,:]
 
     A_batch = matrix[:,:,:2]
     if A_batch.size(0) != x.size(0):
