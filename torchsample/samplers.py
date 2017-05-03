@@ -1,5 +1,5 @@
 
-import torch
+import torch as th
 import math
 
 class Sampler(object):
@@ -44,7 +44,7 @@ class StratifiedSampler(Sampler):
         import numpy as np
         
         s = StratifiedShuffleSplit(n_splits=self.n_splits, test_size=0.5)
-        X = torch.randn(self.class_vector.size(0),2).numpy()
+        X = th.randn(self.class_vector.size(0),2).numpy()
         y = self.class_vector.numpy()
         s.get_n_splits(X, y)
 
@@ -95,12 +95,12 @@ class MultiSampler(Sampler):
         n_repeats = self.desired_samples / self.data_samples
         cat_list = []
         for i in range(math.floor(n_repeats)):
-            cat_list.append(torch.range(0,self.data_samples-1))
+            cat_list.append(th.arange(0,self.data_samples))
         # add the left over samples
         left_over = self.desired_samples % self.data_samples
         if left_over > 0:
             cat_list.append(th_random_choice(self.data_samples, left_over))
-        self.sample_idx_array = torch.cat(cat_list).long()
+        self.sample_idx_array = th.cat(cat_list).long()
         return self.sample_idx_array
 
     def __iter__(self):
@@ -138,7 +138,7 @@ class RandomSampler(Sampler):
         self.num_samples = nb_samples
 
     def __iter__(self):
-        return iter(torch.randperm(self.num_samples).long())
+        return iter(th.randperm(self.num_samples).long())
 
     def __len__(self):
         return self.num_samples
