@@ -14,10 +14,11 @@ import csv
 import time
 from tempfile import NamedTemporaryFile
 import shutil
+import math
 
 from tqdm import tqdm
 
-import torch
+import torch as th
 
 
 class CallbackModule(object):
@@ -203,10 +204,24 @@ class History(Callback):
 class ModelCheckpoint(Callback):
     """
     Model Checkpoint to save model weights during training
+
+    save_checkpoint({
+                'epoch': epoch + 1,
+                'arch': args.arch,
+                'state_dict': model.state_dict(),
+                'best_prec1': best_prec1,
+                'optimizer' : optimizer.state_dict(),
+            }
+    def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
+        th.save(state, filename)
+        if is_best:
+            shutil.copyfile(filename, 'model_best.pth.tar')
+
     """
 
-    def __init__(self, 
-                 file, 
+    def __init__(self,
+                 directory, 
+                 fname='checkpoint.pth.tar', 
                  monitor='val_loss', 
                  save_best_only=False, 
                  save_weights_only=True,
@@ -235,7 +250,9 @@ class ModelCheckpoint(Callback):
         verbose : integer in {0, 1}
             verbosity
         """
-        self.file = file
+        self.directory = directory
+        self.fname = fname
+        self.file = os.path.join(self.directory, self.fname)
         self.monitor = monitor
         self.save_best_only = save_best_only
         self.save_weights_only = save_weights_only
@@ -246,8 +263,13 @@ class ModelCheckpoint(Callback):
             self.old_files = []
 
         # mode = 'min' only supported
-        self.best_loss = 1e15
+        self.best_loss = math.inf
         super(ModelCheckpoint, self).__init__()
+
+    def save_checkpoint(self, state, is_best=False):
+        th.save(state, self.file)
+        if is_best:
+            shutil.copyfile(self.file, 'model_best.pth.tar')
 
     def on_epoch_end(self, epoch, logs=None):
         file = self.file.format(epoch='%03i'%(epoch+1), 
@@ -262,7 +284,22 @@ class ModelCheckpoint(Callback):
                         print('\nEpoch %i: improved from %0.4f to %0.4f saving model to %s' % 
                               (epoch+1, self.best_loss, current_loss, file))
                     self.best_loss = current_loss
+                    #if self.save_weights_only:
                     self.model.save_state_dict(file)
+                    #else:
+                    #    self.save_checkpoint({
+                    #            'epoch': epoch + 1,
+                    #            #'arch': args.arch,
+                    #            'state_dict': self.model.state_dict(),
+                    #            #'best_prec1': best_prec1,
+                    #            'optimizer' : self.model.optimizer.state_dict(),
+                    #            #'loss':{},
+                    #            #'regularizers':{},
+                    #            #'constraints':{},
+                    #            #'initializers':{},
+                    #            #'metrics':{},
+                    #            #'val_loss':{}
+                    #        })
                     if self.max_checkpoints > 0:
                         if len(self.old_files) == self.max_checkpoints:
                             try:
@@ -362,8 +399,21 @@ class LearningRateScheduler(Callback):
             the epoch logs such as mean training and validation loss from
             the epoch
         """
+        if isinstance(schedule, dict):
+            schedule = self.schedule_from_dict
+            self.schedule_dict = schedule
         self.schedule = schedule
         super(LearningRateScheduler, self).__init__()
+
+    def schedule_from_dict(self, epoch, logs=None):
+        for epoch_bound, learn_rate in self.schedule_dict.items():
+            # epoch_bound is in units of "epochs"
+            if epoch_bound > 1.0 and epoch_bound < epoch:
+                return learn_rate
+            # epoch_bound is in units of "cumulative percent of epochs"
+            elif epoch_bound <= 1.0 and epoch <= epoch_bound*logs['nb_epoch']:
+                return learn_rate
+        warnings.warn('Check the fractions in the schedule dict')
 
     def on_epoch_begin(self, epoch, logs=None):
         current_lrs = [p['lr'] for p in self.model._optimizer.param_groups]
@@ -508,7 +558,7 @@ class CSVLogger(Callback):
         RK = {'nb_batches', 'nb_epoch'}
 
         def handle_value(k):
-            is_zero_dim_tensor = isinstance(k, torch.Tensor) and k.dim() == 0
+            is_zero_dim_tensor = isinstance(k, th.Tensor) and k.dim() == 0
             if isinstance(k, Iterable) and not is_zero_dim_tensor:
                 return '"[%s]"' % (', '.join(map(str, k)))
             else:
@@ -540,14 +590,14 @@ class ExperimentLogger(Callback):
 
     def __init__(self,
                  directory,
-                 filename='Experiment_Logger.csv',
+                 fname='Experiment_Logger.csv',
                  save_prefix='Model_', 
                  separator=',', 
                  append=True):
 
         self.directory = directory
-        self.filename = filename
-        self.file = os.path.join(self.directory, self.filename)
+        self.fname = fname
+        self.file = os.path.join(self.directory, self.fname)
         self.save_prefix = save_prefix
         self.sep = separator
         self.append = append

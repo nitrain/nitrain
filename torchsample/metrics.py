@@ -1,4 +1,11 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
+
+import torch as th
+
+from .utils import th_matrixcorr
+
 
 class MetricsModule(object):
 
@@ -69,5 +76,56 @@ class BinaryAccuracy(Metric):
         self.total_count += len(y_pred)
         accuracy = 100. * float(self.correct_count) / float(self.total_count)
         return accuracy
+
+
+class ProjectionCorrelation(Metric):
+
+    def __init__(self):
+        self.corr_sum = 0.
+        self.total_count = 0.
+
+        self._name = 'corr_metric'
+
+    def reset(self):
+        self.corr_sum = 0.
+        self.total_count = 0.
+        self.average = 0.
+
+    def __call__(self, y_pred, y_true=None):
+        """
+        y_pred should be two projections
+        """
+        covar_mat = th.abs(th_matrixcorr(y_pred[0].data, y_pred[1].data))
+        self.corr_sum += th.trace(covar_mat)
+        self.total_count += covar_mat.size(0)
+        return self.corr_sum / self.total_count
+
+
+class ProjectionAntiCorrelation(Metric):
+
+    def __init__(self):
+        self.anticorr_sum = 0.
+        self.total_count = 0.
+        self.average = 0.
+
+        self._name = 'anticorr_metric'
+
+    def reset(self):
+        self.anticorr_sum = 0.
+        self.total_count = 0.
+        self.average = 0.
+
+    def __call__(self, y_pred, y_true=None):
+        """
+        y_pred should be two projections
+        """
+        covar_mat = th.abs(th_matrixcorr(y_pred[0].data, y_pred[1].data))
+        upper_sum = th.sum(th.triu(covar_mat,1))
+        lower_sum = th.sum(th.tril(covar_mat,-1))
+        self.anticorr_sum += upper_sum
+        self.anticorr_sum += lower_sum
+        self.total_count += covar_mat.size(0)*(covar_mat.size(1) - 1)
+        return self.anticorr_sum / self.total_count
+
 
 
