@@ -402,18 +402,25 @@ class LearningRateScheduler(Callback):
         if isinstance(schedule, dict):
             schedule = self.schedule_from_dict
             self.schedule_dict = schedule
+            if any([k < 1.0 for k in schedule.keys()]):
+                self.fractional_bounds = False
+            else:
+                self.fractional_bounds = True
         self.schedule = schedule
         super(LearningRateScheduler, self).__init__()
 
     def schedule_from_dict(self, epoch, logs=None):
         for epoch_bound, learn_rate in self.schedule_dict.items():
             # epoch_bound is in units of "epochs"
-            if epoch_bound > 1.0 and epoch_bound < epoch:
-                return learn_rate
+            if not self.fractional_bounds:
+                if epoch_bound < epoch:
+                    return learn_rate
             # epoch_bound is in units of "cumulative percent of epochs"
-            elif epoch_bound <= 1.0 and epoch <= epoch_bound*logs['nb_epoch']:
-                return learn_rate
-        warnings.warn('Check the fractions in the schedule dict')
+            else:
+                if epoch <= epoch_bound*logs['nb_epoch']:
+                    return learn_rate
+        warnings.warn('Check the keys in the schedule dict.. Returning last value')
+        return learn_rate
 
     def on_epoch_begin(self, epoch, logs=None):
         current_lrs = [p['lr'] for p in self.model._optimizer.param_groups]
