@@ -182,8 +182,8 @@ class Rotate(object):
             the value to fill the empty space with if fill_mode='constant'
 
         lazy    : boolean
-            if true, perform the transform on the tensor and return the tensor
-            if false, only create the affine transform matrix and return that
+            if false, perform the transform on the tensor and return the tensor
+            if true, only create the affine transform matrix and return that
         """
         self.rotation_range = rotation_range
         self.lazy = lazy
@@ -239,8 +239,8 @@ class Translate(object):
             the value to fill the empty space with if fill_mode='constant'
 
         lazy    : boolean
-            if true, perform the transform on the tensor and return the tensor
-            if false, only create the affine transform matrix and return that
+            if false, perform the transform on the tensor and return the tensor
+            if true, only create the affine transform matrix and return that
         """
         if isinstance(translation_range, float):
             translation_range = (translation_range, translation_range)
@@ -299,8 +299,8 @@ class Shear(object):
             the value to fill the empty space with if fill_mode='constant'
 
         lazy    : boolean
-            if true, perform the transform on the tensor and return the tensor
-            if false, only create the affine transform matrix and return that
+            if false, perform the transform on the tensor and return the tensor
+            if true, only create the affine transform matrix and return that
         """
         self.shear_range = shear_range
         self.lazy = lazy
@@ -351,8 +351,8 @@ class Zoom(object):
             the value to fill the empty space with if fill_mode='constant'
 
         lazy    : boolean
-            if true, perform the transform on the tensor and return the tensor
-            if false, only create the affine transform matrix and return that
+            if false, perform the transform on the tensor and return the tensor
+            if true, only create the affine transform matrix and return that
         """
         if not isinstance(zoom_range, list) and not isinstance(zoom_range, tuple):
             raise ValueError('zoom_range must be tuple or list with 2 values')
