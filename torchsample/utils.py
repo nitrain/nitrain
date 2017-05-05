@@ -3,9 +3,10 @@ Utility functions for th.Tensors
 """
 
 import pickle
-import torch as th
-
+import random
 import numpy as np
+
+import torch as th
 
 
 def th_allclose(x, y):
@@ -50,6 +51,10 @@ def th_iterproduct(*args):
 
 def th_iterproduct_like(x):
     return th_iterproduct(*x.size())
+
+
+def th_uniform(lower, upper):
+    return random.uniform(lower, upper)
 
 
 def th_gather_nd(x, coords):

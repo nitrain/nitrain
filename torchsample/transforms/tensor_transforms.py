@@ -487,3 +487,14 @@ class RandomFlip(object):
             return th.from_numpy(x.copy()),th.from_numpy(y.copy())
 
 
+class RandomOrder(object):
+    """
+    Randomly permute the image channels
+    """
+    def __call__(self, x, y=None):
+        order = th.randperm(x.dim())
+        x = x.index_select(0, order)
+        if y is not None:
+            y = y.index_select(0, order)
+        return x, y
+
