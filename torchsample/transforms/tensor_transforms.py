@@ -263,6 +263,18 @@ class RangeNormalize(object):
             return x, y
 
 
+class UnitRange(object):
+    """
+    Normalize tensor to be between zero and one
+    """
+    def __call__(self, x, y=None):
+        x = x.sub(x.min()).div(x.max()-x.min())
+        if y is not None:
+            y = y.sub(y.min()).div(y.max()-y.min())
+            return x, y
+        return x
+
+
 class StdNormalize(object):
     """
     Normalize torch tensor to have zero mean and unit std deviation

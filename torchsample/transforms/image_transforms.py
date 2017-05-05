@@ -7,8 +7,61 @@ import random
 
 from ..utils import th_zeros_like
 
+def _blend(img1, img2, alpha):
+    """
+    Takes weighted sum of two images
+
+    Example:
+    >>> # img will be all 0.4's
+    >>> img = _blend(th.ones(5,5),th.zeros(5,5),0.4) 
+    """
+    return img1.mul(alpha).add(1 - alpha, img2)
+
+
+class Grayscale(object):
+    """
+    Convert RGB image to grayscale
+
+    Example:
+    >>> import PIL.Image
+    >>> import numpy as np
+    >>> import torch as th
+    >>> img = PIL.Image.open('/users/ncullen/desktop/projects/torchsample/tests/image.jpg')
+    >>> img = th.from_numpy(np.rollaxis(np.asarray(img),2)).float()/255.
+    >>> gs = Grayscale(keep_channels=True)(img)
+    >>> PIL.Image.fromarray(np.uint8(gs.permute(1,2,0).numpy()*255.))
+    """
+    def __init__(self, keep_channels=False):
+        """
+        Convert RGB image to grayscale
+
+        Arguments
+        ---------
+        keep_channels : boolean
+            If true, will keep all 3 channels and they will be the same
+            If false, will just return 1 grayscale channel
+        """
+        self.keep_channels = keep_channels
+        if keep_channels:
+            self.channels = 3
+        else:
+            self.channels = 1
+
+    def __call__(self, x, y=None):
+        x_dst = x[0]*0.299 + x[1]*0.587 + x[2]*0.114
+        x_gs = x_dst.repeat(self.channels,1,1)
+
+        if y is not None:
+            y_dst = y[0]*0.299 + y[1]*0.587 + y[2]*0.114
+            y_gs= y_dst.repeat(self.channels,1,1)
+            return x_gs, y_gs
+        return x_gs
+
+
 class Lighting(object):
     """
+    NOT TESTED NOT TESTED NOT TESTED
+
     function M.Lighting(alphastd, eigval, eigvec)
        return function(input)
           if alphastd == 0 then
@@ -58,64 +111,10 @@ class Lighting(object):
         return x
 
 
-def _blend(img1, img2, alpha):
-    """
-    local function blend(img1, img2, alpha)
-       return img1:mul(alpha):add(1 - alpha, img2)
-    end
-    """
-    return img1.mul(alpha).add(1 - alpha, img2)
-
-
-class Grayscale(object):
-    """
-    local function grayscale(dst, img)
-       dst:resizeAs(img)
-       dst[1]:zero()
-       dst[1]:add(0.299, img[1]):add(0.587, img[2]):add(0.114, img[3])
-       dst[2]:copy(dst[1])
-       dst[3]:copy(dst[1])
-       return dst
-    end
-
-    Example:
-    >>> import PIL.Image
-    >>> import numpy as np
-    >>> import torch as th
-    >>> import matplotlib.pyplot as plt
-    >>> %matplotlib inline
-    >>> img = PIL.Image.open('/users/ncullen/desktop/projects/torchsample/tests/image.jpg')
-    >>> img = th.from_numpy(np.rollaxis(np.asarray(img),2)).float()
-    >>> gs = Grayscale(keep_channels=True)(img)
-    >>> PIL.Image.fromarray(np.uint8(gs.permute(1,2,0).numpy()))
-    """
-    def __init__(self, keep_channels=False):
-        self.keep_channels = keep_channels
-        if keep_channels:
-            self.channels = 3
-        else:
-            self.channels = 1
-
-    def __call__(self, x, y=None):
-        x_dst = x.new(th.Size([self.channels])+x.size()[1:]).zero_()
-        x_dst[0].add_(0.299,x[0]).add_(0.587,x[1]).add_(0.114,x[2])
-        if self.keep_channels:
-            x_dst[1].copy_(x_dst[0])
-            x_dst[2].copy_(x_dst[1])
-
-        if y is not None:
-            y_dst = y.new(th.Size([self.channels])+x.size()[1:]).zero_()
-            y_dst[0].add_(0.299,y[0]).add_(0.587,y[1]).add_(0.114,y[2])
-            if self.keep_channels:
-                y_dst[1].copy_(y_dst[0])
-                y_dst[2].copy_(y_dst[1])
-
-            return x_dst, y_dst
-        return x_dst
-
-
 class Saturation(object):
     """
+    NOT TESTED NOT TESTED NOT TESTED
+
     function M.Saturation(var)
        local gs
 
@@ -155,6 +154,8 @@ class Saturation(object):
 
 class Brightness(object):
     """
+    NOT TESTED NOT TESTED NOT TESTED
+
     function M.Brightness(var)
        local gs
 
@@ -184,7 +185,7 @@ class Brightness(object):
 
     def __call__(self, x, y=None):
         x_gs = th_zeros_like(x)
-        alpha = 1.0 + random.uniform(-self.var, self.var)
+        alpha = 1.0 + self.var#random.uniform(-self.var, self.var)
         x = _blend(x, x_gs, alpha)
         if y is not None:
             y_gs = th_zeros_like(y)
@@ -196,38 +197,57 @@ class Brightness(object):
 
 class Contrast(object):
     """
-    function M.Contrast(var)
-       local gs
+    NOT TESTED NOT TESTED NOT TESTED
 
-       return function(input)
-          gs = gs or input.new()
-          grayscale(gs, input)
-          gs:fill(gs[1]:mean())
+    Contrast is adjusted independently for each channel of each image.
 
-          local alpha = 1.0 + torch.uniform(-var, var)
-          blend(input, gs, alpha)
-          return input
-       end
-    end
+    For each channel, this Op computes the mean of the image pixels 
+    in the channel and then adjusts each component x of each pixel to 
+    (x - mean) * contrast_factor + mean.
+
+    >>> import PIL.Image
+    >>> import numpy as np
+    >>> import torch as th
+    >>> import matplotlib.pyplot as plt
+    >>> %matplotlib inline
+    >>> img = PIL.Image.open('/users/ncullen/desktop/projects/torchsample/tests/image.jpg')
+    >>> x = th.from_numpy(np.rollaxis(np.asarray(img),2)).float()
+
     """
     def __init__(self, var):
         self.var = var
 
     def __call__(self, x, y=None):
-        x_gs = Grayscale(keep_channels=True)(x)
-        x_gs.fill_(x_gs[1].mean())
+        channel_means = x.mean(1)
+        for i in range(2,x.dim()):
+            channel_means = channel_means.mean(i)
+        channel_means = channel_means.expand_as(x)
 
-        alpha = 1.0 + random.uniform(-self.var, self.var)
-        x = _blend(x, x_gs, alpha)
-
+        x = (x - channel_means) * self.var + channel_means
         if y is not None:
-            y_gs = Grayscale(keep_channels=True)(y)
-            y_gs.fill_(y_gs[1].mean())
-            y = _blend(y, y_gs, alpha)
+            channel_means = x.mean(1).mean(2).expand_as(x)
+            x = (x - channel_means) * self.var + channel_means          
+
+
+class Gamma(object):
+    """
+    !! WORKS WORKS WORKS !!
+
+    Performs Gamma Correction on the input image. Also known as 
+    Power Law Transform. This function transforms the input image 
+    pixelwise according 
+    to the equation Out = In**gamma after scaling each 
+    pixel to the range 0 to 1.
+    """
+    def __init__(self, gamma):
+        self.gamma = gamma
+
+    def __call__(self, x, y=None):
+        x = th.pow(x, self.gamma)
+        if y is not None:
+            y = th.pow(y, self.gamma)
             return x, y
         return x
-
-
 
 
 
