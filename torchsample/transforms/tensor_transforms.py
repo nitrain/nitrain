@@ -3,8 +3,9 @@ import os
 import random
 import math
 import numpy as np
-import torch as th
 
+import torch as th
+from torch.autograd import Variable
 
 class Compose(object):
     """
@@ -42,6 +43,16 @@ class ToTensor(object):
         x = th.from_numpy(x)
         if y is not None:
             y = th.from_numpy(y)
+            return x, y
+        return x
+
+
+class ToVariable(object):
+
+    def __call__(self, x, y=None):
+        x = Variable(x)
+        if y is not None:
+            y = Variable(y)
             return x, y
         return x
 
@@ -96,25 +107,26 @@ class ToFile(object):
 class TypeCast(object):
 
     def __init__(self, dtype='float'):
+        if isinstance(dtype, str):
+            if dtype == 'byte':
+                dtype = th.ByteTensor
+            elif dtype == 'double':
+                dtype = th.DoubleTensor
+            elif dtype == 'float':
+                dtype = th.FloatTensor
+            elif dtype == 'int':
+                dtype = th.Intensor
+            elif dtype == 'long':
+                dtype = th.LongTensor
+            elif dtype == 'short':
+                dtype = th.ShortTensor
         self.dtype = dtype
 
-    def __call__(self, x):
-        if self.dtype == th.ByteTensor:
-            x = x.byte()
-        elif self.dtype == th.CharTensor:
-            x = x.char()
-        elif self.dtype == th.DoubleTensor:
-            x = x.double()
-        elif self.dtype == th.FloatTensor:
-            x = x.float()
-        elif self.dtype == th.IntTensor:
-            x = x.int()
-        elif self.dtype == th.LongTensor:
-            x = x.long()
-        elif self.dtype == th.ShortTensor:
-            x = x.short()
-        else:
-            raise Exception('Not a valid Tensor Type')
+    def __call__(self, x, y=None):
+        x = x.type(self.dtype)
+        if y is not None:
+            y = y.type(self.dtype)
+            return x, y
         return x
 
 
