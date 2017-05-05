@@ -20,14 +20,12 @@ def th_flatten(x):
     """Flatten tensor"""
     return x.contiguous().view(-1)
 
-
 def th_c_flatten(x):
     """
     Flatten tensor, leaving channel intact.
     Assumes CHW format.
     """
     return x.contiguous().view(x.size(0), -1)
-
 
 def th_bc_flatten(x):
     """
@@ -37,15 +35,25 @@ def th_bc_flatten(x):
     return x.contiguous().view(x.size(0), x.size(1), -1)
 
 
+def th_zeros_like(x):
+    return x.new().resize_as_(x).zero_()
+
+def th_ones_like(x):
+    return x.new().resize_as_(x).fill_(1)
+
+def th_constant_like(x, val):
+    return x.new().resize_as_(x).fill_(val)
+
+
 def th_iterproduct(*args):
     return th.from_numpy(np.indices(args).reshape((len(args),-1)).T)
-
 
 def th_iterproduct_like(x):
     return th_iterproduct(*x.size())
 
 
 def th_gather_nd(x, coords):
+    x = x.contiguous()
     inds = coords.mv(th.LongTensor(x.stride()))
     x_gather = th.index_select(th_flatten(x), 0, inds)
     return x_gather
