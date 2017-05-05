@@ -1,6 +1,9 @@
 """
 Transforms very specific to images such as 
 color, lighting, contrast, brightness, etc transforms
+
+NOTE: Most of these transforms assume your image intensity
+is between 0 and 1, and are torch tensors (NOT numpy or PIL)
 """
 import torch as th
 import random
@@ -21,15 +24,6 @@ def _blend(img1, img2, alpha):
 class Grayscale(object):
     """
     Convert RGB image to grayscale
-
-    Example:
-    >>> import PIL.Image
-    >>> import numpy as np
-    >>> import torch as th
-    >>> img = PIL.Image.open('/users/ncullen/desktop/projects/torchsample/tests/image.jpg')
-    >>> img = th.from_numpy(np.rollaxis(np.asarray(img),2)).float()/255.
-    >>> gs = Grayscale(keep_channels=True)(img)
-    >>> PIL.Image.fromarray(np.uint8(gs.permute(1,2,0).numpy()*255.))
     """
     def __init__(self, keep_channels=False):
         """
@@ -58,196 +52,123 @@ class Grayscale(object):
         return x_gs
 
 
-class Lighting(object):
+class Gamma(object):
     """
-    NOT TESTED NOT TESTED NOT TESTED
+    Performs Gamma Correction on the input image. Also known as 
+    Power Law Transform. This function transforms the input image 
+    pixelwise according 
+    to the equation Out = In**gamma after scaling each 
+    pixel to the range 0 to 1.
 
-    function M.Lighting(alphastd, eigval, eigvec)
-       return function(input)
-          if alphastd == 0 then
-             return input
-          end
-
-          local alpha = torch.Tensor(3):normal(0, alphastd)
-          local rgb = eigvec:clone()
-             :cmul(alpha:view(1, 3):expand(3, 3))
-             :cmul(eigval:view(1, 3):expand(3, 3))
-             :sum(2)
-             :squeeze()
-
-          input = input:clone()
-          for i=1,3 do
-             input[i]:add(rgb[i])
-          end
-          return input
-       end
-    end
     """
+    def __init__(self, value):
+        """
+        Perform Gamma correction
 
-    def __init__(self, alphastd, eigval, eigvec):
-        self.alphastd = alphastd
-        self.eigval = eigval
-        self.eigvec = eigvec
+        Arguments
+        ---------
+        gamma : float
+            <1 : image will tend to be lighter
+            =1 : image will stay the same
+            >1 : image will tend to be darker
+        """
+        self.value = value
 
     def __call__(self, x, y=None):
-        if self.alphastd == 0:
-            if y is not None:
-                return x, y
-            return x
-
-        alpha = th.Tensor(3).normal_(0, self.alphastd)
-        rgb = self.eigvec.clone().cmul(alpha.view(1,3).expand(3,3))
-        rgb = rgb.cmul(self.eigval.view(1,3).expand(3,3))
-        rgb = rgb.sum(2).squeeze()
-
-        x = x.clone()
-        for i in range(3):
-            x[i].add_(rgb[i])
+        x = th.pow(x, self.value)
         if y is not None:
-            y = y.clone()
-            for i in range(3):
-                y[i].add_(rgb[i])
-            return x, y
-        return x
-
-
-class Saturation(object):
-    """
-    NOT TESTED NOT TESTED NOT TESTED
-
-    function M.Saturation(var)
-       local gs
-
-       return function(input)
-          gs = gs or input.new()
-          grayscale(gs, input)
-
-          local alpha = 1.0 + torch.uniform(-var, var)
-          blend(input, gs, alpha)
-          return input
-       end
-    end
-
-    >>> import PIL.Image
-    >>> import numpy as np
-    >>> import torch as th
-    >>> import matplotlib.pyplot as plt
-    >>> %matplotlib inline
-    >>> img = PIL.Image.open('/users/ncullen/desktop/projects/torchsample/tests/image.jpg')
-    >>> img = th.from_numpy(np.rollaxis(np.asarray(img),2)).float()
-    >>> gs = Saturation(0.5)(img)
-    >>> PIL.Image.fromarray(np.uint8(gs.permute(1,2,0).numpy()))
-    """
-    def __init__(self, var):
-        self.var = var
-
-    def __call__(self, x, y=None):
-        x_gs = Grayscale(keep_channels=True)(x)
-        alpha = 1.0 + random.uniform(-self.var, self.var)
-        x = _blend(x, x_gs, alpha)
-        if y is not None:
-            y_gs = Grayscale(keep_channels=True)(y)
-            y = _blend(y, y_gs, alpha)
+            y = th.pow(y, self.value)
             return x, y
         return x
 
 
 class Brightness(object):
     """
-    NOT TESTED NOT TESTED NOT TESTED
-
-    function M.Brightness(var)
-       local gs
-
-       return function(input)
-          gs = gs or input.new()
-          gs:resizeAs(input):zero()
-
-          local alpha = 1.0 + torch.uniform(-var, var)
-          blend(input, gs, alpha)
-          return input
-       end
-    end
-
-    >>> import PIL.Image
-    >>> import numpy as np
-    >>> import torch as th
-    >>> import matplotlib.pyplot as plt
-    >>> %matplotlib inline
-    >>> img = PIL.Image.open('/users/ncullen/desktop/projects/torchsample/tests/image.jpg')
-    >>> img = th.from_numpy(np.rollaxis(np.asarray(img),2)).float()
-    >>> gs = Brightness(0.5)(img)
-    >>> PIL.Image.fromarray(np.uint8(gs.permute(1,2,0).numpy()))
-
+    Alter the Brightness of an image
     """
-    def __init__(self, var):
-        self.var = var
+    def __init__(self, value):
+        """
+        Arguments
+        ---------
+        value : brightness factor
+            =-1 = completely black
+            <0 = darker
+            0 = no change
+            >0 = brighter
+            =1 = completely white
+        """
+        self.value = max(min(value,1.0),-1.0)
 
     def __call__(self, x, y=None):
-        x_gs = th_zeros_like(x)
-        alpha = 1.0 + self.var#random.uniform(-self.var, self.var)
-        x = _blend(x, x_gs, alpha)
+        x = th.clamp(x.float().add(self.value).type(x.type()), 0, 1)
         if y is not None:
-            y_gs = th_zeros_like(y)
-            # use the same alpha
-            y = _blend(y, y_gs, alpha)
+            y = th.clamp(y.float().add(self.value).type(y.type()), 0, 1)
+            return x, y
+        return x
+
+
+class Saturation(object):
+    """
+    Alter the Saturation of image
+    """
+    def __init__(self, value):
+        """
+        Arguments
+        ---------
+        value : float
+            =-1 : gray
+            <0 : colors are more muted
+            =0 : image stays the same
+            >0 : colors are more pure
+            =1 : most saturated
+        """
+        self.value = max(min(value,1.0),-1.0)
+
+    def __call__(self, x, y=None):
+        x_gs = Grayscale(keep_channels=True)(x)
+        alpha = 1.0 + self.value
+        x = th.clamp(_blend(x, x_gs, alpha),0,1)
+        if y is not None:
+            y_gs = Grayscale(keep_channels=True)(y)
+            y = th.clamp(_blend(y, y_gs, alpha),0,1)
             return x, y
         return x
 
 
 class Contrast(object):
     """
-    NOT TESTED NOT TESTED NOT TESTED
-
     Contrast is adjusted independently for each channel of each image.
 
     For each channel, this Op computes the mean of the image pixels 
     in the channel and then adjusts each component x of each pixel to 
     (x - mean) * contrast_factor + mean.
-
-    >>> import PIL.Image
-    >>> import numpy as np
-    >>> import torch as th
-    >>> import matplotlib.pyplot as plt
-    >>> %matplotlib inline
-    >>> img = PIL.Image.open('/users/ncullen/desktop/projects/torchsample/tests/image.jpg')
-    >>> x = th.from_numpy(np.rollaxis(np.asarray(img),2)).float()
-
     """
-    def __init__(self, var):
-        self.var = var
+    def __init__(self, value):
+        """
+        Arguments
+        ---------
+        value : float
+            smaller value: less contrast
+            ZERO: channel means
+            larger positive value: greater contrast
+            larger negative value: greater inverse contrast
+            
+    
+        """
+        self.value = value
 
     def __call__(self, x, y=None):
-        channel_means = x.mean(1)
-        for i in range(2,x.dim()):
-            channel_means = channel_means.mean(i)
+        channel_means = x.mean(1).mean(2)
         channel_means = channel_means.expand_as(x)
+        x = th.clamp((x - channel_means) * self.value + channel_means,0,1)
 
-        x = (x - channel_means) * self.var + channel_means
         if y is not None:
-            channel_means = x.mean(1).mean(2).expand_as(x)
-            x = (x - channel_means) * self.var + channel_means          
-
-
-class Gamma(object):
-    """
-    !! WORKS WORKS WORKS !!
-
-    Performs Gamma Correction on the input image. Also known as 
-    Power Law Transform. This function transforms the input image 
-    pixelwise according 
-    to the equation Out = In**gamma after scaling each 
-    pixel to the range 0 to 1.
-    """
-    def __init__(self, gamma):
-        self.gamma = gamma
-
-    def __call__(self, x, y=None):
-        x = th.pow(x, self.gamma)
-        if y is not None:
-            y = th.pow(y, self.gamma)
+            channel_means = y.mean(1).mean(2).expand_as(y)
+            y = th.clamp((y - channel_means) * self.value + channel_means,0,1)       
             return x, y
         return x
+
+
 
 
 
