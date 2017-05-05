@@ -104,6 +104,52 @@ class ToFile(object):
             return x
 
 
+class ChannelsLast(object):
+
+    def __init__(self, safe_check=False):
+        self.safe_check = safe_check
+
+    def __call__(self, x, y=None):
+        ndim = x.dim()
+        if self.safe_check:
+            # check if channels are already last
+            if x.size(-1) < x.size(0):
+                if y is not None:
+                    return x, y
+                return x
+        plist = list(range(1,ndim))+[0]
+        x = x.permute(*plist)
+        if y is not None:
+            y = y.permute(*plist)
+            return x, y
+        return x
+
+HWC = ChannelsLast
+DHWC = ChannelsLast
+
+class ChannelsFirst(object):
+
+    def __init__(self, safe_check=False):
+        self.safe_check = safe_check
+
+    def __call__(self, x, y=None):
+        ndim = x.dim()
+        if self.safe_check:
+            # check if channels are already first
+            if x.size(0) < x.size(-1):
+                if y is not None:
+                    return x, y
+                return x
+        plist = [ndim-1] + list(range(0,ndim-1))
+        x = x.permute(*plist)
+        if y is not None:
+            y = y.permute(*plist)
+            return x, y
+        return x
+
+CHW = ChannelsFirst
+CDHW = ChannelsFirst
+
 class TypeCast(object):
 
     def __init__(self, dtype='float'):
