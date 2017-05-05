@@ -8,7 +8,6 @@ is between 0 and 1, and are torch tensors (NOT numpy or PIL)
 import torch as th
 import random
 
-from ..utils import th_zeros_like
 
 def _blend(img1, img2, alpha):
     """
@@ -169,7 +168,29 @@ class Contrast(object):
         return x
 
 
+def rgb_to_hsv(x):
+    """
+    Convert from RGB to HSV
+    """
+    hsv = th.zeros(*x.size())
+    c_min = x.min(0)
+    c_max = x.max(0)
 
+    delta = c_max[0] - c_min[0]
 
+    # set H
+    r_idx = c_max[1].eq(0)
+    hsv[0][r_idx] = ((x[1][r_idx] - x[2][r_idx]) / delta[r_idx]) % 6
+    g_idx = c_max[1].eq(1)
+    hsv[0][g_idx] = 2 + ((x[2][g_idx] - x[0][g_idx]) / delta[g_idx])
+    b_idx = c_max[1].eq(2)
+    hsv[0][b_idx] = 4 + ((x[0][b_idx] - x[1][b_idx]) / delta[b_idx])
+    hsv[0] = hsv[0].mul(60)
 
+    # set S
+    hsv[1] = delta / c_max[0]
 
+    # set V - good
+    hsv[2] = c_max[0]
+
+    return hsv
