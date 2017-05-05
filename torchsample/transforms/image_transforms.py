@@ -194,7 +194,7 @@ class Brightness(object):
         return x
 
 
-class Constrast(object):
+class Contrast(object):
     """
     function M.Contrast(var)
        local gs
