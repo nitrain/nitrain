@@ -51,7 +51,7 @@ class Grayscale(object):
         return x_gs
 
 
-class Gamma(object):
+class AdjustGamma(object):
     """
     Performs Gamma Correction on the input image. Also known as 
     Power Law Transform. This function transforms the input image 
@@ -80,8 +80,17 @@ class Gamma(object):
             return x, y
         return x
 
+class RandomGamma(object):
 
-class Brightness(object):
+    def __init__(self, min_val, max_val):
+        self.values = (min_val, max_val)
+
+    def __call__(self, x, y=None):
+        value = random.uniform(self.values[0], self.values[1])
+        return AdjustGamma(value)(x, y)
+
+
+class AdjustBrightness(object):
     """
     Alter the Brightness of an image
     """
@@ -105,8 +114,17 @@ class Brightness(object):
             return x, y
         return x
 
+class RandomBrightness(object):
 
-class Saturation(object):
+    def __init__(self, min_val, max_val):
+        self.values = (min_val, max_val)
+
+    def __call__(self, x, y=None):
+        value = random.uniform(self.values[0], self.values[1])
+        return AdjustBrightness(value)(x, y)
+
+
+class AdjustSaturation(object):
     """
     Alter the Saturation of image
     """
@@ -133,8 +151,17 @@ class Saturation(object):
             return x, y
         return x
 
+class RandomSaturation(object):
 
-class Contrast(object):
+    def __init__(self, min_val, max_val):
+        self.values = (min_val, max_val)
+
+    def __call__(self, x, y=None):
+        value = random.uniform(self.values[0], self.values[1])
+        return AdjustSaturation(value)(x, y)
+
+
+class AdjustContrast(object):
     """
     Contrast is adjusted independently for each channel of each image.
 
@@ -151,8 +178,6 @@ class Contrast(object):
             ZERO: channel means
             larger positive value: greater contrast
             larger negative value: greater inverse contrast
-            
-    
         """
         self.value = value
 
@@ -166,6 +191,15 @@ class Contrast(object):
             y = th.clamp((y - channel_means) * self.value + channel_means,0,1)       
             return x, y
         return x
+
+class RandomContrast(object):
+
+    def __init__(self, min_val, max_val):
+        self.values = (min_val, max_val)
+
+    def __call__(self, x, y=None):
+        value = random.uniform(self.values[0], self.values[1])
+        return AdjustContrast(value)(x, y)
 
 
 def rgb_to_hsv(x):
