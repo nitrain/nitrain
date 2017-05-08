@@ -5,7 +5,10 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import math
-import torch
+from collections import OrderedDict
+
+import torch as th
+import torch.nn as nn
 from torch.autograd import Variable
 
 # local imports
@@ -62,6 +65,49 @@ class ModuleTrainer(object):
         Should be overriden by all subclasses.
         """
         raise NotImplementedError('Subclass must implement this method')
+
+    def summary(self, input_size):
+        print('hre')
+        def register_hook(module):
+            def hook(module, input, output):
+                class_name = str(module.__class__).split('.')[-1].split("'")[0]
+                module_idx = len(summary)
+
+                m_key = '%s-%i' % (class_name, module_idx)
+                summary[m_key] = OrderedDict()
+                summary[m_key]['input_shape'] = list(input[0].size())
+                summary[m_key]['input_shape'][0] = -1
+                summary[m_key]['output_shape'] = list(output.size())
+                summary[m_key]['output_shape'][0] = -1
+                params = 0
+                if hasattr(module, 'weight'):
+                    params += th.prod(th.LongTensor(list(module.weight.size())))
+                if hasattr(module, 'bias'):
+                    params +=  th.prod(th.LongTensor(list(module.bias.size())))
+                summary[m_key]['nb_params'] = params
+                
+            if not isinstance(module, nn.Sequential) and \
+               not isinstance(module, nn.ModuleList) and \
+               not (module == self.model):
+                hooks.append(module.register_forward_hook(hook))
+
+        if isinstance(input_size[0], list):
+            x = [Variable(th.rand(1,*in_size)) for in_size in input_size]
+        else:
+            x = Variable(th.rand(1,*input_size))
+
+        # create properties
+        summary = OrderedDict()
+        hooks = []
+        # register hook
+        self.model.apply(register_hook)
+        # make a forward pass
+        self.model(x)
+        # remove these hooks
+        for h in hooks:
+            h.remove()
+
+        return summary
 
     def set_loss(self, loss):
         self._loss = loss
@@ -275,7 +321,7 @@ class ModuleTrainer(object):
 
                 # shuffle inputs and targets if necessary
                 if shuffle:
-                    rand_idx = torch.randperm(len(inputs[0]))
+                    rand_idx = th.randperm(len(inputs[0]))
                     inputs = [ins[rand_idx] for ins in inputs]
                     targets = [tars[rand_idx] for tars in targets]
 
@@ -677,7 +723,7 @@ class ModuleTrainer(object):
                 input_batch = [ins.cuda(cuda_device) for ins in input_batch]
 
             prediction_list.append(self.model(*input_batch))
-        return torch.cat(prediction_list,0)
+        return th.cat(prediction_list,0)
 
     def predict_loader(self,
                        loader,
@@ -695,7 +741,7 @@ class ModuleTrainer(object):
                 input_batch = [ins.cuda(cuda_device) for ins in input_batch]
 
             prediction_list.append(self.model(*input_batch))
-        return torch.cat(prediction_list,0)
+        return th.cat(prediction_list,0)
 
     def predict_on_batch(self, 
                          inputs, 
@@ -890,7 +936,7 @@ class ModuleTrainer(object):
         """
         # model parameters -> ordered dict
         state_dict = self.model.state_dict()
-        torch.save(state_dict, file)
+        th.save(state_dict, file)
 
 
 
