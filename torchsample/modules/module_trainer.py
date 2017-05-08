@@ -67,7 +67,6 @@ class ModuleTrainer(object):
         raise NotImplementedError('Subclass must implement this method')
 
     def summary(self, input_size):
-        print('hre')
         def register_hook(module):
             def hook(module, input, output):
                 class_name = str(module.__class__).split('.')[-1].split("'")[0]
