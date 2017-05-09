@@ -72,15 +72,20 @@ class ModuleTrainer(object):
                 class_name = str(module.__class__).split('.')[-1].split("'")[0]
                 module_idx = len(summary)
 
-                m_key = '%s-%i' % (class_name, module_idx)
+                m_key = '%s-%i' % (class_name, module_idx+1)
                 summary[m_key] = OrderedDict()
                 summary[m_key]['input_shape'] = list(input[0].size())
                 summary[m_key]['input_shape'][0] = -1
                 summary[m_key]['output_shape'] = list(output.size())
                 summary[m_key]['output_shape'][0] = -1
+
                 params = 0
                 if hasattr(module, 'weight'):
                     params += th.prod(th.LongTensor(list(module.weight.size())))
+                    if module.weight.requires_grad:
+                        summary[m_key]['trainable'] = True
+                    else:
+                        summary[m_key]['trainable'] = False
                 if hasattr(module, 'bias'):
                     params +=  th.prod(th.LongTensor(list(module.bias.size())))
                 summary[m_key]['nb_params'] = params
