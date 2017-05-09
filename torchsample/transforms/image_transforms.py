@@ -80,6 +80,7 @@ class AdjustGamma(object):
             return x, y
         return x
 
+
 class RandomGamma(object):
 
     def __init__(self, min_val, max_val):
@@ -113,6 +114,7 @@ class AdjustBrightness(object):
             y = th.clamp(y.float().add(self.value).type(y.type()), 0, 1)
             return x, y
         return x
+
 
 class RandomBrightness(object):
 
@@ -150,6 +152,7 @@ class AdjustSaturation(object):
             y = th.clamp(_blend(y, y_gs, alpha),0,1)
             return x, y
         return x
+
 
 class RandomSaturation(object):
 
@@ -191,6 +194,7 @@ class AdjustContrast(object):
             y = th.clamp((y - channel_means) * self.value + channel_means,0,1)       
             return x, y
         return x
+
 
 class RandomContrast(object):
 

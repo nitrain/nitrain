@@ -182,10 +182,13 @@ class AddChannel(object):
     This will make an image of size (28, 28) to now be
     of size (1, 28, 28), for example.
     """
+    def __init__(self, axis=0):
+        self.axis = axis
+
     def __call__(self, x, y=None):
-        x = x.unsqueeze(2)
+        x = x.unsqueeze(self.axis)
         if y is not None:
-            y = y.unsqueeze(2)
+            y = y.unsqueeze(self.axis)
             return x,y
         return x
 
@@ -218,6 +221,22 @@ class RangeNormalize(object):
     where min' & max' are given values, 
     and min & max are observed min/max for each channel
     
+    Arguments
+    ---------
+    min_range : float or integer
+        Min value to which tensors will be normalized
+    max_range : float or integer
+        Max value to which tensors will be normalized
+    fixed_min : float or integer
+        Give this value if every sample has the same min (max) and 
+        you know for sure what it is. For instance, if you
+        have an image then you know the min value will be 0 and the
+        max value will be 255. Otherwise, the min/max value will be
+        calculated for each individual sample and this will decrease
+        speed. Dont use this if each sample has a different min/max.
+    fixed_max :float or integer
+        See above
+
     Example:
         >>> x = th.rand(3,5,5)
         >>> rn = RangeNormalize((0,0,10),(1,1,11))
@@ -228,8 +247,11 @@ class RangeNormalize(object):
         >>> rn = RangeNormalize(0,1)
         >>> x_norm = rn(x)
     """
-    def __init__(self, min_range, max_range, 
-        fixed_min=None, fixed_max=None):
+    def __init__(self, 
+                 min_range, 
+                 max_range, 
+                 fixed_min=None, 
+                 fixed_max=None):
         self.min_range = min_range
         self.max_range = max_range
         self.fixed_min = fixed_min
@@ -249,18 +271,16 @@ class RangeNormalize(object):
 
         a = (self.max_range - self.min_range) / (max_val - min_val)
         b = self.max_range - a * max_val
-        x.mul_(a).add_(b)
-        #x.clamp_(self.min_range, self.max_range)
+        x_norm = x.mul(a).add(b)
         if y is None:
-            return x
+            return x_norm
         else:
             min_val = th.min(y)
             max_val = th.max(y)
             a = (self.max_range - self.min_range) / (max_val - min_val)
             b = self.max_range - a * max_val
-            y.mul_(a).add_(b)
-            #y.clamp_(self.min_range, self.max_range)
-            return x, y
+            y_norm = y.mul(a).add(b)
+            return x_norm, y_norm
 
 
 class UnitRange(object):
