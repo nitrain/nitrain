@@ -126,11 +126,23 @@ def th_affine2d(x, matrix, mode='bilinear', center=True):
 
     # map new coordinates using bilinear interpolation
     if mode == 'nearest':
-        x_transformed = th_nearest_interp2d(x, new_coords)
+        x_transformed = th_nearest_interp2d(x.contiguous(), new_coords)
     elif mode == 'bilinear':
-        x_transformed = th_bilinear_interp2d(x, new_coords)
+        x_transformed = th_bilinear_interp2d(x.contiguous(), new_coords)
 
     return x_transformed
+
+
+def _th_nearest_interp2d(input, coords, fill_value):
+    """
+    Support for fill_value on overflow coordinates
+    """
+    x = coords[:,:,0]
+    y = coords[:,:,1]
+    # image coordinates where there is an overflow
+    idx_overflow = th.cat([coords.le(0), 
+                           coords.ge(th.FloatTensor([input.size(1)-1,input.size(2)-1]).expand_as(coords))],
+                          0)
 
 
 def th_nearest_interp2d(input, coords):
@@ -145,7 +157,7 @@ def th_nearest_interp2d(input, coords):
     x_ix = x.mul(stride[1]).long()
     y_ix = y.mul(stride[2]).long()
 
-    input_flat = input.view(input.size(0),-1).contiguous()
+    input_flat = input.view(input.size(0),-1)
 
     mapped_vals = input_flat.gather(1, x_ix.add(y_ix))
 
@@ -169,7 +181,7 @@ def th_bilinear_interp2d(input, coords):
     y0_ix = y0.mul(stride[2]).long()
     y1_ix = y1.mul(stride[2]).long()
 
-    input_flat = input.view(input.size(0),-1).contiguous()
+    input_flat = input.view(input.size(0),-1)
 
     vals_00 = input_flat.gather(1, x0_ix.add(y0_ix))
     vals_10 = input_flat.gather(1, x1_ix.add(y0_ix))

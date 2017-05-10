@@ -181,70 +181,6 @@ class FolderDataset(torch.utils.data.Dataset):
         return len(self.inputs)
 
 
-class MultiTensorDataset(torch.utils.data.Dataset):
-
-    def __init__(self,
-                 input_tensors,
-                 target_tensors=None,
-                 input_transform=None, 
-                 target_transform=None,
-                 co_transform=None):
-        """
-        Sample multiple input/target tensors at once
-
-        Example:
-        >>> import torch
-        >>> from torch.utils.data import DataLoader
-        >>> x1 = torch.ones(100,5)
-        >>> x2 = torch.zeros(100,10)
-        >>> y = torch.ones(100,1)*10
-        >>> dataset = MultiTensorDataset([x1,x2], None)
-        >>> loader = DataLoader(dataset, 
-        ...           sampler=SequentialSampler(x1.size(0)), batch_size=5)
-        >>> loader_iter = iter(loader)
-        >>> x,y = next(loader_iter)
-        """
-        if not isinstance(input_tensors, list):
-            input_tensors = [input_tensors]
-        self.inputs = input_tensors
-        self.num_inputs = len(input_tensors)
-
-        if not isinstance(target_tensors, list) and target_tensors is not None:
-            target_tensors = [target_tensors]
-        self.targets = target_tensors
-
-        if target_tensors is None:
-            self.has_target = False
-        else:
-            self.has_target = True
-            self.num_targets = len(target_tensors)
-
-        self.input_transform = input_transform
-        self.target_transform = target_transform
-
-    def __getitem__(self, index):
-        """Return a (transformed) input and target sample from an integer index"""
-        # get paths
-        input_samples = [self.inputs[i][index] for i in range(self.num_inputs)]
-        if self.has_target:
-            target_samples = [self.targets[i][index] for i in range(self.num_targets)]
-
-        # apply transforms
-        if self.input_transform is not None:
-            input_samples = [self.input_transform(input_samples[i]) for i in range(self.num_inputs)]
-        if self.has_target and self.target_transform is not None:
-            target_samples = [self.target_transform(target_samples[i]) for i in range(self.num_targets)]
-
-        if self.has_target:
-            return input_samples, target_samples
-        else:
-            return [input_samples]
-
-    def __len__(self):
-        """Number of samples"""
-        return self.inputs.size(0)
-
-
 class TensorDataset(torch.utils.data.Dataset):
 
     def __init__(self,
@@ -303,6 +239,80 @@ class TensorDataset(torch.utils.data.Dataset):
             return input_sample, target_sample
         else:
             return input_sample
+
+    def __len__(self):
+        """Number of samples"""
+        return self.inputs.size(0)
+
+
+class CSVDataset(torch.utils.data.Dataset):
+
+    def __init__(self,
+                 filepath,
+                 input_transform=None,
+                 target_transform=None,
+                 co_transform=None):
+        pass
+
+
+class MultiTensorDataset(torch.utils.data.Dataset):
+
+    def __init__(self,
+                 input_tensors,
+                 target_tensors=None,
+                 input_transform=None, 
+                 target_transform=None,
+                 co_transform=None):
+        """
+        Sample multiple input/target tensors at once
+
+        Example:
+        >>> import torch
+        >>> from torch.utils.data import DataLoader
+        >>> x1 = torch.ones(100,5)
+        >>> x2 = torch.zeros(100,10)
+        >>> y = torch.ones(100,1)*10
+        >>> dataset = MultiTensorDataset([x1,x2], None)
+        >>> loader = DataLoader(dataset, 
+        ...           sampler=SequentialSampler(x1.size(0)), batch_size=5)
+        >>> loader_iter = iter(loader)
+        >>> x,y = next(loader_iter)
+        """
+        if not isinstance(input_tensors, list):
+            input_tensors = [input_tensors]
+        self.inputs = input_tensors
+        self.num_inputs = len(input_tensors)
+
+        if not isinstance(target_tensors, list) and target_tensors is not None:
+            target_tensors = [target_tensors]
+        self.targets = target_tensors
+
+        if target_tensors is None:
+            self.has_target = False
+        else:
+            self.has_target = True
+            self.num_targets = len(target_tensors)
+
+        self.input_transform = input_transform
+        self.target_transform = target_transform
+
+    def __getitem__(self, index):
+        """Return a (transformed) input and target sample from an integer index"""
+        # get paths
+        input_samples = [self.inputs[i][index] for i in range(self.num_inputs)]
+        if self.has_target:
+            target_samples = [self.targets[i][index] for i in range(self.num_targets)]
+
+        # apply transforms
+        if self.input_transform is not None:
+            input_samples = [self.input_transform(input_samples[i]) for i in range(self.num_inputs)]
+        if self.has_target and self.target_transform is not None:
+            target_samples = [self.target_transform(target_samples[i]) for i in range(self.num_targets)]
+
+        if self.has_target:
+            return input_samples, target_samples
+        else:
+            return [input_samples]
 
     def __len__(self):
         """Number of samples"""

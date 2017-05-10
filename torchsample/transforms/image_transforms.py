@@ -81,7 +81,7 @@ class AdjustGamma(object):
         return x
 
 
-class RandomGamma(object):
+class RandomAdjustGamma(object):
 
     def __init__(self, min_val, max_val):
         self.values = (min_val, max_val)
@@ -116,7 +116,7 @@ class AdjustBrightness(object):
         return x
 
 
-class RandomBrightness(object):
+class RandomAdjustBrightness(object):
 
     def __init__(self, min_val, max_val):
         self.values = (min_val, max_val)
@@ -154,7 +154,7 @@ class AdjustSaturation(object):
         return x
 
 
-class RandomSaturation(object):
+class RandomAdjustSaturation(object):
 
     def __init__(self, min_val, max_val):
         self.values = (min_val, max_val)
@@ -196,7 +196,7 @@ class AdjustContrast(object):
         return x
 
 
-class RandomContrast(object):
+class RandomAdjustContrast(object):
 
     def __init__(self, min_val, max_val):
         self.values = (min_val, max_val)
