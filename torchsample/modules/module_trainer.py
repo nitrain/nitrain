@@ -239,7 +239,7 @@ class ModuleTrainer(object):
     def fit(self,
             inputs,
             targets=None,
-            validation_data=None,
+            val_data=None,
             nb_epoch=100,
             batch_size=32,
             shuffle=False,
@@ -260,7 +260,7 @@ class ModuleTrainer(object):
             nb_targets = len(targets)
 
         # store whether validation data was given
-        if validation_data is None:
+        if val_data is None:
             has_validation_data = False
         else:
             has_validation_data = True      
@@ -413,7 +413,7 @@ class ModuleTrainer(object):
 
                 # validation evaluation if necessary
                 if has_validation_data:
-                    val_loss = self.evaluate(*validation_data, 
+                    val_loss = self.evaluate(*val_data, 
                                              batch_size=batch_size,
                                              cuda_device=cuda_device)
                     if self._has_metrics:
@@ -817,7 +817,7 @@ class ModuleTrainer(object):
         # put model back in training mode
         self.model.train()
         if self._has_metrics:
-            return total_loss / float(total_samples), metric_logs
+            return total_loss / float(total_samples), {k.split('_metric')[0]:v for k,v in metric_logs.items()}
         else:
             return total_loss / float(total_samples)
 

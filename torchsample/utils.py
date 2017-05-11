@@ -371,14 +371,14 @@ def th_matrixcorr(x, y):
     return r_mat
 
 
-def th_random_choice(a, size=None, replace=True, p=None):
+def th_random_choice(a, n_samples=1, replace=True, p=None):
     """
     Parameters
     -----------
     a : 1-D array-like
         If a th.Tensor, a random sample is generated from its elements.
         If an int, the random sample is generated as if a was th.range(n)
-    size : int, optional
+    n_samples : int, optional
         Number of samples to draw. Default is None, in which case a
         single value is returned.
     replace : boolean, optional
@@ -393,26 +393,26 @@ def th_random_choice(a, size=None, replace=True, p=None):
     samples : 1-D ndarray, shape (size,)
         The generated random samples
     """
-    if size is None:
-        size = 1
-
     if isinstance(a, int):
         a = th.arange(0, a)
 
     if p is None:
         if replace:
-            idx = th.floor(th.rand(size)*a.size(0)).long()
+            idx = th.floor(th.rand(n_samples)*a.size(0)).long()
         else:
-            idx = th.randperm(a.size(0))[:size]
+            idx = th.randperm(len(a))[:n_samples]
     else:
         if abs(1.0-sum(p)) > 1e-3:
             raise ValueError('p must sum to 1.0')
         if not replace:
             raise ValueError('replace must equal true if probabilities given')
         idx_vec = th.cat([th.zeros(round(p[i]*1000))+i for i in range(len(p))])
-        idx = (th.floor(th.rand(size)*999.99)).long()
+        idx = (th.floor(th.rand(n_samples)*999)).long()
         idx = idx_vec[idx].long()
-    return a[idx]
+    selection = a[idx]
+    if n_samples == 1:
+        selection = selection[0]
+    return selection
 
 
 def save_transform(file, transform):

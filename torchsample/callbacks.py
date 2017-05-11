@@ -221,11 +221,11 @@ class ModelCheckpoint(Callback):
 
     def __init__(self,
                  directory, 
-                 fname='checkpoint.pth.tar', 
+                 filename='ckpt.pth.tar', 
                  monitor='val_loss', 
                  save_best_only=False, 
                  save_weights_only=True,
-                 max_checkpoints=-1,
+                 max_save=-1,
                  verbose=0):
         """
         Model Checkpoint to save model weights during training
@@ -243,23 +243,25 @@ class ModelCheckpoint(Callback):
         save_weight_only : boolean 
             whether to save entire model or just weights
             NOTE: only `True` is supported at the moment
-        max_checkpoints : integer > 0 or -1
+        max_save : integer > 0 or -1
             the max number of models to save. Older model checkpoints
             will be overwritten if necessary. Set equal to -1 to have
             no limit
         verbose : integer in {0, 1}
             verbosity
         """
+        if directory.startswith('~'):
+            directory = os.path.expanduser(directory)
         self.directory = directory
-        self.fname = fname
-        self.file = os.path.join(self.directory, self.fname)
+        self.filename = filename
+        self.file = os.path.join(self.directory, self.filename)
         self.monitor = monitor
         self.save_best_only = save_best_only
         self.save_weights_only = save_weights_only
-        self.max_checkpoints = max_checkpoints
+        self.max_save = max_save
         self.verbose = verbose
 
-        if self.max_checkpoints > 0:
+        if self.max_save > 0:
             self.old_files = []
 
         # mode = 'min' only supported
@@ -300,8 +302,8 @@ class ModelCheckpoint(Callback):
                     #            #'metrics':{},
                     #            #'val_loss':{}
                     #        })
-                    if self.max_checkpoints > 0:
-                        if len(self.old_files) == self.max_checkpoints:
+                    if self.max_save > 0:
+                        if len(self.old_files) == self.max_save:
                             try:
                                 os.remove(self.old_files[0])
                             except:
@@ -312,8 +314,8 @@ class ModelCheckpoint(Callback):
             if self.verbose > 0:
                 print('\nEpoch %i: saving model to %s' % (epoch+1, file))
             self.model.save_state_dict(file)
-            if self.max_checkpoints > 0:
-                if len(self.old_files) == self.max_checkpoints:
+            if self.max_save > 0:
+                if len(self.old_files) == self.max_save:
                     try:
                         os.remove(self.old_files[0])
                     except:
@@ -597,14 +599,14 @@ class ExperimentLogger(Callback):
 
     def __init__(self,
                  directory,
-                 fname='Experiment_Logger.csv',
+                 filename='Experiment_Logger.csv',
                  save_prefix='Model_', 
                  separator=',', 
                  append=True):
 
         self.directory = directory
-        self.fname = fname
-        self.file = os.path.join(self.directory, self.fname)
+        self.filename = filename
+        self.file = os.path.join(self.directory, self.filename)
         self.save_prefix = save_prefix
         self.sep = separator
         self.append = append
