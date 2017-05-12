@@ -133,18 +133,6 @@ def th_affine2d(x, matrix, mode='bilinear', center=True):
     return x_transformed
 
 
-def _th_nearest_interp2d(input, coords, fill_value):
-    """
-    Support for fill_value on overflow coordinates
-    """
-    x = coords[:,:,0]
-    y = coords[:,:,1]
-    # image coordinates where there is an overflow
-    idx_overflow = th.cat([coords.le(0), 
-                           coords.ge(th.FloatTensor([input.size(1)-1,input.size(2)-1]).expand_as(coords))],
-                          0)
-
-
 def th_nearest_interp2d(input, coords):
     """
     2d nearest neighbor interpolation th.Tensor
