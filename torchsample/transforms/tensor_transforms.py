@@ -7,6 +7,7 @@ import numpy as np
 import torch as th
 from torch.autograd import Variable
 
+
 class Compose(object):
     """
     Composes several transforms together.
@@ -23,7 +24,7 @@ class Compose(object):
     def __init__(self, transforms):
         self.transforms = transforms
 
-    def __call__(self, x, y=None):
+    def __call__(self, x, y):
         if y is not None:
             for t in self.transforms:
                 x, y = t(x, y)
@@ -39,22 +40,22 @@ class ToTensor(object):
     Converts a numpy array to th.Tensor
     """
     
-    def __call__(self, x, y=None):
-        x = th.from_numpy(x)
-        if y is not None:
-            y = th.from_numpy(y)
-            return x, y
-        return x
+    def __call__(self, *inputs):
+        outputs = []
+        for idx, _input in enumerate(inputs):
+            _input = th.from_numpy(_input)
+            outputs.append(_input)
+        return outputs if idx > 1 else outputs[0]
 
 
 class ToVariable(object):
 
-    def __call__(self, x, y=None):
-        x = Variable(x)
-        if y is not None:
-            y = Variable(y)
-            return x, y
-        return x
+    def __call__(self, *inputs):
+        outputs = []
+        for idx, _input in enumerate(inputs):
+            _input = Variable(_input)
+            outputs.append(_input)
+        return outputs if idx > 1 else outputs[0]
 
 
 class ToCuda(object):
@@ -62,17 +63,18 @@ class ToCuda(object):
     def __init__(self, device=0):
         self.device = device
 
-    def __call__(self, x, y):
-        x = x.cuda(self.device)
-        if y is not None:
-            y = y.cuda(self.device)
-            return x, y
-        else:
-            return x
+    def __call__(self, *inputs):
+        outputs = []
+        for idx, _input in enumerate(inputs):
+            _input = _input.cuda(self.device)
+            outputs.append(_input)
+        return outputs if idx > 1 else outputs[0]
 
 
 class ToFile(object):
     """
+    NOT FINISHED! NOT FINISHED! NOT FINISHED!
+
     Saves an image to file. Useful as the last transform
     when wanting to observe how augmentation/affine transforms
     are affecting the data
@@ -85,10 +87,12 @@ class ToFile(object):
         root : string
             path to main directory in which images will be saved
 
-        save_format : string in `{'npy', 'jpg', 'png'}
+        save_format : string in `{'npy', 'pth', 'jpg', 'png'}
             file format in which to save the sample. Right now, only
             numpy's `npy` format is supported
         """
+        if root.startswith('~'):
+            root = os.path.expanduser(root)
         self.root = root
         self.save_format = save_format
         self.counter = 0
@@ -109,20 +113,19 @@ class ChannelsLast(object):
     def __init__(self, safe_check=False):
         self.safe_check = safe_check
 
-    def __call__(self, x, y=None):
-        ndim = x.dim()
+    def __call__(self, *inputs):
+        ndim = inputs[0].dim()
         if self.safe_check:
             # check if channels are already last
-            if x.size(-1) < x.size(0):
-                if y is not None:
-                    return x, y
-                return x
+            if inputs[0].size(-1) < inputs[0].size(0):
+                return inputs
         plist = list(range(1,ndim))+[0]
-        x = x.permute(*plist)
-        if y is not None:
-            y = y.permute(*plist)
-            return x, y
-        return x
+
+        outputs = []
+        for idx, _input in enumerate(inputs):
+            _input = _input.permute(*plist)
+            outputs.append(_input)
+        return outputs if idx > 1 else outputs[0]
 
 HWC = ChannelsLast
 DHWC = ChannelsLast
@@ -132,20 +135,19 @@ class ChannelsFirst(object):
     def __init__(self, safe_check=False):
         self.safe_check = safe_check
 
-    def __call__(self, x, y=None):
-        ndim = x.dim()
+    def __call__(self, *inputs):
+        ndim = inputs[0].dim()
         if self.safe_check:
             # check if channels are already first
-            if x.size(0) < x.size(-1):
-                if y is not None:
-                    return x, y
-                return x
+            if inputs[0].size(0) < inputs[0].size(-1):
+                return inputs
         plist = [ndim-1] + list(range(0,ndim-1))
-        x = x.permute(*plist)
-        if y is not None:
-            y = y.permute(*plist)
-            return x, y
-        return x
+
+        outputs = []
+        for idx, _input in enumerate(inputs):
+            _input = _input.permute(*plist)
+            outputs.append(_input)
+        return outputs if idx > 1 else outputs[0]
 
 CHW = ChannelsFirst
 CDHW = ChannelsFirst
@@ -168,12 +170,12 @@ class TypeCast(object):
                 dtype = th.ShortTensor
         self.dtype = dtype
 
-    def __call__(self, x, y=None):
-        x = x.type(self.dtype)
-        if y is not None:
-            y = y.type(self.dtype)
-            return x, y
-        return x
+    def __call__(self, *inputs):
+        outputs = []
+        for idx, _input in enumerate(inputs):
+            _input = _input.type(self.dtype)
+            outputs.append(_input)
+        return outputs if idx > 1 else outputs[0]
 
 
 class AddChannel(object):
@@ -185,12 +187,12 @@ class AddChannel(object):
     def __init__(self, axis=0):
         self.axis = axis
 
-    def __call__(self, x, y=None):
-        x = x.unsqueeze(self.axis)
-        if y is not None:
-            y = y.unsqueeze(self.axis)
-            return x,y
-        return x
+    def __call__(self, *inputs):
+        outputs = []
+        for idx, _input in enumerate(inputs):
+            _input = _input.unsqueeze(self.axis)
+            outputs.append(_input)
+        return outputs if idx > 1 else outputs[0]
 
 
 class Transpose(object):
@@ -199,16 +201,15 @@ class Transpose(object):
         self.dim1 = dim1
         self.dim2 = dim2
 
-    def __call__(self, x, y=None):
-        x = th.transpose(x, self.dim1, self.dim2)
-        if y is not None:
-            y = th.transpose(y, self.dim1, self.dim2)
-            return x, y
-        else:
-            return x
+    def __call__(self, *inputs):
+        outputs = []
+        for idx, _input in enumerate(inputs):
+            _input = th.transpose(_input, self.dim1, self.dim2)
+            outputs.append(_input)
+        return outputs if idx > 1 else outputs[0]
 
 
-class RangeNormalize(object):
+class RangeNorm(object):
     """
     Given min_val: (R, G, B) and max_val: (R,G,B),
     will normalize each channel of the th.*Tensor to
@@ -257,45 +258,19 @@ class RangeNormalize(object):
         self.fixed_min = fixed_min
         self.fixed_max = fixed_max
 
-    def __call__(self, x, y=None):
-        if self.fixed_min is not None:
-            min_val = self.fixed_min
-        else:
-            min_val = th.min(x)
-        if self.fixed_max is not None:
-            max_val = self.fixed_max
-        else:
-            max_val = th.max(x)
-        if min_val == max_val:
-            min_val += 1e-07
-
-        a = (self.max_range - self.min_range) / (max_val - min_val)
-        b = self.max_range - a * max_val
-        x_norm = x.mul(a).add(b)
-        if y is None:
-            return x_norm
-        else:
-            min_val = th.min(y)
-            max_val = th.max(y)
+    def __call__(self, *inputs):
+        outputs = []
+        for idx, _input in enumerate(inputs):
+            min_val = _input.min()
+            max_val = _input.max()
             a = (self.max_range - self.min_range) / (max_val - min_val)
             b = self.max_range - a * max_val
-            y_norm = y.mul(a).add(b)
-            return x_norm, y_norm
+            _input = _input.mul(a).add(b)
+            outputs.append(_input)
+        return outputs if idx > 1 else outputs[0]
 
 
-class UnitRange(object):
-    """
-    Normalize tensor to be between zero and one
-    """
-    def __call__(self, x, y=None):
-        x = x.sub(x.min()).div(x.max()-x.min())
-        if y is not None:
-            y = y.sub(y.min()).div(y.max()-y.min())
-            return x, y
-        return x
-
-
-class StdNormalize(object):
+class StdNorm(object):
     """
     Normalize torch tensor to have zero mean and unit std deviation
     """
@@ -303,16 +278,12 @@ class StdNormalize(object):
     def __init__(self):
         pass
 
-    def __call__(self, x, y=None):
-        if y is not None:
-            for t, u in zip(x, y):
-                t.sub_(th.mean(t)).div_(th.std(t))
-                u.sub_(th.mean(u)).div_(th.std(u))
-            return x, y
-        else:
-            for t in x:
-                t.sub_(th.mean(t)).div_(th.std(t))
-            return x         
+    def __call__(self, *inputs):
+        outputs = []
+        for idx, _input in enumerate(inputs):
+            _input = _input.sub(_input.mean()).div(_input.std())
+            outputs.append(_input)
+        return outputs if idx > 1 else outputs[0]
 
 
 class Slice2D(object):
@@ -375,15 +346,14 @@ class RandomCrop(object):
         """
         self.crop_size = crop_size
 
-    def __call__(self, x, y=None):
-        h_idx = random.randint(0,x.size(1)-self.crop_size[0])
-        w_idx = random.randint(0,x.size(2)-self.crop_size[1])
-        x = x[:, h_idx:(h_idx+self.crop_size[0]),w_idx:(w_idx+self.crop_size[1])]
-        if y is not None:
-            y = y[:, h_idx:(h_idx+self.crop_size[0]),w_idx:(w_idx+self.crop_size[1])] 
-            return x, y
-        else:
-            return x
+    def __call__(self, *inputs):
+        h_idx = random.randint(0,inputs[0].size(1)-self.crop_size[0])
+        w_idx = random.randint(0,inputs[1].size(2)-self.crop_size[1])
+        outputs = []
+        for idx, _input in enumerate(inputs):
+            _input = _input[:, h_idx:(h_idx+self.crop_size[0]),w_idx:(w_idx+self.crop_size[1])]
+            outputs.append(_input)
+        return outputs if idx > 1 else outputs[0]
 
 
 class SpecialCrop(object):
@@ -523,10 +493,11 @@ class RandomOrder(object):
     """
     Randomly permute the image channels
     """
-    def __call__(self, x, y=None):
-        order = th.randperm(x.dim())
-        x = x.index_select(0, order)
-        if y is not None:
-            y = y.index_select(0, order)
-        return x, y
+    def __call__(self, *inputs):
+        order = th.randperm(inputs[0].dim())
+        outputs = []
+        for idx, _input in enumerate(inputs):
+            _input = _input.index_select(0, order)
+            outputs.append(_input)
+        return outputs if idx > 1 else outputs[0]
 

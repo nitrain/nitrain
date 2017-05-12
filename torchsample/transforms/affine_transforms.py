@@ -64,19 +64,19 @@ class RandomAffine(object):
         """
         self.transforms = []
         if rotation_range is not None:
-            rotation_tform = Rotate(rotation_range, lazy=True)
+            rotation_tform = RandomRotate(rotation_range, lazy=True)
             self.transforms.append(rotation_tform)
 
         if translation_range is not None:
-            translation_tform = Translate(translation_range, lazy=True)
+            translation_tform = RandomTranslate(translation_range, lazy=True)
             self.transforms.append(translation_tform)
 
         if shear_range is not None:
-            shear_tform = Shear(shear_range, lazy=True)
+            shear_tform = RandomShear(shear_range, lazy=True)
             self.transforms.append(shear_tform) 
 
         if zoom_range is not None:
-            zoom_tform = Zoom(zoom_range, lazy=True)
+            zoom_tform = RandomZoom(zoom_range, lazy=True)
             self.transforms.append(zoom_tform)
 
         self.interp = interp

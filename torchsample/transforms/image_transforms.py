@@ -5,9 +5,12 @@ color, lighting, contrast, brightness, etc transforms
 NOTE: Most of these transforms assume your image intensity
 is between 0 and 1, and are torch tensors (NOT numpy or PIL)
 """
-import torch as th
+
 import random
 
+import torch as th
+
+from ..utils import th_random_choice
 
 def _blend(img1, img2, alpha):
     """
@@ -40,18 +43,38 @@ class Grayscale(object):
         else:
             self.channels = 1
 
-    def __call__(self, x, y=None):
-        x_dst = x[0]*0.299 + x[1]*0.587 + x[2]*0.114
-        x_gs = x_dst.repeat(self.channels,1,1)
+    def __call__(self, *inputs):
+        outputs = []
+        for idx, _input in enumerate(inputs):
+            _input_dst = _input[0]*0.299 + _input[1]*0.587 + _input[2]*0.114
+            _input_gs = _input_dst.repeat(self.channels,1,1)
+            outputs.append(_input_gs)
+        return outputs if idx > 1 else outputs[0]
 
-        if y is not None:
-            y_dst = y[0]*0.299 + y[1]*0.587 + y[2]*0.114
-            y_gs= y_dst.repeat(self.channels,1,1)
-            return x_gs, y_gs
-        return x_gs
+class RandomGrayscale(object):
+    """
+    Randomly grayscales some images with given probability,
+    but ALWAYS retains the 3 channels if image is grayscaled
+    """
+    def __init__(self, p=0.5):
+        """
+        p : a float
+            probability that image will be grayscaled
+        """
+        self.p = p
 
+    def __call__(self, *inputs):
+        pval = random.random()
+        if pval < self.p:
+            outputs = Grayscale(keep_channels=True)(*inputs)
+        else:
+            outputs = inputs
+        return outputs
 
-class AdjustGamma(object):
+# ----------------------------------------------------
+# ----------------------------------------------------
+
+class Gamma(object):
     """
     Performs Gamma Correction on the input image. Also known as 
     Power Law Transform. This function transforms the input image 
@@ -73,25 +96,38 @@ class AdjustGamma(object):
         """
         self.value = value
 
-    def __call__(self, x, y=None):
-        x = th.pow(x, self.value)
-        if y is not None:
-            y = th.pow(y, self.value)
-            return x, y
-        return x
+    def __call__(self, *inputs):
+        outputs = []
+        for idx, _input in enumerate(inputs):
+            _input = th.pow(_input, self.value)
+            outputs.append(_input)
+        return outputs if idx > 1 else outputs[0]
 
-
-class RandomAdjustGamma(object):
+class RandomGamma(object):
 
     def __init__(self, min_val, max_val):
         self.values = (min_val, max_val)
 
-    def __call__(self, x, y=None):
+    def __call__(self, *inputs):
         value = random.uniform(self.values[0], self.values[1])
-        return AdjustGamma(value)(x, y)
+        outputs = Gamma(value)(*inputs)
+        return outputs
 
+class RandomChoiceGamma(object):
 
-class AdjustBrightness(object):
+    def __init__(self, values, p=None):
+        self.values = values
+        self.p = p
+
+    def __call__(self, *inputs):
+        value = th_random_choice(self.values, p=self.p)
+        outputs = Gamma(value)(*inputs)
+        return outputs
+
+# ----------------------------------------------------
+# ----------------------------------------------------
+
+class Brightness(object):
     """
     Alter the Brightness of an image
     """
@@ -108,25 +144,38 @@ class AdjustBrightness(object):
         """
         self.value = max(min(value,1.0),-1.0)
 
-    def __call__(self, x, y=None):
-        x = th.clamp(x.float().add(self.value).type(x.type()), 0, 1)
-        if y is not None:
-            y = th.clamp(y.float().add(self.value).type(y.type()), 0, 1)
-            return x, y
-        return x
+    def __call__(self, *inputs):
+        outputs = []
+        for idx, _input in enumerate(inputs):
+            _input = th.clamp(_input.float().add(self.value).type(_input.type()), 0, 1)
+            outputs.append(_input)
+        return outputs if idx > 1 else outputs[0]
 
-
-class RandomAdjustBrightness(object):
+class RandomBrightness(object):
 
     def __init__(self, min_val, max_val):
         self.values = (min_val, max_val)
 
-    def __call__(self, x, y=None):
+    def __call__(self, *inputs):
         value = random.uniform(self.values[0], self.values[1])
-        return AdjustBrightness(value)(x, y)
+        outputs = Brightness(value)(*inputs)
+        return outputs
 
+class RandomChoiceBrightness(object):
 
-class AdjustSaturation(object):
+    def __init__(self, values, p=None):
+        self.values = values
+        self.p = p
+
+    def __call__(self, *inputs):
+        value = th_random_choice(self.values, p=self.p)
+        outputs = Brightness(value)(*inputs)
+        return outputs
+
+# ----------------------------------------------------
+# ----------------------------------------------------
+
+class Saturation(object):
     """
     Alter the Saturation of image
     """
@@ -143,28 +192,40 @@ class AdjustSaturation(object):
         """
         self.value = max(min(value,1.0),-1.0)
 
-    def __call__(self, x, y=None):
-        x_gs = Grayscale(keep_channels=True)(x)
-        alpha = 1.0 + self.value
-        x = th.clamp(_blend(x, x_gs, alpha),0,1)
-        if y is not None:
-            y_gs = Grayscale(keep_channels=True)(y)
-            y = th.clamp(_blend(y, y_gs, alpha),0,1)
-            return x, y
-        return x
+    def __call__(self, *inputs):
+        outputs = []
+        for idx, _input in enumerate(inputs):
+            _in_gs = Grayscale(keep_channels=True)(_input)
+            alpha = 1.0 + self.value
+            _in = th.clamp(_blend(_input, _in_gs, alpha), 0, 1)
+            outputs.append(_in)
+        return outputs if idx > 1 else outputs[0]
 
-
-class RandomAdjustSaturation(object):
+class RandomSaturation(object):
 
     def __init__(self, min_val, max_val):
         self.values = (min_val, max_val)
 
-    def __call__(self, x, y=None):
+    def __call__(self, *inputs):
         value = random.uniform(self.values[0], self.values[1])
-        return AdjustSaturation(value)(x, y)
+        outputs = Saturation(value)(*inputs)
+        return outputs
 
+class RandomChoiceSaturation(object):
 
-class AdjustContrast(object):
+    def __init__(self, values, p=None):
+        self.values = values
+        self.p = p
+
+    def __call__(self, *inputs):
+        value = th_random_choice(self.values, p=self.p)
+        outputs = Saturation(value)(*inputs)
+        return outputs
+
+# ----------------------------------------------------
+# ----------------------------------------------------
+
+class Contrast(object):
     """
     Contrast is adjusted independently for each channel of each image.
 
@@ -184,27 +245,38 @@ class AdjustContrast(object):
         """
         self.value = value
 
-    def __call__(self, x, y=None):
-        channel_means = x.mean(1).mean(2)
-        channel_means = channel_means.expand_as(x)
-        x = th.clamp((x - channel_means) * self.value + channel_means,0,1)
+    def __call__(self, *inputs):
+        outputs = []
+        for idx, _input in enumerate(inputs):
+            channel_means = _input.mean(1).mean(2)
+            channel_means = channel_means.expand_as(_input)
+            _input = th.clamp((_input - channel_means) * self.value + channel_means,0,1)
+            outputs.append(_input)
+        return outputs if idx > 1 else outputs[0]
 
-        if y is not None:
-            channel_means = y.mean(1).mean(2).expand_as(y)
-            y = th.clamp((y - channel_means) * self.value + channel_means,0,1)       
-            return x, y
-        return x
-
-
-class RandomAdjustContrast(object):
+class RandomContrast(object):
 
     def __init__(self, min_val, max_val):
         self.values = (min_val, max_val)
 
-    def __call__(self, x, y=None):
+    def __call__(self, *inputs):
         value = random.uniform(self.values[0], self.values[1])
-        return AdjustContrast(value)(x, y)
+        outputs = Contrast(value)(*inputs)
+        return outputs
 
+class RandomChoiceContrast(object):
+
+    def __init__(self, values, p=None):
+        self.values = values
+        self.p = p
+
+    def __call__(self, *inputs):
+        value = th_random_choice(self.values, p=None)
+        outputs = Contrast(value)(*inputs)
+        return outputs
+
+# ----------------------------------------------------
+# ----------------------------------------------------
 
 def rgb_to_hsv(x):
     """
