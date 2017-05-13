@@ -112,8 +112,21 @@ class ToFile(object):
 
 
 class ChannelsLast(object):
-
+    """
+    Transposes a tensor so that the channel dim is last
+    `HWC` and `DHWC` are aliases for this transform.    
+    """
     def __init__(self, safe_check=False):
+        """
+        Transposes a tensor so that the channel dim is last
+        `HWC` and `DHWC` are aliases for this transform.
+
+        Arguments
+        ---------
+        safe_check : boolean
+            if true, will check if channels are already last and, if so,
+            will just return the inputs
+        """
         self.safe_check = safe_check
 
     def __call__(self, *inputs):
@@ -134,8 +147,21 @@ HWC = ChannelsLast
 DHWC = ChannelsLast
 
 class ChannelsFirst(object):
-
+    """
+    Transposes a tensor so that the channel dim is first.
+    `CHW` and `CDHW` are aliases for this transform.
+    """
     def __init__(self, safe_check=False):
+        """
+        Transposes a tensor so that the channel dim is first.
+        `CHW` and `CDHW` are aliases for this transform.
+
+        Arguments
+        ---------
+        safe_check : boolean
+            if true, will check if channels are already last and, if so,
+            will just return the inputs
+        """
         self.safe_check = safe_check
 
     def __call__(self, *inputs):
@@ -156,27 +182,62 @@ CHW = ChannelsFirst
 CDHW = ChannelsFirst
 
 class TypeCast(object):
-
+    """
+    Cast a torch.Tensor to a different type
+    """
     def __init__(self, dtype='float'):
-        if isinstance(dtype, str):
-            if dtype == 'byte':
-                dtype = th.ByteTensor
-            elif dtype == 'double':
-                dtype = th.DoubleTensor
-            elif dtype == 'float':
-                dtype = th.FloatTensor
-            elif dtype == 'int':
-                dtype = th.IntTensor
-            elif dtype == 'long':
-                dtype = th.LongTensor
-            elif dtype == 'short':
-                dtype = th.ShortTensor
-        self.dtype = dtype
+        """
+        Cast a torch.Tensor to a different type
+
+        Arguments
+        ---------
+        dtype : string or torch.*Tensor literal or list of such
+            data type to which input(s) will be cast.
+            If list, it should be the same length as inputs.
+        """
+        if isinstance(dtype, (list,tuple)):
+            dtypes = []
+            for dt in dtype:
+                if isinstance(dt, str):
+                    if dt == 'byte':
+                        dt = th.ByteTensor
+                    elif dt == 'double':
+                        dt = th.DoubleTensor
+                    elif dt == 'float':
+                        dt = th.FloatTensor
+                    elif dt == 'int':
+                        dt = th.IntTensor
+                    elif dt == 'long':
+                        dt = th.LongTensor
+                    elif dt == 'short':
+                        dt = th.ShortTensor
+                dtypes.append(dt)
+            self.dtype = dtypes
+        else:
+            if isinstance(dtype, str):
+                if dtype == 'byte':
+                    dtype = th.ByteTensor
+                elif dtype == 'double':
+                    dtype = th.DoubleTensor
+                elif dtype == 'float':
+                    dtype = th.FloatTensor
+                elif dtype == 'int':
+                    dtype = th.IntTensor
+                elif dtype == 'long':
+                    dtype = th.LongTensor
+                elif dtype == 'short':
+                    dtype = th.ShortTensor
+            self.dtype = dtype
 
     def __call__(self, *inputs):
+        if not isinstance(self.dtype, (tuple,list)):
+            dtypes = [self.dtype]*len(inputs)
+        else:
+            dtypes = self.dtype
+        
         outputs = []
         for idx, _input in enumerate(inputs):
-            _input = _input.type(self.dtype)
+            _input = _input.type(dtypes[idx])
             outputs.append(_input)
         return outputs if idx > 1 else outputs[0]
 
