@@ -12,10 +12,10 @@ from torchsample.metrics import *
 
 import os
 from torchvision import datasets
-ROOT = '/users/ncullen/data'
+ROOT = '/users/ncullen/desktop/data/mnist'
 dataset = datasets.MNIST(ROOT, train=True, download=True)
-x_train, y_train = torch.load(os.path.join(dataset.root, 'processed/training.pt'))
-x_test, y_test = torch.load(os.path.join(dataset.root, 'processed/test.pt'))
+x_train, y_train = th.load(os.path.join(dataset.root, 'processed/training.pt'))
+x_test, y_test = th.load(os.path.join(dataset.root, 'processed/test.pt'))
 
 x_train = x_train.float()
 y_train = y_train.long()
@@ -66,14 +66,19 @@ initializers = [XavierUniform(bias=False, module_filter='fc*')]
 metrics = [CategoricalAccuracy(top_k=3)]
 
 trainer.compile(loss='nll_loss',
-                optimizer='adadelta')
-                #regularizers=regularizers,
-                #constraints=constraints,
-                #initializers=initializers,
-                #metrics=metrics)
+                optimizer='adadelta',
+                regularizers=regularizers,
+                constraints=constraints,
+                initializers=initializers,
+                metrics=metrics)
+
+summary = trainer.summary([1,28,28])
+print(summary)
 
 trainer.fit(x_train, y_train, 
-          validation_data=(x_test, y_test),
+          val_data=(x_test, y_test),
           nb_epoch=20, 
           batch_size=128,
           verbose=1)
+
+

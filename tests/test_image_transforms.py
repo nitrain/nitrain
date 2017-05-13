@@ -149,7 +149,7 @@ def Contrast_setup():
 # ----------------------------------------------------
 # ----------------------------------------------------
 
-def test_image_transforms():
+def test_image_transforms_runtime():
     """
     Test that there are no runtime errors
     """
@@ -179,3 +179,5 @@ def test_image_transforms():
     print('FAILURES: ' , failures)
 
 
+if __name__=='__main__':
+    test_image_transforms_runtime()

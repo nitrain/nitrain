@@ -437,8 +437,6 @@ class Translate(object):
 
         self.height_range = value[0]
         self.width_range = value[1]
-        if not isinstance(interp, (tuple,list)):
-            interp = (interp, interp)
         self.interp = interp
         self.lazy = lazy
 
