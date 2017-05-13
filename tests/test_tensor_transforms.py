@@ -34,7 +34,7 @@ def gray2d_setup():
 
     x = th.zeros(1,30,40)
     x[:,10:21,10:21] = 1
-    images['gray_02']
+    images['gray_02'] = x
     return images
 
 def multi_gray2d_setup():
@@ -261,13 +261,13 @@ def RandomOrder_setup():
 # ----------------------------------------------------
 # ----------------------------------------------------
 
-def test_image_transforms_runtime():
+def test_image_transforms_runtime(verbose=1):
     ### MAKE TRANSFORMS ###
     tforms = {}
     tforms.update(ToTensor_setup())
     tforms.update(ToVariable_setup())
     tforms.update(ToCuda_setup())
-    tforms.update(ToFile_setup())
+    #tforms.update(ToFile_setup())
     tforms.update(ChannelsLast_setup())
     tforms.update(ChannelsFirst_setup())
     tforms.update(TypeCast_setup())
@@ -289,15 +289,26 @@ def test_image_transforms_runtime():
     images.update(color2d_setup())
     images.update(multi_color2d_setup())
 
+    successes =[]
     failures = []
     for im_key, im_val in images.items():
         for tf_key, tf_val in tforms.items():
             try:
-                tf_val(im_val)
+                if isinstance(im_val, (tuple,list)):
+                    tf_val(*im_val)
+                else:
+                    tf_val(im_val)
+                successes.append((im_key, tf_key))
             except:
                 failures.append((im_key, tf_key))
 
-    print('FAILURES: ' , failures)
+    if verbose > 0:
+        for k, v in failures:
+            print('%s - %s' % (k, v))
+
+    print('# SUCCESSES: ', len(successes))
+    print('# FAILURES: ' , len(failures))
+
 
 if __name__=='__main__':
     test_image_transforms_runtime()

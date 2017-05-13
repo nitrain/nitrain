@@ -163,7 +163,7 @@ class TypeCast(object):
             elif dtype == 'float':
                 dtype = th.FloatTensor
             elif dtype == 'int':
-                dtype = th.Intensor
+                dtype = th.IntTensor
             elif dtype == 'long':
                 dtype = th.LongTensor
             elif dtype == 'short':

@@ -143,12 +143,13 @@ def test_affine_transforms_runtime(verbose=1):
             except:
                 failures.append((im_key, tf_key))
 
-    print('# SUCCESSES: ', len(successes))
-    print('# FAILURES: ' , len(failures))
-
     if verbose > 0:
         for k, v in failures:
             print('%s - %s' % (k, v))
+
+    print('# SUCCESSES: ', len(successes))
+    print('# FAILURES: ' , len(failures))
+
 
 if __name__=='__main__':
     test_affine_transforms_runtime()
