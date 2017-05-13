@@ -13,24 +13,29 @@ class Compose(object):
     Composes several transforms together.
     """
     def __init__(self, transforms):
+        """
+        Composes (chains) several transforms together into
+        a single transform
+
+        Arguments
+        ---------
+        transforms : a list of transforms
+            transforms will be applied sequentially
+        """
         self.transforms = transforms
 
-    def __call__(self, x, y):
-        if y is not None:
-            for t in self.transforms:
-                x, y = t(x, y)
-            return x, y
-        else:
-            for t in self.transforms:
-                x = t(x)
-            return x
+    def __call__(self, *inputs):
+        for transform in self.transforms:
+            if not isinstance(inputs, (list,tuple)):
+                inputs = [inputs]
+            inputs = transform(*inputs)
+        return inputs
 
 
 class ToTensor(object):
     """
-    Converts a numpy array to th.Tensor
+    Converts a numpy array to torch.Tensor
     """
-    
     def __call__(self, *inputs):
         outputs = []
         for idx, _input in enumerate(inputs):
@@ -40,7 +45,9 @@ class ToTensor(object):
 
 
 class ToVariable(object):
-
+    """
+    Converts a torch.Tensor to autograd.Variable
+    """
     def __call__(self, *inputs):
         outputs = []
         for idx, _input in enumerate(inputs):
@@ -50,8 +57,18 @@ class ToVariable(object):
 
 
 class ToCuda(object):
-
+    """
+    Moves an autograd.Variable to the GPU
+    """
     def __init__(self, device=0):
+        """
+        Moves an autograd.Variable to the GPU
+
+        Arguments
+        ---------
+        device : integer
+            which GPU device to put the input(s) on
+        """
         self.device = device
 
     def __call__(self, *inputs):
@@ -64,39 +81,34 @@ class ToCuda(object):
 
 class ToFile(object):
     """
-    NOT FINISHED! NOT FINISHED! NOT FINISHED!
+    Saves an image to file. Useful as a pass-through ransform
+    when wanting to observe how augmentation affects the data
 
-    Saves an image to file. Useful as the last transform
-    when wanting to observe how augmentation/affine transforms
-    are affecting the data
+    NOTE: Only supports saving to Numpy currently
     """
-    def __init__(self, root, save_format='npy'):
-        """Save image to file
+    def __init__(self, root):
+        """
+        Saves an image to file. Useful as a pass-through ransform
+        when wanting to observe how augmentation affects the data
+
+        NOTE: Only supports saving to Numpy currently
 
         Arguments
         ---------
         root : string
             path to main directory in which images will be saved
-
-        save_format : string in `{'npy', 'pth', 'jpg', 'png'}
-            file format in which to save the sample. Right now, only
-            numpy's `npy` format is supported
         """
         if root.startswith('~'):
             root = os.path.expanduser(root)
         self.root = root
-        self.save_format = save_format
         self.counter = 0
 
-    def __call__(self, x, y=None):
-        np.save(os.path.join(self.root,'x_img-%i.npy'%self.counter), x.numpy())
-        if y is not None:
-            np.save(os.path.join(self.root,'y_img-%i.npy'%self.counter), y.numpy())
-            self.counter += 1
-            return x, y
-        else:
-            self.counter += 1
-            return x
+    def __call__(self, *inputs):
+        for idx, _input in inputs:
+            fpath = os.path.join(self.root, 'img_%i_%i'%(self.counter, idx))
+            np.save(fpath, _input.numpy())
+        self.counter += 1
+        return inputs
 
 
 class ChannelsLast(object):
