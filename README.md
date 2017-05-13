@@ -17,11 +17,6 @@ from `nn.Module`.
 Example:
 ```python
 from torchsample.modules import ModuleTrainer
-from torchsample.callbacks import *
-from torchsample.regularizers import *
-from torchsample.constraints import *
-from torchsample.initializers import *
-from torchsample.metrics import *
 
 # Define your model EXACTLY as if you were using nn.Module
 class Network(nn.Module):
@@ -44,27 +39,14 @@ class Network(nn.Module):
 model = Network()
 trainer = ModuleTrainer(model)
 
-callbacks = [EarlyStopping(patience=10),
-             ReduceLROnPlateau(factor=0.5, patience=5)]
-regularizers = [L1Regularizer(scale=1e-3, module_filter='conv*'),
-                L2Regularizer(scale=1e-5, module_filter='fc*')]
-constraints = [UnitNorm(frequency=3, unit='batch', module_filter='fc*'),
-               MaxNorm(lagrangian=True, scale=1e-2, module_filter='conv*')]
-initializers = [XavierUniform(bias=False, module_filter='fc*')]
-metrics = [CategoricalAccuracy(top_k=3)]
-
 trainer.compile(loss='nll_loss',
-                optimizer='adadelta',
-                regularizers=regularizers
-                constraints=constraints
-                initializers=initializers,
-                metrics=metrics)
+                optimizer='adadelta')
 
-model.fit(x_train, y_train, 
-          validation_data=(x_test, y_test),
-          nb_epoch=20, 
-          batch_size=128,
-          verbose=1)
+trainer.fit(x_train, y_train, 
+            validation_data=(x_test, y_test),
+            nb_epoch=20, 
+            batch_size=128,
+            verbose=1)
 ```
 You also have access to the standard evaluation and prediction functions:
 
