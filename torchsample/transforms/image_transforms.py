@@ -12,21 +12,24 @@ import torch as th
 
 from ..utils import th_random_choice
 
+
 def _blend(img1, img2, alpha):
     """
-    Takes weighted sum of two images
+    Weighted sum of two images
 
-    Example:
-    >>> # img will be all 0.4's
-    >>> img = _blend(th.ones(5,5),th.zeros(5,5),0.4) 
+    Arguments
+    ---------
+    img1 : torch tensor
+    img2 : torch tensor
+    alpha : float between 0 and 1
+        how much weight to put on img1 and 1-alpha weight
+        to put on img2
     """
     return img1.mul(alpha).add(1 - alpha, img2)
 
 
 class Grayscale(object):
-    """
-    Convert RGB image to grayscale
-    """
+
     def __init__(self, keep_channels=False):
         """
         Convert RGB image to grayscale
@@ -52,12 +55,12 @@ class Grayscale(object):
         return outputs if idx > 1 else outputs[0]
 
 class RandomGrayscale(object):
-    """
-    Randomly grayscales some images with given probability,
-    but ALWAYS retains the 3 channels if image is grayscaled
-    """
+
     def __init__(self, p=0.5):
         """
+        Randomly convert RGB image(s) to Grayscale w/ some probability,
+        NOTE: Always retains the 3 channels if image is grayscaled
+
         p : a float
             probability that image will be grayscaled
         """
@@ -75,21 +78,18 @@ class RandomGrayscale(object):
 # ----------------------------------------------------
 
 class Gamma(object):
-    """
-    Performs Gamma Correction on the input image. Also known as 
-    Power Law Transform. This function transforms the input image 
-    pixelwise according 
-    to the equation Out = In**gamma after scaling each 
-    pixel to the range 0 to 1.
 
-    """
     def __init__(self, value):
         """
-        Perform Gamma correction
+        Performs Gamma Correction on the input image. Also known as 
+        Power Law Transform. This function transforms the input image 
+        pixelwise according 
+        to the equation Out = In**gamma after scaling each 
+        pixel to the range 0 to 1.
 
         Arguments
         ---------
-        gamma : float
+        value : float
             <1 : image will tend to be lighter
             =1 : image will stay the same
             >1 : image will tend to be darker
@@ -106,6 +106,26 @@ class Gamma(object):
 class RandomGamma(object):
 
     def __init__(self, min_val, max_val):
+        """
+        Performs Gamma Correction on the input image with some
+        randomly selected gamma value between min_val and max_val. 
+        Also known as Power Law Transform. This function transforms 
+        the input image pixelwise according to the equation 
+        Out = In**gamma after scaling each pixel to the range 0 to 1.
+
+        Arguments
+        ---------
+        min_val : float
+            min range
+        max_val : float
+            max range
+
+        NOTE:
+        for values:
+            <1 : image will tend to be lighter
+            =1 : image will stay the same
+            >1 : image will tend to be darker
+        """
         self.values = (min_val, max_val)
 
     def __call__(self, *inputs):
@@ -116,6 +136,27 @@ class RandomGamma(object):
 class RandomChoiceGamma(object):
 
     def __init__(self, values, p=None):
+        """
+        Performs Gamma Correction on the input image with some
+        gamma value selected in the list of given values.
+        Also known as Power Law Transform. This function transforms 
+        the input image pixelwise according to the equation 
+        Out = In**gamma after scaling each pixel to the range 0 to 1.
+
+        Arguments
+        ---------
+        values : list of floats
+            gamma values to sampled from
+        p : list of floats - same length as `values`
+            if None, values will be sampled uniformly.
+            Must sum to 1.
+
+        NOTE:
+        for values:
+            <1 : image will tend to be lighter
+            =1 : image will stay the same
+            >1 : image will tend to be darker
+        """
         self.values = values
         self.p = p
 
@@ -128,11 +169,10 @@ class RandomChoiceGamma(object):
 # ----------------------------------------------------
 
 class Brightness(object):
-    """
-    Alter the Brightness of an image
-    """
     def __init__(self, value):
         """
+        Alter the Brightness of an image
+
         Arguments
         ---------
         value : brightness factor
@@ -154,6 +194,17 @@ class Brightness(object):
 class RandomBrightness(object):
 
     def __init__(self, min_val, max_val):
+        """
+        Alter the Brightness of an image with a value randomly selected
+        between `min_val` and `max_val`
+
+        Arguments
+        ---------
+        min_val : float
+            min range
+        max_val : float
+            max range
+        """
         self.values = (min_val, max_val)
 
     def __call__(self, *inputs):
@@ -164,6 +215,18 @@ class RandomBrightness(object):
 class RandomChoiceBrightness(object):
 
     def __init__(self, values, p=None):
+        """
+        Alter the Brightness of an image with a value randomly selected
+        from the list of given values with given probabilities
+
+        Arguments
+        ---------
+        values : list of floats
+            brightness values to sampled from
+        p : list of floats - same length as `values`
+            if None, values will be sampled uniformly.
+            Must sum to 1.
+        """
         self.values = values
         self.p = p
 
@@ -176,11 +239,11 @@ class RandomChoiceBrightness(object):
 # ----------------------------------------------------
 
 class Saturation(object):
-    """
-    Alter the Saturation of image
-    """
+
     def __init__(self, value):
         """
+        Alter the Saturation of image
+
         Arguments
         ---------
         value : float
@@ -204,6 +267,17 @@ class Saturation(object):
 class RandomSaturation(object):
 
     def __init__(self, min_val, max_val):
+        """
+        Alter the Saturation of an image with a value randomly selected
+        between `min_val` and `max_val`
+
+        Arguments
+        ---------
+        min_val : float
+            min range
+        max_val : float
+            max range
+        """
         self.values = (min_val, max_val)
 
     def __call__(self, *inputs):
@@ -214,6 +288,19 @@ class RandomSaturation(object):
 class RandomChoiceSaturation(object):
 
     def __init__(self, values, p=None):
+        """
+        Alter the Saturation of an image with a value randomly selected
+        from the list of given values with given probabilities
+
+        Arguments
+        ---------
+        values : list of floats
+            saturation values to sampled from
+        p : list of floats - same length as `values`
+            if None, values will be sampled uniformly.
+            Must sum to 1.
+
+        """
         self.values = values
         self.p = p
 
@@ -227,14 +314,18 @@ class RandomChoiceSaturation(object):
 
 class Contrast(object):
     """
-    Contrast is adjusted independently for each channel of each image.
 
-    For each channel, this Op computes the mean of the image pixels 
-    in the channel and then adjusts each component x of each pixel to 
-    (x - mean) * contrast_factor + mean.
     """
     def __init__(self, value):
         """
+        Adjust Contrast of image.
+
+        Contrast is adjusted independently for each channel of each image.
+
+        For each channel, this Op computes the mean of the image pixels 
+        in the channel and then adjusts each component x of each pixel to 
+        (x - mean) * contrast_factor + mean.
+
         Arguments
         ---------
         value : float
@@ -257,6 +348,17 @@ class Contrast(object):
 class RandomContrast(object):
 
     def __init__(self, min_val, max_val):
+        """
+        Alter the Contrast of an image with a value randomly selected
+        between `min_val` and `max_val`
+
+        Arguments
+        ---------
+        min_val : float
+            min range
+        max_val : float
+            max range
+        """
         self.values = (min_val, max_val)
 
     def __call__(self, *inputs):
@@ -267,6 +369,19 @@ class RandomContrast(object):
 class RandomChoiceContrast(object):
 
     def __init__(self, values, p=None):
+        """
+        Alter the Contrast of an image with a value randomly selected
+        from the list of given values with given probabilities
+
+        Arguments
+        ---------
+        values : list of floats
+            contrast values to sampled from
+        p : list of floats - same length as `values`
+            if None, values will be sampled uniformly.
+            Must sum to 1.
+
+        """
         self.values = values
         self.p = p
 
