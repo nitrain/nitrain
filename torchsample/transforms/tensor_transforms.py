@@ -11,15 +11,6 @@ from torch.autograd import Variable
 class Compose(object):
     """
     Composes several transforms together.
-
-    Args:
-        transforms (List[Transform]): list of transforms to compose.
-
-    Example:
-        >>> transforms.Compose([
-        >>>     transforms.CenterCrop(10),
-        >>>     transforms.ToTensor(),
-        >>> ])
     """
     def __init__(self, transforms):
         self.transforms = transforms

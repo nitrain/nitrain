@@ -27,9 +27,9 @@ class RandomAffine(object):
         Arguments
         ---------
         rotation_range : one integer or float
-            image will be rotated between (-degrees, degrees) degrees
+            image will be rotated randomly between (-degrees, degrees) 
 
-        translation_range : a float or a tuple/list w/ 2 floats between [0, 1)
+        translation_range : a float or a tuple/list with 2 floats between [0, 1)
             first value:
                 image will be horizontally shifted between 
                 (-height_range * height_dimension, height_range * height_dimension)
@@ -38,7 +38,7 @@ class RandomAffine(object):
                 (-width_range * width_dimension, width_range * width_dimension)
 
         shear_range : float
-            radian bounds on the shear transform
+            image will be sheared randomly between (-degrees, degrees)
 
         zoom_range : list/tuple with two floats between [0, infinity).
             first float should be less than the second
@@ -49,17 +49,10 @@ class RandomAffine(object):
                  (1.0, 1.4) will only zoom out,
                  (0.7, 1.4) will randomly zoom in or out
 
-        fill_mode : string in {'constant', 'nearest'}
-            how to fill the empty space caused by the transform
-            ProTip : use 'nearest' for discrete images (e.g. segmentations)
-                    and use 'constant' for continuous images
-
-        fill_value : float
-            the value to fill the empty space with if fill_mode='constant'
-
-        target_fill_mode : same as fill_mode, but for target image
-
-        target_fill_value : same as fill_value, but for target image
+        interp : string in {'bilinear', 'nearest'} or list of strings
+            type of interpolation to use. You can provide a different
+            type of interpolation for each input, e.g. if you have two
+            inputs then you can say `interp=['bilinear','nearest']
 
         """
         self.transforms = []
@@ -113,6 +106,12 @@ class Affine(object):
         Arguments
         ---------
         tform_matrix : a 2x3 or 3x3 matrix
+            affine transformation matrix to apply
+
+        interp : string in {'bilinear', 'nearest'} or list of strings
+            type of interpolation to use. You can provide a different
+            type of interpolation for each input, e.g. if you have two
+            inputs then you can say `interp=['bilinear','nearest']
 
         """
         self.tform_matrix = tform_matrix
@@ -152,11 +151,10 @@ class AffineCompose(object):
                 - Shear()
                 - Zoom()
 
-        fill_mode : string in {'constant', 'nearest'}
-            how to fill the empty space caused by the transform
-
-        fill_value : float
-            the value to fill the empty space with if fill_mode='constant'
+        interp : string in {'bilinear', 'nearest'} or list of strings
+            type of interpolation to use. You can provide a different
+            type of interpolation for each input, e.g. if you have two
+            inputs then you can say `interp=['bilinear','nearest']
 
         """
         self.transforms = transforms
@@ -200,15 +198,14 @@ class RandomRotate(object):
         rotation_range : integer or float
             image will be rotated between (-degrees, degrees) degrees
 
-        fill_mode : string in {'constant', 'nearest'}
-            how to fill the empty space caused by the transform
-
-        fill_value : float
-            the value to fill the empty space with if fill_mode='constant'
+        interp : string in {'bilinear', 'nearest'} or list of strings
+            type of interpolation to use. You can provide a different
+            type of interpolation for each input, e.g. if you have two
+            inputs then you can say `interp=['bilinear','nearest']
 
         lazy    : boolean
-            if false, perform the transform on the tensor and return the tensor
             if true, only create the affine transform matrix and return that
+            if false, perform the transform on the tensor and return the tensor
         """
         self.rotation_range = rotation_range
         self.interp = interp
@@ -229,42 +226,44 @@ class RandomChoiceRotate(object):
 
     def __init__(self, 
                  values,
-                 probs=None,
+                 p=None,
                  interp='bilinear',
                  lazy=False):
         """
-        Randomly rotate an image between (-degrees, degrees). If the image
+        Randomly rotate an image from a list of values. If the image
         has multiple channels, the same rotation will be applied to each channel.
 
         Arguments
         ---------
-        rotation_range : integer or float
-            image will be rotated between (-degrees, degrees) degrees
+        values : a list or tuple
+            the values from which the rotation value will be sampled
 
-        fill_mode : string in {'constant', 'nearest'}
-            how to fill the empty space caused by the transform
+        p : a list or tuple the same length as `values`
+            the probabilities of sampling any given value. Must sum to 1.
 
-        fill_value : float
-            the value to fill the empty space with if fill_mode='constant'
+        interp : string in {'bilinear', 'nearest'} or list of strings
+            type of interpolation to use. You can provide a different
+            type of interpolation for each input, e.g. if you have two
+            inputs then you can say `interp=['bilinear','nearest']
 
         lazy    : boolean
-            if false, perform the transform on the tensor and return the tensor
             if true, only create the affine transform matrix and return that
+            if false, perform the transform on the tensor and return the tensor
         """
         if isinstance(values, (list, tuple)):
             values = th.FloatTensor(values)
         self.values = values
-        if probs is None:
-            probs = th.ones(len(values)) / len(values)
+        if p is None:
+            p = th.ones(len(values)) / len(values)
         else:
-            if abs(1.0-sum(probs)) > 1e-3:
+            if abs(1.0-sum(p)) > 1e-3:
                 raise ValueError('Probs must sum to 1')
-        self.probs = probs
+        self.p = p
         self.interp = interp
         self.lazy = lazy
 
     def __call__(self, *inputs):
-        degree = th_random_choice(self.values, p=self.probs)
+        degree = th_random_choice(self.values, p=self.p)
 
         if self.lazy:
             return Rotate(degree, lazy=True)(inputs[0])
@@ -289,15 +288,14 @@ class Rotate(object):
         rotation_range : integer or float
             image will be rotated between (-degrees, degrees) degrees
 
-        fill_mode : string in {'constant', 'nearest'}
-            how to fill the empty space caused by the transform
-
-        fill_value : float
-            the value to fill the empty space with if fill_mode='constant'
+        interp : string in {'bilinear', 'nearest'} or list of strings
+            type of interpolation to use. You can provide a different
+            type of interpolation for each input, e.g. if you have two
+            inputs then you can say `interp=['bilinear','nearest']
 
         lazy    : boolean
-            if false, perform the transform on the tensor and return the tensor
             if true, only create the affine transform matrix and return that
+            if false, perform the transform on the tensor and return the tensor
         """
         self.value = value
         self.interp = interp
@@ -349,15 +347,14 @@ class RandomTranslate(object):
                 Image will be vertically shifted between 
                 (-width_range * width_dimension, width_range * width_dimension)
 
-        fill_mode : string in {'constant', 'nearest'}
-            how to fill the empty space caused by the transform
-
-        fill_value : float
-            the value to fill the empty space with if fill_mode='constant'
+        interp : string in {'bilinear', 'nearest'} or list of strings
+            type of interpolation to use. You can provide a different
+            type of interpolation for each input, e.g. if you have two
+            inputs then you can say `interp=['bilinear','nearest']
 
         lazy    : boolean
-            if false, perform the transform on the tensor and return the tensor
             if true, only create the affine transform matrix and return that
+            if false, perform the transform on the tensor and return the tensor
         """
         if isinstance(translation_range, float):
             translation_range = (translation_range, translation_range)
@@ -385,24 +382,47 @@ class RandomChoiceTranslate(object):
 
     def __init__(self,
                  values,
-                 probs=None,
+                 p=None,
                  interp='bilinear',
                  lazy=False):
+        """
+        Randomly translate an image some fraction of total height and/or
+        some fraction of total width from a list of potential values. 
+        If the image has multiple channels,
+        the same translation will be applied to each channel.
+
+        Arguments
+        ---------
+        values : a list or tuple
+            the values from which the translation value will be sampled
+
+        p : a list or tuple the same length as `values`
+            the probabilities of sampling any given value. Must sum to 1.
+
+        interp : string in {'bilinear', 'nearest'} or list of strings
+            type of interpolation to use. You can provide a different
+            type of interpolation for each input, e.g. if you have two
+            inputs then you can say `interp=['bilinear','nearest']
+
+        lazy    : boolean
+            if true, only create the affine transform matrix and return that
+            if false, perform the transform on the tensor and return the tensor
+        """
         if isinstance(values, (list, tuple)):
             values = th.FloatTensor(values)
         self.values = values
-        if probs is None:
-            probs = th.ones(len(values)) / len(values)
+        if p is None:
+            p = th.ones(len(values)) / len(values)
         else:
-            if abs(1.0-sum(probs)) > 1e-3:
+            if abs(1.0-sum(p)) > 1e-3:
                 raise ValueError('Probs must sum to 1')
-        self.probs = probs
+        self.p = p
         self.interp = interp
         self.lazy = lazy
 
     def __call__(self, *inputs):
-        random_height = th_random_choice(self.values, p=self.probs)
-        random_width = th_random_choice(self.values, p=self.probs)
+        random_height = th_random_choice(self.values, p=self.p)
+        random_width = th_random_choice(self.values, p=self.p)
 
         if self.lazy:
             return Translate([random_height, random_width],
@@ -426,6 +446,12 @@ class Translate(object):
             if single value, both horizontal and vertical translation
             will be this value * total height/width. Thus, value should
             be a fraction of total height/width with range (-1, 1)
+
+        interp : string in {'bilinear', 'nearest'} or list of strings
+            type of interpolation to use. You can provide a different
+            type of interpolation for each input, e.g. if you have two
+            inputs then you can say `interp=['bilinear','nearest']
+
         """
         if not isinstance(value, (tuple,list)):
             value = (value, value)
@@ -479,11 +505,10 @@ class RandomShear(object):
         shear_range : float
             radian bounds on the shear transform
         
-        fill_mode : string in {'constant', 'nearest'}
-            how to fill the empty space caused by the transform
-
-        fill_value : float
-            the value to fill the empty space with if fill_mode='constant'
+        interp : string in {'bilinear', 'nearest'} or list of strings
+            type of interpolation to use. You can provide a different
+            type of interpolation for each input, e.g. if you have two
+            inputs then you can say `interp=['bilinear','nearest']
 
         lazy    : boolean
             if false, perform the transform on the tensor and return the tensor
@@ -508,23 +533,43 @@ class RandomChoiceShear(object):
 
     def __init__(self,
                  values,
-                 probs=None,
+                 p=None,
                  interp='bilinear',
                  lazy=False):
+        """
+        Randomly shear an image with a value sampled from a list of values.
+
+        Arguments
+        ---------
+        values : a list or tuple
+            the values from which the rotation value will be sampled
+
+        p : a list or tuple the same length as `values`
+            the probabilities of sampling any given value. Must sum to 1.
+
+        interp : string in {'bilinear', 'nearest'} or list of strings
+            type of interpolation to use. You can provide a different
+            type of interpolation for each input, e.g. if you have two
+            inputs then you can say `interp=['bilinear','nearest']
+
+        lazy    : boolean
+            if false, perform the transform on the tensor and return the tensor
+            if true, only create the affine transform matrix and return that
+        """
         if isinstance(values, (list, tuple)):
             values = th.FloatTensor(values)
         self.values = values
-        if probs is None:
-            probs = th.ones(len(values)) / len(values)
+        if p is None:
+            p = th.ones(len(values)) / len(values)
         else:
-            if abs(1.0-sum(probs)) > 1e-3:
+            if abs(1.0-sum(p)) > 1e-3:
                 raise ValueError('Probs must sum to 1')
-        self.probs = probs
+        self.p = p
         self.interp = interp
         self.lazy = lazy
 
     def __call__(self, *inputs):
-        shear = th_random_choice(self.values, p=self.probs)
+        shear = th_random_choice(self.values, p=self.p)
 
         if self.lazy:
             return Shear(shear, 
@@ -587,11 +632,10 @@ class RandomZoom(object):
                  (1.0, 1.4) will only zoom out,
                  (0.7, 1.4) will randomly zoom in or out
 
-        fill_mode : string in {'constant', 'nearest'}
-            how to fill the empty space caused by the transform
-
-        fill_value : float
-            the value to fill the empty space with if fill_mode='constant'
+        interp : string in {'bilinear', 'nearest'} or list of strings
+            type of interpolation to use. You can provide a different
+            type of interpolation for each input, e.g. if you have two
+            inputs then you can say `interp=['bilinear','nearest']
 
         lazy    : boolean
             if false, perform the transform on the tensor and return the tensor
@@ -619,27 +663,25 @@ class RandomChoiceZoom(object):
 
     def __init__(self, 
                  values,
-                 probs=None,
+                 p=None,
                  interp='bilinear',
                  lazy=False):
         """
-        Randomly zoom in and/or out on an image 
+        Randomly zoom in and/or out on an image with a value sampled from
+        a list of values
 
         Arguments
         ---------
-        zoom_range : tuple or list with 2 values, both between (0, infinity)
-            lower and upper bounds on percent zoom. 
-            Anything less than 1.0 will zoom in on the image, 
-            anything greater than 1.0 will zoom out on the image.
-            e.g. (0.7, 1.0) will only zoom in, 
-                 (1.0, 1.4) will only zoom out,
-                 (0.7, 1.4) will randomly zoom in or out
+        values : a list or tuple
+            the values from which the applied zoom value will be sampled
 
-        fill_mode : string in {'constant', 'nearest'}
-            how to fill the empty space caused by the transform
+        p : a list or tuple the same length as `values`
+            the probabilities of sampling any given value. Must sum to 1.
 
-        fill_value : float
-            the value to fill the empty space with if fill_mode='constant'
+        interp : string in {'bilinear', 'nearest'} or list of strings
+            type of interpolation to use. You can provide a different
+            type of interpolation for each input, e.g. if you have two
+            inputs then you can say `interp=['bilinear','nearest']
 
         lazy    : boolean
             if false, perform the transform on the tensor and return the tensor
@@ -648,18 +690,18 @@ class RandomChoiceZoom(object):
         if isinstance(values, (list, tuple)):
             values = th.FloatTensor(values)
         self.values = values
-        if probs is None:
-            probs = th.ones(len(values)) / len(values)
+        if p is None:
+            p = th.ones(len(values)) / len(values)
         else:
-            if abs(1.0-sum(probs)) > 1e-3:
+            if abs(1.0-sum(p)) > 1e-3:
                 raise ValueError('Probs must sum to 1')
-        self.probs = probs
+        self.p = p
         self.interp = interp
         self.lazy = lazy
 
     def __call__(self, *inputs):
-        zx = th_random_choice(self.values, p=self.probs)
-        zy = th_random_choice(self.values, p=self.probs)
+        zx = th_random_choice(self.values, p=self.p)
+        zy = th_random_choice(self.values, p=self.p)
 
         if self.lazy:
             return Zoom([zx, zy], lazy=True)(inputs[0])
@@ -683,6 +725,11 @@ class Zoom(object):
             =1 : no zoom
             >1 : zoom-in (value-1)%
             <1 : zoom-out (1-value)%
+
+        interp : string in {'bilinear', 'nearest'} or list of strings
+            type of interpolation to use. You can provide a different
+            type of interpolation for each input, e.g. if you have two
+            inputs then you can say `interp=['bilinear','nearest']
 
         lazy: boolean
             If true, just return transformed
