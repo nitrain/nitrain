@@ -18,7 +18,7 @@ Example:
 ```python
 from torchsample.modules import ModuleTrainer
 
-# Define your model EXACTLY as if you were using nn.Module
+# Define your model EXACTLY as normal
 class Network(nn.Module):
     def __init__(self):
         super(Network, self).__init__()
