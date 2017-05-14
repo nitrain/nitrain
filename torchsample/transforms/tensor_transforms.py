@@ -105,7 +105,7 @@ class ToFile(object):
 
     def __call__(self, *inputs):
         for idx, _input in inputs:
-            fpath = os.path.join(self.root, 'img_%i_%i'%(self.counter, idx))
+            fpath = os.path.join(self.root, 'img_%i_%i.npy'%(self.counter, idx))
             np.save(fpath, _input.numpy())
         self.counter += 1
         return inputs
@@ -249,6 +249,15 @@ class AddChannel(object):
     of size (1, 28, 28), for example.
     """
     def __init__(self, axis=0):
+        """
+        Adds a dummy channel to an image, also known as
+        expanding an axis or unsqueezing a dim
+
+        Arguments
+        ---------
+        axis : integer
+            dimension to be expanded to singleton
+        """
         self.axis = axis
 
     def __call__(self, *inputs):
@@ -258,10 +267,22 @@ class AddChannel(object):
             outputs.append(_input)
         return outputs if idx > 1 else outputs[0]
 
+ExpandAxis = AddChannel
+Unsqueeze = AddChannel
 
 class Transpose(object):
 
     def __init__(self, dim1, dim2):
+        """
+        Swaps two dimensions of a tensor
+
+        Arguments
+        ---------
+        dim1 : integer
+            first dim to switch
+        dim2 : integer
+            second dim to switch
+        """
         self.dim1 = dim1
         self.dim2 = dim2
 
@@ -313,22 +334,28 @@ class RangeNorm(object):
         >>> x_norm = rn(x)
     """
     def __init__(self, 
-                 min_range, 
-                 max_range, 
-                 fixed_min=None, 
-                 fixed_max=None):
-        self.min_range = min_range
-        self.max_range = max_range
-        self.fixed_min = fixed_min
-        self.fixed_max = fixed_max
+                 min_val, 
+                 max_val):
+        """
+        Normalize a tensor between a min and max value
+
+        Arguments
+        ---------
+        min_val : float
+            lower bound of normalized tensor
+        max_val : float
+            upper bound of normalized tensor
+        """
+        self.min_val = min_val
+        self.max_val = max_val
 
     def __call__(self, *inputs):
         outputs = []
         for idx, _input in enumerate(inputs):
-            min_val = _input.min()
-            max_val = _input.max()
-            a = (self.max_range - self.min_range) / (max_val - min_val)
-            b = self.max_range - a * max_val
+            _min_val = _input.min()
+            _max_val = _input.max()
+            a = (self.max_val - self.min_val) / (_max_val - _min_val)
+            b = self.max_val- a * _max_val
             _input = _input.mul(a).add(b)
             outputs.append(_input)
         return outputs if idx > 1 else outputs[0]
@@ -338,10 +365,6 @@ class StdNorm(object):
     """
     Normalize torch tensor to have zero mean and unit std deviation
     """
-
-    def __init__(self):
-        pass
-
     def __call__(self, *inputs):
         outputs = []
         for idx, _input in enumerate(inputs):
@@ -399,7 +422,7 @@ class Slice2D(object):
 
 class RandomCrop(object):
 
-    def __init__(self, crop_size):
+    def __init__(self, size):
         """
         Randomly crop a torch tensor
 
@@ -408,26 +431,29 @@ class RandomCrop(object):
         size : tuple or list
             dimensions of the crop
         """
-        self.crop_size = crop_size
+        self.size = size
 
     def __call__(self, *inputs):
-        h_idx = random.randint(0,inputs[0].size(1)-self.crop_size[0])
-        w_idx = random.randint(0,inputs[1].size(2)-self.crop_size[1])
+        h_idx = random.randint(0,inputs[0].size(1)-self.size[0])
+        w_idx = random.randint(0,inputs[1].size(2)-self.size[1])
         outputs = []
         for idx, _input in enumerate(inputs):
-            _input = _input[:, h_idx:(h_idx+self.crop_size[0]),w_idx:(w_idx+self.crop_size[1])]
+            _input = _input[:, h_idx:(h_idx+self.size[0]),w_idx:(w_idx+self.size[1])]
             outputs.append(_input)
         return outputs if idx > 1 else outputs[0]
 
 
 class SpecialCrop(object):
 
-    def __init__(self, crop_size, crop_type=0):
+    def __init__(self, size, crop_type=0):
         """
         Perform a special crop - one of the four corners or center crop
 
         Arguments
         ---------
+        size : tuple or list
+            dimensions of the crop
+
         crop_type : integer in {0,1,2,3,4}
             0 = center crop
             1 = top left crop
@@ -437,36 +463,36 @@ class SpecialCrop(object):
         """
         if crop_type not in {0, 1, 2, 3, 4}:
             raise ValueError('crop_type must be in {0, 1, 2, 3, 4}')
-        self.crop_size = crop_size
+        self.size = size
         self.crop_type = crop_type
     
     def __call__(self, x, y=None):
         if self.crop_type == 0:
             # center crop
-            x_diff  = (x.size(1)-self.crop_size[0])/2.
-            y_diff  = (x.size(2)-self.crop_size[1])/2.
+            x_diff  = (x.size(1)-self.size[0])/2.
+            y_diff  = (x.size(2)-self.size[1])/2.
             ct_x    = [int(math.ceil(x_diff)),x.size(1)-int(math.floor(x_diff))]
             ct_y    = [int(math.ceil(y_diff)),x.size(2)-int(math.floor(y_diff))]
             indices = [ct_x,ct_y]        
         elif self.crop_type == 1:
             # top left crop
-            tl_x = [0, self.crop_size[0]]
-            tl_y = [0, self.crop_size[1]]
+            tl_x = [0, self.size[0]]
+            tl_y = [0, self.size[1]]
             indices = [tl_x,tl_y]
         elif self.crop_type == 2:
             # top right crop
-            tr_x = [0, self.crop_size[0]]
-            tr_y = [x.size(2)-self.crop_size[1], x.size(2)]
+            tr_x = [0, self.size[0]]
+            tr_y = [x.size(2)-self.size[1], x.size(2)]
             indices = [tr_x,tr_y]
         elif self.crop_type == 3:
             # bottom right crop
-            br_x = [x.size(1)-self.crop_size[0],x.size(1)]
-            br_y = [x.size(2)-self.crop_size[1],x.size(2)]
+            br_x = [x.size(1)-self.size[0],x.size(1)]
+            br_y = [x.size(2)-self.size[1],x.size(2)]
             indices = [br_x,br_y]
         elif self.crop_type == 4:
             # bottom left crop
-            bl_x = [x.size(1)-self.crop_size[0], x.size(1)]
-            bl_y = [0, self.crop_size[1]]
+            bl_x = [x.size(1)-self.size[0], x.size(1)]
+            bl_y = [0, self.size[1]]
             indices = [bl_x,bl_y]
         
         x = x[:,indices[0][0]:indices[0][1],indices[1][0]:indices[1][1]]
@@ -483,6 +509,11 @@ class Pad(object):
     def __init__(self, size):
         """
         Pads an image to the given size
+
+        Arguments
+        ---------
+        size : tuple or list
+            size of crop
         """
         self.size = size
 
@@ -555,7 +586,7 @@ class RandomFlip(object):
 
 class RandomOrder(object):
     """
-    Randomly permute the image channels
+    Randomly permute the channels of an image
     """
     def __call__(self, *inputs):
         order = th.randperm(inputs[0].dim())
