@@ -14,6 +14,13 @@ import torch.optim as optim
 from ..metrics import Metric, CategoricalAccuracy, BinaryAccuracy
 from ..initializers import GeneralInitializer
 
+def _standardize_user_data(inputs, targets):
+    if not isinstance(inputs, (list,tuple)):
+        inputs = [inputs]
+    if not isinstance(targets, (list,tuple)):
+        targets = [targets]
+    return inputs, targets
+
 def _validate_metric_input(metric):
     if isinstance(metric, str):
         if metric.upper() == 'CATEGORICAL_ACCURACY' or metric.upper() == 'ACCURACY':
