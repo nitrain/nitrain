@@ -2,44 +2,50 @@
 import torch as th
 from fnmatch import fnmatch
 
+from .callbacks import Callback
 
 class RegularizerContainer(object):
 
     def __init__(self, regularizers):
         self.regularizers = regularizers
         self._hooks = []
-        self._model = None
 
-    def set_model(self, model):
-        self._model = model
-
-    def register(self, model):
+    def register_forward_hooks(self, model):
         for regularizer in self.regularizers:
-            self.register_regularizer(model, regularizer)
+            for module_name, module in model.named_modules():
+                if fnmatch(module_name, regularizer.module_filter) and hasattr(module, 'weight'):
+                    hook = module.register_forward_hook(regularizer)
+                    self._hooks.append(hook)
+        
+        if len(self._hooks) == 0:
+            raise Exception('Tried to register regularizers but no modules '
+                'were found that matched any module_filter argument.')
 
-    def unregister(self):
+    def unregister_forward_hooks(self):
         for hook in self._hooks:
             hook.remove()
-
-    def register_regularizer(self, model, regularizer):
-        for module_name, module in self._model.named_modules():
-            if fnmatch(module_name, regularizer.module_filter) and hasattr(module, 'weight'):
-                hook = module.register_forward_hook(regularizer)
-                self._hooks.append(hook)
-
-    def add_regularizer(self, model, regularizer):
-        self.regularizers.append(regularizer)
-        self.register_regularizer(model, regularizer)
 
     def reset(self):
         for r in self.regularizers:
             r.reset()
 
-    def get_loss(self):
-        return sum([r.value for r in self.regularizers])
+    def get_value(self):
+        value = self.regularizers[0].value
+        for r in self.regularizers[1:]:
+            value += r.value
+        return value
 
     def __len__(self):
         return len(self.regularizers)
+
+
+class RegularizerCallback(Callback):
+
+    def __init__(self, container):
+        self.container = container
+
+    def on_batch_end(self, batch, logs=None):
+        self.container.reset()
 
 
 class ForwardHook(object):
@@ -97,30 +103,4 @@ class L1L2Regularizer(ForwardHook):
         self.l2(module, input, output)
         self.value = self.l1.value + self.l2.value
 
-
-# --------------------------------------------------------
-# --------------------------------------------------------
-# --------------------------------------------------------
-
-
-class _RegularizerModule(object):
-
-    def __init__(self, regularizers):
-        self.regularizers = regularizers
-        self.loss = 0.
-
-    def _apply(self, module, regularizer):
-        for name, module in module.named_children():
-            if fnmatch(name, regularizer.module_filter) and hasattr(module, 'weight'):
-                self.loss += regularizer(module)
-                self._apply(module, regularizer)
-
-    def __call__(self, model):
-        self.loss = 0.
-        for regularizer in self.regularizers:
-            self._apply(model, regularizer)
-        return self.loss
-
-    def __len__(self):
-        return len(self.regularizers)
 

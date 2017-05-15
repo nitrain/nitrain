@@ -14,14 +14,12 @@ from torch.autograd import Variable
 # local imports
 from ._utils import (_validate_loss_input, _validate_metric_input, 
                      _validate_optimizer_input, _validate_initializer_input,
-                     _get_current_time, _nb_function_args,
-                     _standardize_user_data)
-
+                     _get_current_time, _nb_function_args)
 from ..callbacks import CallbackModule, History, TQDM
 from ..constraints import ConstraintModule
 from ..initializers import InitializerModule
 from ..metrics import MetricsModule
-from ..regularizers import RegularizerContainer
+from ..regularizers import RegularizerModule
 
 
 class ModuleTrainer(object):
@@ -225,29 +223,16 @@ class ModuleTrainer(object):
         opt_kwargs = {k.split('optimizer_')[1]:v for k,v in kwargs.items() if 'optimizer_' in k}
         self.set_optimizer(optimizer, **opt_kwargs)
         self.set_loss(loss)
-
         if regularizers is not None:
             self.set_regularizers(regularizers)
-            self._REG_CONTAINER = RegularizerContainer(self._regularizers)
-            self._REG_CONTAINER.register(self.model)
-
         if initializers is not None:
             self.set_initializers(initializers)
-            self._INIT_CONTAINER = InitializerModule(self._initializers)
-            self._INIT_CONTAINER(self.model)
-
         if callbacks is not None:
             self.set_callbacks(callbacks)
-
         if constraints is not None:
             self.set_constraints(constraints)
-            self._CONSTRAINT_CONTAINER = ConstraintModule(self._constraints)
-            self._CONSTRAINT_CONTAINER.set_model(self.model)
-
         if metrics is not None:
             self.set_metrics(metrics)
-            self._METRICS_CONTAINER = MetricsModule(self._metrics)
-
         if transforms is not None:
             self.set_transforms(transforms)
 
@@ -260,12 +245,55 @@ class ModuleTrainer(object):
             shuffle=False,
             cuda_device=-1,
             verbose=1):
-        inputs, targets = _standardize_user_data(inputs, targets)
-        has_target = targets is not None
-        if has_target:
+        # convert inputs to a list if not already
+        if not isinstance(inputs, (list,tuple)):
+            inputs = [inputs]
+
+        # determine whether targets were given
+        # and convert targets to list if not already
+        if targets is None:
+            has_target = False
+        else:
+            has_target = True
+            if not isinstance(targets, (list,tuple)):
+                targets = [targets]
             nb_targets = len(targets)
 
-        has_validation_data = val_data is not None
+        # store whether validation data was given
+        if val_data is None:
+            has_validation_data = False
+        else:
+            has_validation_data = True      
+
+        # create regularizers
+        if hasattr(self.model, 'regularizers'):
+            for reg in self.model.regularizers:
+                self.add_regularizer(reg)
+        if self._has_regularizers:
+            regularizers = RegularizerModule(self._regularizers)
+
+        # create constraints
+        if hasattr(self.model, 'constraints'):
+            for constraint in self.model.constraints:
+                self.add_constraint(constraint)
+        if self._has_constraints:
+            constraints = ConstraintModule(self._constraints)
+            constraints.set_model(self.model)
+
+        # create metrics
+        if hasattr(self.model, 'metrics'):
+            for metric in self.model.metrics:
+                self.add_metric(metric)
+        if self._has_metrics:
+            metrics = MetricsModule(self._metrics)
+
+        # create initializers
+        if hasattr(self.model, 'initializers'):
+            for initializer in self.model.initializers:
+                self.add_initializer(initializer)
+        if self._has_initializers:
+            initializers = InitializerModule(self._initializers)
+            initializers(self.model)
 
         # enter context-manager for progress bar
         with TQDM() as pbar:
@@ -303,8 +331,6 @@ class ModuleTrainer(object):
 
                 # loop through each batch
                 for batch_idx in range(nb_batches):
-                    self._REG_CONTAINER.reset()
-
                     batch_logs = {'batch_idx': batch_idx}  
                     callbacks.on_batch_begin(batch_idx, batch_logs) 
 
@@ -358,13 +384,13 @@ class ModuleTrainer(object):
                         
                     # add regularizers to loss if necessary
                     if self._has_regularizers:
-                        regularizer_loss = self._REG_CONTAINER.get_loss()
+                        regularizer_loss = regularizers(self.model)
                         loss += regularizer_loss
                         batch_logs['regularizer_loss'] = regularizer_loss.data[0]
 
                     # add lagrangian constraints to loss if necessary
                     if self._has_lagrangian_constraints:
-                        constraint_loss = self._CONSTRAINT_CONTAINER(self.model)
+                        constraint_loss = constraints(self.model)
                         loss += constraint_loss
                         batch_logs['constraint_loss'] = constraint_loss.data[0]
 
@@ -372,7 +398,7 @@ class ModuleTrainer(object):
 
                     # calculate custom/special batch metrics if necessary
                     if self._has_metrics:
-                        metric_logs = self._METRICS_CONTAINER(outputs[0], target_batch[0])
+                        metric_logs = metrics(outputs[0], target_batch[0])
                         batch_logs.update(metric_logs)
 
                     # backward pass and optimizer step
@@ -383,7 +409,7 @@ class ModuleTrainer(object):
 
                     # apply explicit constraints if necessary
                     if self._has_constraints:
-                        self._CONSTRAINT_CONTAINER.on_batch_end(batch_idx)
+                        constraints.on_batch_end(batch_idx)
 
                 # validation evaluation if necessary
                 if has_validation_data:
@@ -405,10 +431,10 @@ class ModuleTrainer(object):
 
                 # apply Epoch-level constraints if necessary
                 if self._has_constraints:
-                    self._CONSTRAINT_CONTAINER.on_epoch_end(epoch_idx)
+                    constraints.on_epoch_end(epoch_idx)
                 # reset all metric counters
                 if self._has_metrics:
-                    self._METRICS_CONTAINER.reset()
+                    metrics.reset()
                 # exit the training loop if necessary (e.g. EarlyStopping)
                 if self._stop_training:
                     break
