@@ -52,6 +52,7 @@ from torchsample.modules import ModuleTrainer
 from torchsample.regularizers import L1Regularizer, L2Regularizer
 from torchsample.initializers import XavierUniform
 
+
 trainer = ModuleTrainer(net)
 trainer.compile(loss='nll_loss', optimizer='adadelta',
                 regularizers=[L1Regularizer(scale=1e-2, module_filter='fc*'),

@@ -20,6 +20,7 @@ from ._utils import (_validate_loss_input, _validate_metric_input,
 from ..callbacks import CallbackModule, History, TQDM
 from ..regularizers import RegularizerContainer
 from ..initializers import InitializerContainer
+from ..constraints import ConstraintContainer
 
 
 class ModuleTrainer(object):
@@ -141,6 +142,7 @@ class ModuleTrainer(object):
                 loss,
                 regularizers=None,
                 initializers=None,
+                constraints=None,
                 **kwargs):
         opt_kwargs = {k.split('optimizer_')[1]:v for k,v in kwargs.items() if 'optimizer_' in k}
         self.set_optimizer(optimizer, **opt_kwargs)
@@ -157,6 +159,13 @@ class ModuleTrainer(object):
             self._INITIALIZER_CONTAINER = InitializerContainer(self._initializers)
             # actually initialize model
             self._INITIALIZER_CONTAINER(self.model)
+
+        if constraints is not None:
+            self.set_constrants(constraints)
+            self._CONSTRAINT_CONTAINER = ConstraintContainer(self._constraints)
+            # register forward hooks for lagrangian constraints
+            self._CONSTRAINT_CONTAINER.register_forward_hooks(self.model)
+            
 
     def fit(self,
             inputs,
