@@ -51,15 +51,17 @@ net = Network()
 from torchsample.modules import ModuleTrainer
 from torchsample.regularizers import L1Regularizer, L2Regularizer
 from torchsample.initializers import XavierUniform
+from torchsample.constraints import UnitNorm
 
 
 trainer = ModuleTrainer(net)
 trainer.compile(loss='nll_loss', optimizer='adadelta',
                 regularizers=[L1Regularizer(scale=1e-2, module_filter='fc*'),
                               L2Regularizer(scale=1e-3, module_filter='conv*')],
-                initializers=[XavierUniform(module_filter='conv*')])
+                initializers=[XavierUniform(module_filter='conv*')],
+                constraints=[UnitNorm(module_filter='fc1')])
 
-#trainer.fit(x_train, y_train, nb_epoch=2, batch_size=128)
+trainer.fit(x_train, y_train, nb_epoch=2, batch_size=128, verbose=1)
 
 
 

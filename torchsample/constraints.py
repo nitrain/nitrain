@@ -11,8 +11,28 @@ class ConstraintContainer(object):
 
     def __init__(self, constraints):
         self.constraints = constraints
-        self.batch_constraints = [c for c in self.constraints if c.unit == 'batch']
-        self.epoch_constraints = [c for c in self.constraints if c.unit == 'epoch']
+        #self.batch_constraints = [c for c in self.constraints if c.unit == 'batch']
+        #self.epoch_constraints = [c for c in self.constraints if c.unit == 'epoch']
+
+    def register_constraints(self, model):
+        """
+        Grab pointers to the weights which will be modified by constraints so
+        that we dont have to search through the entire network using `apply`
+        each time
+        """
+        self.c_ptrs = {}
+        for c_idx, constraint in enumerate(self.constraints):
+            self.c_ptrs[c_idx] = []
+            for name, module in model.named_modules():
+                if fnmatch(name, constraint.module_filter) and hasattr(module, 'weight'):
+                    self.c_ptrs[c_idx].append(module)
+
+    def apply_constraints(self):
+        for c_idx, modules in self.c_ptrs.items():
+            for module in modules:
+                # apply constraint
+                self.constraints[c_idx](module)
+
 
 class Constraint(object):
 
@@ -37,7 +57,8 @@ class UnitNorm(Constraint):
 
     def __call__(self, module):
         w = module.weight.data
-        w = w.div(th.norm(w,2,1).expand_as(w))
+        w.div_(th.norm(w,2,1).expand_as(w))
+
 
 class MaxNorm(Constraint):
     """
@@ -66,6 +87,7 @@ class MaxNorm(Constraint):
     def __call__(self, module):
         module.weight.data = th.renorm(module.weight.data, 2, self.axis, self.value)
 
+
 class NonNeg(Constraint):
     """
     Constrains the weights to be non-negative.
@@ -80,7 +102,7 @@ class NonNeg(Constraint):
 
     def __call__(self, module):
         w = module.weight.data
-        w = w.gt(0).float().mul(w)
+        module.weight.data = w.gt(0).float().mul(w)
 
 
 

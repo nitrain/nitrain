@@ -46,8 +46,7 @@ class GeneralInitializer(Initializer):
 
     def __call__(self, module):
         classname = module.__class__.__name__
-        if fnmatch(classname, self.module_filter) and \
-        (hasattr(module, 'weight') or hasattr(module, 'bias')):
+        if fnmatch(classname, self.module_filter) and hasattr(module, 'weight'):
             if self.bias_only:
                 self._initializer(module.bias.data, **self.kwargs)
             else:
@@ -71,8 +70,7 @@ class Normal(Initializer):
 
     def __call__(self, module):
         classname = module.__class__.__name__
-        if fnmatch(classname, self.module_filter) and \
-        (hasattr(module, 'weight') or hasattr(module, 'bias')):
+        if fnmatch(classname, self.module_filter) and hasattr(module, 'weight'):
             if self.bias_only:
                 torch.nn.init.normal(module.bias.data, mean=self.mean, std=self.std)
             else:
@@ -95,8 +93,7 @@ class Uniform(Initializer):
 
     def __call__(self, module):
         classname = module.__class__.__name__
-        if fnmatch(classname, self.module_filter) and \
-        (hasattr(module, 'weight') or hasattr(module, 'bias')):
+        if fnmatch(classname, self.module_filter) and hasattr(module, 'weight'):
             if self.bias_only:
                 torch.nn.init.uniform(module.bias.data, a=self.a, b=self.b)
             else:
@@ -118,8 +115,7 @@ class ConstantInitializer(Initializer):
 
     def __call__(self, module, bias=False, bias_only=False, module_filter='*'):
         classname = module.__class__.__name__
-        if fnmatch(classname, self.module_filter) and \
-        (hasattr(module, 'weight') or hasattr(module, 'bias')):
+        if fnmatch(classname, self.module_filter) and hasattr(module, 'weight'):
             if self.bias_only:
                 torch.nn.init.constant(module.bias.data, val=self.value)
             else:
@@ -141,8 +137,7 @@ class XavierUniform(Initializer):
 
     def __call__(self, module):
         classname = module.__class__.__name__
-        if fnmatch(classname, self.module_filter) and \
-        (hasattr(module, 'weight') or hasattr(module, 'bias')):
+        if fnmatch(classname, self.module_filter) and hasattr(module, 'weight'):
             if self.bias_only:
                 torch.nn.init.xavier_uniform(module.bias.data, gain=self.gain)
             else:
@@ -164,8 +159,7 @@ class XavierNormal(Initializer):
 
     def __call__(self, module):
         classname = module.__class__.__name__
-        if fnmatch(classname, self.module_filter) and \
-        (hasattr(module, 'weight') or hasattr(module, 'bias')):
+        if fnmatch(classname, self.module_filter) and hasattr(module, 'weight'):
             if self.bias_only:
                 torch.nn.init.xavier_normal(module.bias.data, gain=self.gain)
             else:
@@ -188,8 +182,7 @@ class KaimingUniform(Initializer):
 
     def __call__(self, module):
         classname = module.__class__.__name__
-        if fnmatch(classname, self.module_filter) and \
-        (hasattr(module, 'weight') or hasattr(module, 'bias')):
+        if fnmatch(classname, self.module_filter) and hasattr(module, 'weight'):
             if self.bias_only:
                 torch.nn.init.kaiming_uniform(module.bias.data, a=self.a, mode=self.mode)
             else:
@@ -212,8 +205,7 @@ class KaimingNormal(Initializer):
 
     def __call__(self, module):
         classname = module.__class__.__name__
-        if fnmatch(classname, self.module_filter) and \
-        (hasattr(module, 'weight') or hasattr(module, 'bias')):
+        if fnmatch(classname, self.module_filter) and hasattr(module, 'weight'):
             if self.bias_only:
                 torch.nn.init.kaiming_normal(module.bias.data, a=self.a, mode=self.mode)
             else:
@@ -235,8 +227,7 @@ class Orthogonal(Initializer):
 
     def __call__(self, module):
         classname = module.__class__.__name__
-        if fnmatch(classname, self.module_filter) and \
-        (hasattr(module, 'weight') or hasattr(module, 'bias')):
+        if fnmatch(classname, self.module_filter) and hasattr(module, 'weight'):
             if self.bias_only:
                 torch.nn.init.orthogonal(module.bias.data, gain=self.gain)
             else:
@@ -259,8 +250,7 @@ class Sparse(Initializer):
 
     def __call__(self, module):
         classname = module.__class__.__name__
-        if fnmatch(classname, self.module_filter) and \
-        (hasattr(module, 'weight') or hasattr(module, 'bias')):
+        if fnmatch(classname, self.module_filter) and hasattr(module, 'weight'):
             if self.bias_only:
                 torch.nn.init.sparse(module.bias.data, sparsity=self.sparsity, std=self.std)
             else:

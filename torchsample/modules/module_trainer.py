@@ -42,6 +42,10 @@ class ModuleTrainer(object):
         # initializers
         self._initializers = []
 
+        # constraints
+        self._constraints = []
+        self._has_constraints = False
+
         # losses
         self._loss_fns = []
         self._has_multiple_loss_fns = False
@@ -137,6 +141,12 @@ class ModuleTrainer(object):
         self._has_initializers = True
         self._initializers = initializers
 
+    def set_constraints(self, constraints):
+        if not isinstance(constraints, (list,tuple)):
+            constraints = [constraints]
+        self._has_constraints = True
+        self._constraints = constraints
+
     def compile(self,
                 optimizer,
                 loss,
@@ -151,20 +161,17 @@ class ModuleTrainer(object):
         if regularizers is not None:
             self.set_regularizers(regularizers)
             self._REGULARIZER_CONTAINER = RegularizerContainer(self._regularizers)
-            # register forward hooks
             self._REGULARIZER_CONTAINER.register_forward_hooks(self.model)
 
         if initializers is not None:
             self.set_initializers(initializers)
             self._INITIALIZER_CONTAINER = InitializerContainer(self._initializers)
-            # actually initialize model
             self._INITIALIZER_CONTAINER(self.model)
 
         if constraints is not None:
-            self.set_constrants(constraints)
+            self.set_constraints(constraints)
             self._CONSTRAINT_CONTAINER = ConstraintContainer(self._constraints)
-            # register forward hooks for lagrangian constraints
-            self._CONSTRAINT_CONTAINER.register_forward_hooks(self.model)
+            self._CONSTRAINT_CONTAINER.register_constraints(self.model)
             
 
     def fit(self,
@@ -299,6 +306,9 @@ class ModuleTrainer(object):
                     self._optimizer.step()
 
                     callbacks.on_batch_end(batch_idx, batch_logs)
+                    # apply batch constraints
+                    if self._has_constraints:
+                        self._CONSTRAINT_CONTAINER.apply_constraints()
                 
                 # END OF EPOCH
                 epoch_logs.update(self.history.batch_metrics)
