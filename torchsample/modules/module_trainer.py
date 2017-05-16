@@ -228,12 +228,8 @@ class ModuleTrainer(object):
         verbose : integer
             level of verbosity
         """
-        #print('TRAINING MODEL\n\n')
-
         inputs, targets = _standardize_user_data(inputs, targets)
-        has_target = targets is not None
-        if has_target:
-            nb_targets = len(targets)
+        nb_targets = len(targets)
 
         # enter context-manager for progress bar
         with TQDM() as pbar:
@@ -263,6 +259,10 @@ class ModuleTrainer(object):
                 }
                 callbacks.on_epoch_begin(epoch_idx, epoch_logs)
 
+                # reset metric counts
+                if self._has_metrics:
+                    self._METRICS_CONTAINER.reset()
+
                 # shuffle inputs and targets if necessary
                 if shuffle:
                     rand_idx = th.randperm(len(inputs[0]))
@@ -278,8 +278,7 @@ class ModuleTrainer(object):
 
                     # grab an input batch and a target batch if necessary
                     input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size]) for x in inputs]
-                    if has_target:
-                        target_batch = [Variable(y[batch_idx*batch_size:(batch_idx+1)*batch_size]) for y in targets]
+                    target_batch = [Variable(y[batch_idx*batch_size:(batch_idx+1)*batch_size]) for y in targets]
 
                     batch_logs['batch_samples'] = len(input_batch[0])
 
@@ -290,26 +289,8 @@ class ModuleTrainer(object):
                     # apply multiple loss functions if necessary
                     if not isinstance(output_batch, (list,tuple)):
                         output_batch = [output_batch]
-                    if has_target:
-                        loss = self._loss_fns[0](output_batch[0], target_batch[0])
-                        for loss_idx in range(1,nb_targets):
-                            if self._has_multiple_loss_fns:
-                                loss += self._loss_fns[loss_idx](output_batch[loss_idx], target_batch[loss_idx])
-                            else:
-                                loss += self._loss_fns[0](output_batch[loss_idx], target_batch[loss_idx])
-                    else:
-                        # multiple outputs, but they all go into one loss functions
-                        if len(output_batch) == _nb_function_args(self._loss_fns[0]):
-                            loss = self._loss_fns[0](*output_batch)
-                        # multiple outputs, each with their own loss function
-                        else:
-                            loss = self._loss_fns[0](output_batch[0])
-                            for loss_idx in range(1,len(output_batch)):
-                                if self._has_multiple_loss_fns:
-                                    loss += self._loss_fns[loss_idx](output_batch[loss_idx])
-                                else:
-                                    loss += self._loss_fns[0](output_batch[loss_idx])
-                        
+                    loss = sum([self._loss_fns[loss_idx](output_batch[loss_idx], target_batch[loss_idx]) 
+                            for loss_idx in range(nb_targets)])
                     # add regularizers to loss if necessary
                     if self._has_regularizers:
                         regularizer_loss = self._REGULARIZER_CONTAINER.get_value()
@@ -318,7 +299,7 @@ class ModuleTrainer(object):
 
                     # calculate metrics if necessary
                     if self._has_metrics:
-                        metrics_logs = self._METRICS_CONTAINER(output_batch, target_batch)
+                        metrics_logs = self._METRICS_CONTAINER(output_batch[0], target_batch[0])
                         batch_logs.update(metrics_logs)
 
                     batch_logs['loss'] = loss.data[0]

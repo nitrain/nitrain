@@ -30,10 +30,7 @@ class RegularizerContainer(object):
             r.reset()
 
     def get_value(self):
-        value = self.regularizers[0].value
-        for r in self.regularizers[1:]:
-            value += r.value
-        return value
+        return sum([r.value for r in self.regularizers])
 
     def __len__(self):
         return len(self.regularizers)

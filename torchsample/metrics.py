@@ -19,7 +19,8 @@ class MetricsContainer(object):
             metric.reset()
 
     def __call__(self, y_pred, y_true):
-        logs = {self._prefix+metric._name: metric(y_pred, y_true) for metric in self._metrics}
+        logs = {self._prefix+metric._name: metric(y_pred, y_true) 
+                for metric in self._metrics}
         return logs
 
 class Metric(object):
