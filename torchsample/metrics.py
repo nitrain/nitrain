@@ -7,21 +7,20 @@ import torch as th
 from .utils import th_matrixcorr
 
 
-class MetricsModule(object):
+class MetricsContainer(object):
 
 
     def __init__(self, metrics, prefix=''):
         self._metrics = metrics
         self._prefix = prefix
 
-    def __call__(self, y_pred, y_true):
-        logs = {self._prefix+metric._name: metric(y_pred, y_true) for metric in self._metrics}
-        return logs
-
     def reset(self):
         for metric in self._metrics:
             metric.reset()
 
+    def __call__(self, y_pred, y_true):
+        logs = {self._prefix+metric._name: metric(y_pred, y_true) for metric in self._metrics}
+        return logs
 
 class Metric(object):
 

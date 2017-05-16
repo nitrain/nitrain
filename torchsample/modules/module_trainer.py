@@ -21,6 +21,7 @@ from ..callbacks import CallbackModule, History, TQDM
 from ..regularizers import RegularizerContainer
 from ..initializers import InitializerContainer
 from ..constraints import ConstraintContainer
+from ..metrics import MetricsContainer
 
 
 class ModuleTrainer(object):
@@ -45,6 +46,10 @@ class ModuleTrainer(object):
         # constraints
         self._constraints = []
         self._has_constraints = False
+
+        # metrics
+        self._metrics = []
+        self._has_metrics = False
 
         # losses
         self._loss_fns = []
@@ -147,12 +152,20 @@ class ModuleTrainer(object):
         self._has_constraints = True
         self._constraints = constraints
 
+    def set_metrics(self, metrics):
+        if not isinstance(metrics, (list,tuple)):
+            metrics = [metrics]
+        metrics = [_validate_metric_input(m) for m in metrics]
+        self._has_metrics = True
+        self._metrics = metrics
+
     def compile(self,
                 optimizer,
                 loss,
                 regularizers=None,
                 initializers=None,
                 constraints=None,
+                metrics=None,
                 **kwargs):
         opt_kwargs = {k.split('optimizer_')[1]:v for k,v in kwargs.items() if 'optimizer_' in k}
         self.set_optimizer(optimizer, **opt_kwargs)
@@ -172,7 +185,11 @@ class ModuleTrainer(object):
             self.set_constraints(constraints)
             self._CONSTRAINT_CONTAINER = ConstraintContainer(self._constraints)
             self._CONSTRAINT_CONTAINER.register_constraints(self.model)
-            
+        
+        if metrics is not None:
+            self.set_metrics(metrics)
+            self._METRICS_CONTAINER = MetricsContainer(self._metrics)
+
 
     def fit(self,
             inputs,
@@ -268,36 +285,41 @@ class ModuleTrainer(object):
 
                     # zero grads and forward pass
                     self._optimizer.zero_grad()
-                    outputs = self.model(*input_batch)
+                    output_batch = self.model(*input_batch)
 
                     # apply multiple loss functions if necessary
-                    if not isinstance(outputs, (list,tuple)):
-                        outputs = [outputs]
+                    if not isinstance(output_batch, (list,tuple)):
+                        output_batch = [output_batch]
                     if has_target:
-                        loss = self._loss_fns[0](outputs[0], target_batch[0])
+                        loss = self._loss_fns[0](output_batch[0], target_batch[0])
                         for loss_idx in range(1,nb_targets):
                             if self._has_multiple_loss_fns:
-                                loss += self._loss_fns[loss_idx](outputs[loss_idx], target_batch[loss_idx])
+                                loss += self._loss_fns[loss_idx](output_batch[loss_idx], target_batch[loss_idx])
                             else:
-                                loss += self._loss_fns[0](outputs[loss_idx], target_batch[loss_idx])
+                                loss += self._loss_fns[0](output_batch[loss_idx], target_batch[loss_idx])
                     else:
                         # multiple outputs, but they all go into one loss functions
-                        if len(outputs) == _nb_function_args(self._loss_fns[0]):
-                            loss = self._loss_fns[0](*outputs)
+                        if len(output_batch) == _nb_function_args(self._loss_fns[0]):
+                            loss = self._loss_fns[0](*output_batch)
                         # multiple outputs, each with their own loss function
                         else:
-                            loss = self._loss_fns[0](outputs[0])
-                            for loss_idx in range(1,len(outputs)):
+                            loss = self._loss_fns[0](output_batch[0])
+                            for loss_idx in range(1,len(output_batch)):
                                 if self._has_multiple_loss_fns:
-                                    loss += self._loss_fns[loss_idx](outputs[loss_idx])
+                                    loss += self._loss_fns[loss_idx](output_batch[loss_idx])
                                 else:
-                                    loss += self._loss_fns[0](outputs[loss_idx])
+                                    loss += self._loss_fns[0](output_batch[loss_idx])
                         
                     # add regularizers to loss if necessary
                     if self._has_regularizers:
                         regularizer_loss = self._REGULARIZER_CONTAINER.get_value()
                         loss += regularizer_loss
                         batch_logs['regularizer_loss'] = regularizer_loss.data[0]
+
+                    # calculate metrics if necessary
+                    if self._has_metrics:
+                        metrics_logs = self._METRICS_CONTAINER(output_batch, target_batch)
+                        batch_logs.update(metrics_logs)
 
                     batch_logs['loss'] = loss.data[0]
 

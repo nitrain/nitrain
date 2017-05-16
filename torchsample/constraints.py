@@ -38,13 +38,13 @@ class ConstraintContainer(object):
 
     def apply_batch_constraints(self, batch_idx):
         for c_idx, modules in self._batch_c_ptrs.items():
-            if self.constraints[c_idx].frequency % batch_idx == 0:
+            if (batch_idx+1) % self.constraints[c_idx].frequency == 0:
                 for module in modules:
                     self.constraints[c_idx](module)
 
     def apply_epoch_constraints(self, epoch_idx):
         for c_idx, modules in self._epoch_c_ptrs.items():
-            if self.constraints[c_idx].frequency % epoch_idx == 0:
+            if (epoch_idx+1) % self.constraints[c_idx].frequency == 0:
                 for module in modules:
                     self.constraints[c_idx](module)
 
