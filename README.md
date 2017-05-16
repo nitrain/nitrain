@@ -9,6 +9,7 @@ This package provides a few things:
 
 <b>Have any feature requests?</b> Submit an issue! I'll make it happen. Specifically,
 any data augmentation, data loading, or sampling functions.
+
 <b>Want to contribute?</b> Check the [issues page](https://github.com/ncullen93/torchsample/issues)
  for those tagged with [contributions welcome].
 
