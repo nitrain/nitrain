@@ -14,10 +14,9 @@ from torch.autograd import Variable
 # local imports
 from ._utils import (_validate_loss_input, _validate_metric_input, 
                      _validate_optimizer_input, _validate_initializer_input,
-                     _get_current_time, _nb_function_args,
-                     _standardize_user_data)
+                     _get_current_time, _standardize_user_data)
 
-from ..callbacks import CallbackModule, History, TQDM
+from ..callbacks import CallbackContainer, History, TQDM
 from ..regularizers import RegularizerContainer
 from ..initializers import InitializerContainer
 from ..constraints import ConstraintContainer
@@ -29,7 +28,19 @@ class ModuleTrainer(object):
     def __init__(self, model):
         """
         ModelTrainer for high-level training of Pytorch models
+
+        Major Parts
+        -----------
+        - optimizer(s)
+        - loss(es)
+        - regularizers
+        - initializers
+        - constraints
+        - metrics
+        - callbacks
         """
+        if not isinstance(model, nn.Module):
+            raise ValueError('model argument must inherit from torch.nn.Module')
         self.model = model
 
         # callbacks
@@ -159,6 +170,12 @@ class ModuleTrainer(object):
         self._has_metrics = True
         self._metrics = metrics
 
+    def set_callbacks(self, callbacks):
+        self._callbacks += callbacks
+
+    def add_callback(self, callback):
+        self._callbacks.append(callback)
+
     def compile(self,
                 optimizer,
                 loss,
@@ -166,6 +183,7 @@ class ModuleTrainer(object):
                 initializers=None,
                 constraints=None,
                 metrics=None,
+                callbacks=None,
                 **kwargs):
         opt_kwargs = {k.split('optimizer_')[1]:v for k,v in kwargs.items() if 'optimizer_' in k}
         self.set_optimizer(optimizer, **opt_kwargs)
@@ -190,6 +208,9 @@ class ModuleTrainer(object):
             self.set_metrics(metrics)
             self._METRICS_CONTAINER = MetricsContainer(self._metrics)
 
+        if callbacks is not None:
+            self.set_callbacks(callbacks)
+            #self._CALLBACK_CONTAINER = Callback
 
     def fit(self,
             inputs,
@@ -230,6 +251,11 @@ class ModuleTrainer(object):
         """
         inputs, targets = _standardize_user_data(inputs, targets)
         nb_targets = len(targets)
+        nb_losses = len(self._loss_fns)
+        if nb_targets > nb_losses and nb_losses > 1:
+            raise Exception('Must give only one loss fn or one for each target')
+        if nb_targets > nb_losses:
+            self._loss_fns = [self._loss_fns[0]]*nb_targets
 
         # enter context-manager for progress bar
         with TQDM() as pbar:
@@ -238,14 +264,14 @@ class ModuleTrainer(object):
             # add progress bar if necessary
             if verbose > 0:
                 progressbar = [pbar]
-            callbacks = CallbackModule(self._callbacks + progressbar)
-            callbacks.set_model(self)
+            _CALLBACK_CONTAINER = CallbackContainer(self._callbacks + progressbar)
+            _CALLBACK_CONTAINER.set_model(self)
 
-            train_begin_logs = {
+            train_logs = {
                 'start_time': _get_current_time(),
                 'has_validation_data': False
             }
-            callbacks.on_train_begin(logs=train_begin_logs)
+            _CALLBACK_CONTAINER.on_train_begin(logs=train_logs)
 
             # calculate total number of batches
             nb_batches = int(math.ceil(inputs[0].size(0) / batch_size))
@@ -257,7 +283,7 @@ class ModuleTrainer(object):
                     'nb_epoch': nb_epoch,
                     'has_validation_data': False
                 }
-                callbacks.on_epoch_begin(epoch_idx, epoch_logs)
+                _CALLBACK_CONTAINER.on_epoch_begin(epoch_idx, epoch_logs)
 
                 # reset metric counts
                 if self._has_metrics:
@@ -274,7 +300,7 @@ class ModuleTrainer(object):
                     self._REGULARIZER_CONTAINER.reset()
 
                     batch_logs = {'batch_idx': batch_idx}
-                    callbacks.on_batch_begin(batch_idx, batch_logs) 
+                    _CALLBACK_CONTAINER.on_batch_begin(batch_idx, batch_logs) 
 
                     # grab an input batch and a target batch if necessary
                     input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size]) for x in inputs]
@@ -312,26 +338,24 @@ class ModuleTrainer(object):
                     if self._has_constraints:
                         self._CONSTRAINT_CONTAINER.apply_batch_constraints(batch_idx)
 
-                    callbacks.on_batch_end(batch_idx, batch_logs)
+                    _CALLBACK_CONTAINER.on_batch_end(batch_idx, batch_logs)
 
                 # END OF EPOCH
                 if self._has_constraints:
                     self._CONSTRAINT_CONTAINER.apply_epoch_constraints(epoch_idx)
 
                 epoch_logs.update(self.history.batch_metrics)
-                callbacks.on_epoch_end(epoch_idx, epoch_logs)
+                _CALLBACK_CONTAINER.on_epoch_end(epoch_idx, epoch_logs)
 
                 # exit the training loop if necessary (e.g. EarlyStopping)
                 if self._stop_training:
                     break
 
-        train_logs = {
-            'final_loss': self.history.losses[-1],
-            'best_loss': min(self.history.losses),
-            'end_time': _get_current_time()
-        }
+        train_logs['final_loss'] = self.history.losses[-1],
+        train_logs['best_loss'] = min(self.history.losses),
+        train_logs['stop_time'] = _get_current_time()
 
-        callbacks.on_train_end(logs=train_logs)
+        _CALLBACK_CONTAINER.on_train_end(logs=train_logs)
 
     def save_state_dict(self, file):
         """

@@ -21,11 +21,10 @@ from tqdm import tqdm
 import torch as th
 
 
-class CallbackModule(object):
+class CallbackContainer(object):
     """
     Container holding a list of callbacks.
     """
-
     def __init__(self, callbacks=None, queue_length=10):
         callbacks = callbacks or []
         self.callbacks = [c for c in callbacks]
@@ -171,8 +170,6 @@ class History(Callback):
         self.losses = []
         if self.model._has_regularizers:
             self.regularizer_losses = []
-        #if self.model._has_lagrangian_constraints:
-        #    self.constraint_losses = []
         if logs['has_validation_data']:
             self.val_losses = []
 
@@ -182,16 +179,12 @@ class History(Callback):
         }
         if self.model._has_regularizers:
             self.batch_metrics['regularizer_loss'] = 0.
-        #if self.model._has_lagrangian_constraints:
-        #    self.batch_metrics['constraint_loss'] = 0.
         self.seen = 0.
 
     def on_epoch_end(self, epoch, logs=None):
         self.losses.append(logs['loss'])
         if self.model._has_regularizers:
             self.regularizer_losses.append(logs['regularizer_loss'])
-        #if self.model._has_lagrangian_constraints:
-        #    self.constraint_losses.append(logs['constraint_loss'])
         #if logs['has_validation_data']:
         #    self.val_losses.append(logs['val_loss'])
 
@@ -332,7 +325,7 @@ class EarlyStopping(Callback):
     def __init__(self, 
                  monitor='val_loss',
                  min_delta=0,
-                 patience=0):
+                 patience=5):
         """
         EarlyStopping callback to exit the training loop if training or
         validation loss does not improve by a certain amount for a certain

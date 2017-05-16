@@ -122,7 +122,7 @@ class UnitNormRegularizer(Regularizer):
     def reset(self):
         self.value = 0.
 
-    def __call__(self, module):
+    def __call__(self, module, input=None, output=None):
         w = module.weight
         norm_diff = th.norm(w, 2, 1).sub(1.)
         value = self.scale * th.sum(norm_diff.gt(0).float().mul(norm_diff))
@@ -146,7 +146,7 @@ class MaxNormRegularizer(Regularizer):
     def reset(self):
         self.value = 0.
 
-    def __call__(self, module):
+    def __call__(self, module, input=None, output=None):
         w = module.weight
         norm_diff = th.norm(w,2,self.axis).sub(self.value)
         value = self.scale * th.sum(norm_diff.gt(0).float().mul(norm_diff))
@@ -170,7 +170,7 @@ class NonNegRegularizer(Regularizer):
     def reset(self):
         self.value = 0.
 
-    def __call__(self, module):
+    def __call__(self, module, input=None, output=None):
         w = module.weight
         value = -1 * self.scale * th.sum(w.gt(0).float().mul(w))
         self.value += value
