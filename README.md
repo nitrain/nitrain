@@ -1,10 +1,14 @@
 # High-Level Training, Data Augmentation, and Utilities for Pytorch
 
+NOTE: If you have any 
+
 This package provides a few things:
 - A high-level module for Keras-like training with callbacks, constraints, and regularizers.
 - Comprehensive data augmentation, transforms, sampling, and loading
 - Utility tensor and variable functions so you don't need numpy as often
 
+<b>Have any feature requests?</b> Submit an issue! I'll make it happen. Specifically,
+any data augmentation, data loading, or sampling functions.
 <b>Want to contribute?</b> Check the [issues page](https://github.com/ncullen93/torchsample/issues)
  for those tagged with [contributions welcome].
 
