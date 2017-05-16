@@ -11,8 +11,8 @@ class ConstraintContainer(object):
 
     def __init__(self, constraints):
         self.constraints = constraints
-        #self.batch_constraints = [c for c in self.constraints if c.unit == 'batch']
-        #self.epoch_constraints = [c for c in self.constraints if c.unit == 'epoch']
+        self.batch_constraints = [c for c in self.constraints if c.unit.upper() == 'BATCH']
+        self.epoch_constraints = [c for c in self.constraints if c.unit.upper() == 'EPOCH']
 
     def register_constraints(self, model):
         """
@@ -20,18 +20,33 @@ class ConstraintContainer(object):
         that we dont have to search through the entire network using `apply`
         each time
         """
-        self.c_ptrs = {}
-        for c_idx, constraint in enumerate(self.constraints):
-            self.c_ptrs[c_idx] = []
+        # get batch constraint pointers
+        self._batch_c_ptrs = {}
+        for c_idx, constraint in enumerate(self.batch_constraints):
+            self._batch_c_ptrs[c_idx] = []
             for name, module in model.named_modules():
                 if fnmatch(name, constraint.module_filter) and hasattr(module, 'weight'):
-                    self.c_ptrs[c_idx].append(module)
+                    self._batch_c_ptrs[c_idx].append(module)
 
-    def apply_constraints(self):
-        for c_idx, modules in self.c_ptrs.items():
-            for module in modules:
-                # apply constraint
-                self.constraints[c_idx](module)
+        # get epoch constraint pointers
+        self._epoch_c_ptrs = {}
+        for c_idx, constraint in enumerate(self.epoch_constraints):
+            self._epoch_c_ptrs[c_idx] = []
+            for name, module in model.named_modules():
+                if fnmatch(name, constraint.module_filter) and hasattr(module, 'weight'):
+                    self._epoch_c_ptrs[c_idx].append(module)
+
+    def apply_batch_constraints(self, batch_idx):
+        for c_idx, modules in self._batch_c_ptrs.items():
+            if self.constraints[c_idx].frequency % batch_idx == 0:
+                for module in modules:
+                    self.constraints[c_idx](module)
+
+    def apply_epoch_constraints(self, epoch_idx):
+        for c_idx, modules in self._epoch_c_ptrs.items():
+            if self.constraints[c_idx].frequency % epoch_idx == 0:
+                for module in modules:
+                    self.constraints[c_idx](module)
 
 
 class Constraint(object):
@@ -57,7 +72,7 @@ class UnitNorm(Constraint):
 
     def __call__(self, module):
         w = module.weight.data
-        w.div_(th.norm(w,2,1).expand_as(w))
+        module.weight.data = w.div(th.norm(w,2,1).expand_as(w))
 
 
 class MaxNorm(Constraint):
@@ -85,7 +100,8 @@ class MaxNorm(Constraint):
         self.module_filter = module_filter
 
     def __call__(self, module):
-        module.weight.data = th.renorm(module.weight.data, 2, self.axis, self.value)
+        w = module.weight.data
+        module.weight.data = th.renorm(w, 2, self.axis, self.value)
 
 
 class NonNeg(Constraint):

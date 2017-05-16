@@ -305,12 +305,16 @@ class ModuleTrainer(object):
                     loss.backward()
                     self._optimizer.step()
 
-                    callbacks.on_batch_end(batch_idx, batch_logs)
                     # apply batch constraints
                     if self._has_constraints:
-                        self._CONSTRAINT_CONTAINER.apply_constraints()
-                
+                        self._CONSTRAINT_CONTAINER.apply_batch_constraints(batch_idx)
+
+                    callbacks.on_batch_end(batch_idx, batch_logs)
+
                 # END OF EPOCH
+                if self._has_constraints:
+                    self._CONSTRAINT_CONTAINER.apply_epoch_constraints(epoch_idx)
+
                 epoch_logs.update(self.history.batch_metrics)
                 callbacks.on_epoch_end(epoch_idx, epoch_logs)
 
