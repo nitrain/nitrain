@@ -312,7 +312,7 @@ class ModuleTrainer(object):
             callbacks.on_train_begin(logs=train_begin_logs)
 
             # calculate total number of batches
-            nb_batches = int(math.ceil(inputs[0].size(0) / batch_size))
+            nb_batches = int(math.ceil(len(inputs[0]) / batch_size))
 
             # loop through each epoch
             for epoch_idx in range(nb_epoch):
@@ -718,7 +718,7 @@ class ModuleTrainer(object):
         if not isinstance(inputs, (list,tuple)):
             inputs = [inputs]
 
-        nb_batches = int(math.ceil(inputs[0].size(0) / batch_size))
+        nb_batches = int(math.ceil(len(inputs[0]) / batch_size))
         prediction_list = []
         for batch_idx in range(nb_batches):
             input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size]) for x in inputs]
@@ -727,6 +727,16 @@ class ModuleTrainer(object):
                 input_batch = [ins.cuda(cuda_device) for ins in input_batch]
 
             prediction_list.append(self.model(*input_batch))
+        
+        # concatenate all outputs of the same type together (when there are multiple outputs)
+        if len(prediction_list) > 0 and isinstance(prediction_list[0], (tuple,list)):
+            nb_out = len(prediction_list[0])
+            out_list = []
+            for out_i in range(nb_out):
+                precdiction_out_i = [prediction[out_i] for prediction in prediction_list]
+                out_list.append(th.cat(precdiction_out_i, 0))
+            return out_list
+            
         return th.cat(prediction_list,0)
 
     def predict_loader(self,
@@ -745,6 +755,16 @@ class ModuleTrainer(object):
                 input_batch = [ins.cuda(cuda_device) for ins in input_batch]
 
             prediction_list.append(self.model(*input_batch))
+            
+        # concatenate all outputs of the same type together (when there are multiple outputs)
+        if len(prediction_list) > 0 and isinstance(prediction_list[0], (tuple,list)):
+            nb_out = len(prediction_list[0])
+            out_list = []
+            for out_i in range(nb_out):
+                precdiction_out_i = [prediction[out_i] for prediction in prediction_list]
+                out_list.append(th.cat(precdiction_out_i, 0))
+            return out_list
+            
         return th.cat(prediction_list,0)
 
     def predict_on_batch(self, 
@@ -781,7 +801,7 @@ class ModuleTrainer(object):
 
         total_loss = 0.
         total_samples = 0.
-        nb_batches = int(math.ceil(inputs[0].size(0) / batch_size))
+        nb_batches = int(math.ceil(len(inputs[0]) / batch_size))
         for batch_idx in range(nb_batches):
             input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size]) for x in inputs]
             if has_target:
