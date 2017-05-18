@@ -55,13 +55,14 @@ from torchsample.callbacks import LambdaCallback
 
 
 trainer = ModuleTrainer(net)
-trainer.compile(loss='nll_loss', optimizer='adadelta',
+trainer.compile(loss='nll_loss', 
+                optimizer='adadelta',
                 regularizers=[L1Regularizer(scale=1e-6, module_filter='fc*'),
                               L2Regularizer(scale=1e-7, module_filter='conv*')],
                 initializers=[XavierUniform(module_filter='conv*')],
                 constraints=[UnitNorm(module_filter='fc1')],
-                metrics=['categorical_accuracy'],
-                callbacks=[LambdaCallback(on_epoch_begin=lambda epoch, logs: print('\nEpoch:%i\n'%epoch))])
+                metrics=['categorical_accuracy'])
+                #callbacks=[LambdaCallback(on_epoch_begin=lambda epoch, logs: print('\nEpoch:%i\n'%epoch))])
 
 trainer.fit(x_train, y_train, nb_epoch=2, batch_size=128, verbose=1)
 

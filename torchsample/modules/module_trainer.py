@@ -62,6 +62,10 @@ class ModuleTrainer(object):
         self._metrics = []
         self._has_metrics = False
 
+        # transforms
+        self._transforms = []
+        self._has_transforms = False
+
         # losses
         self._loss_fns = []
         self._has_multiple_loss_fns = False
@@ -176,6 +180,21 @@ class ModuleTrainer(object):
     def add_callback(self, callback):
         self._callbacks.append(callback)
 
+    def set_transforms(self, transforms):
+        if not isinstance(transforms, (list,tuple)):
+            transforms = [transforms, None, None]
+        if len(transforms) == 1:
+            transforms = [transforms, None, None]
+        elif len(transforms) == 2:
+            transforms = [transforms, transforms, None]
+
+        self._has_input_transform = transforms[0] is not None
+        self._has_target_transform = transforms[1] is not None
+        self._has_co_transform = transforms[2] is not None
+
+        self._has_transforms = True
+        self._transforms = transforms
+
     def compile(self,
                 optimizer,
                 loss,
@@ -184,6 +203,7 @@ class ModuleTrainer(object):
                 constraints=None,
                 metrics=None,
                 callbacks=None,
+                transforms=None,
                 **kwargs):
         opt_kwargs = {k.split('optimizer_')[1]:v for k,v in kwargs.items() if 'optimizer_' in k}
         self.set_optimizer(optimizer, **opt_kwargs)
@@ -206,15 +226,17 @@ class ModuleTrainer(object):
         
         if metrics is not None:
             self.set_metrics(metrics)
-            self._METRICS_CONTAINER = MetricsContainer(self._metrics)
+            self._METRIC_CONTAINER = MetricsContainer(self._metrics)
 
         if callbacks is not None:
             self.set_callbacks(callbacks)
-            #self._CALLBACK_CONTAINER = Callback
+
+        if transforms is not None:
+            self.set_transforms(transforms)
 
     def fit(self,
             inputs,
-            targets=None,
+            targets,
             nb_epoch=100,
             batch_size=32,
             shuffle=False,
@@ -252,10 +274,15 @@ class ModuleTrainer(object):
         inputs, targets = _standardize_user_data(inputs, targets)
         nb_targets = len(targets)
         nb_losses = len(self._loss_fns)
-        if nb_targets > nb_losses and nb_losses > 1:
-            raise Exception('Must give only one loss fn or one for each target')
+        if (nb_targets > nb_losses) and (nb_losses > 1):
+            raise Exception('Must give either a) only one loss function or '
+                            'b) one for every target')
         if nb_targets > nb_losses:
             self._loss_fns = [self._loss_fns[0]]*nb_targets
+
+        if cuda_device > -1:
+            inputs = [x.cuda(cuda_device) for x in inputs]
+            targets = [y.cuda(cuda_device) for y in targets]
 
         # enter context-manager for progress bar
         with TQDM() as pbar:
@@ -287,16 +314,17 @@ class ModuleTrainer(object):
 
                 # reset metric counts
                 if self._has_metrics:
-                    self._METRICS_CONTAINER.reset()
+                    self._METRIC_CONTAINER.reset()
 
                 # shuffle inputs and targets if necessary
                 if shuffle:
-                    rand_idx = th.randperm(len(inputs[0]))
-                    inputs = [ins[rand_idx] for ins in inputs]
-                    targets = [tars[rand_idx] for tars in targets]
+                    rand_indices = th.randperm(len(inputs[0]))
+                    inputs = [ins[rand_indices] for ins in inputs]
+                    targets = [tars[rand_indices] for tars in targets]
 
                 # loop through each batch
                 for batch_idx in range(nb_batches):
+                    # reset regularizer each batch
                     self._REGULARIZER_CONTAINER.reset()
 
                     batch_logs = {'batch_idx': batch_idx}
@@ -305,6 +333,15 @@ class ModuleTrainer(object):
                     # grab an input batch and a target batch if necessary
                     input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size]) for x in inputs]
                     target_batch = [Variable(y[batch_idx*batch_size:(batch_idx+1)*batch_size]) for y in targets]
+
+                    # run transforms if necessary
+                    if self._has_input_transform:
+                        input_batch = [self._transforms[0](x) for x in inputs]
+                    if self._has_target_transform:
+                        target_batch = [self._transforms[1](y) for y in targets]
+                    if self._has_co_transform:
+                        input_batch, target_batch = zip(*[self._transforms[2](x, y) 
+                            for x, y in zip(input_batch, target_batch)])
 
                     batch_logs['batch_samples'] = len(input_batch[0])
 
@@ -315,8 +352,10 @@ class ModuleTrainer(object):
                     # apply multiple loss functions if necessary
                     if not isinstance(output_batch, (list,tuple)):
                         output_batch = [output_batch]
+
+                    # multiple outputs, but they all go into one loss function
                     loss = sum([self._loss_fns[loss_idx](output_batch[loss_idx], target_batch[loss_idx]) 
-                            for loss_idx in range(nb_targets)])
+                                    for loss_idx in range(nb_targets)])
                     # add regularizers to loss if necessary
                     if self._has_regularizers:
                         regularizer_loss = self._REGULARIZER_CONTAINER.get_value()
@@ -325,7 +364,7 @@ class ModuleTrainer(object):
 
                     # calculate metrics if necessary
                     if self._has_metrics:
-                        metrics_logs = self._METRICS_CONTAINER(output_batch[0], target_batch[0])
+                        metrics_logs = self._METRIC_CONTAINER(output_batch[0], target_batch[0])
                         batch_logs.update(metrics_logs)
 
                     batch_logs['loss'] = loss.data[0]
