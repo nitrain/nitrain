@@ -14,7 +14,7 @@ from torch.autograd import Variable
 # local imports
 from ._utils import (_validate_loss_input, _validate_metric_input, 
                      _validate_optimizer_input, _validate_initializer_input,
-                     _get_current_time, _standardize_user_data)
+                     _standardize_user_data)
 
 from ..callbacks import CallbackContainer, History, TQDM
 from ..regularizers import RegularizerContainer
@@ -295,13 +295,12 @@ class ModuleTrainer(object):
             _CALLBACK_CONTAINER.set_model(self)
 
             train_logs = {
-                'start_time': _get_current_time(),
                 'has_validation_data': False
             }
             _CALLBACK_CONTAINER.on_train_begin(logs=train_logs)
 
             # calculate total number of batches
-            nb_batches = int(math.ceil(inputs[0].size(0) / batch_size))
+            nb_batches = int(math.ceil(len(inputs[0]) / batch_size))
 
             # loop through each epoch
             for epoch_idx in range(nb_epoch):
@@ -389,10 +388,6 @@ class ModuleTrainer(object):
                 # exit the training loop if necessary (e.g. EarlyStopping)
                 if self._stop_training:
                     break
-
-        train_logs['final_loss'] = self.history.losses[-1],
-        train_logs['best_loss'] = min(self.history.losses),
-        train_logs['stop_time'] = _get_current_time()
 
         _CALLBACK_CONTAINER.on_train_end(logs=train_logs)
 

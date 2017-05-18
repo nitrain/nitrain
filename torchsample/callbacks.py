@@ -20,6 +20,8 @@ from tqdm import tqdm
 
 import torch as th
 
+from .modules._utils import _get_current_time
+
 
 class CallbackContainer(object):
     """
@@ -38,6 +40,7 @@ class CallbackContainer(object):
             callback.set_params(params)
 
     def set_model(self, model):
+        self.model = model
         for callback in self.callbacks:
             callback.set_model(model)
 
@@ -63,11 +66,15 @@ class CallbackContainer(object):
 
     def on_train_begin(self, logs=None):
         logs = logs or {}
+        logs['start_time'] = _get_current_time()
         for callback in self.callbacks:
             callback.on_train_begin(logs)
 
     def on_train_end(self, logs=None):
         logs = logs or {}
+        logs['final_loss'] = self.model.history.losses[-1],
+        logs['best_loss'] = min(self.model.history.losses),
+        logs['stop_time'] = _get_current_time()
         for callback in self.callbacks:
             callback.on_train_end(logs)
 
