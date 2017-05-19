@@ -500,29 +500,30 @@ class ReduceLROnPlateau(Callback):
         current_loss = logs.get(self.monitor)
         if current_loss is None:
             pass
-        else:  
-            if self.cooldown_counter > 0:
-                # if in cooldown phase
-                self.cooldown_counter += 1
+        else:
+            # if in cooldown phase
+            if self.cooldown_counter > 0: 
+                self.cooldown_counter -= 1
                 self.wait = 0
+            # if loss improved, grab new loss and reset wait counter
             if self.monitor_op(current_loss, self.best_loss):
-                # not in cooldown and loss improved
                 self.best_loss = current_loss
                 self.wait = 0
-            else:
-                # loss didnt improve
-                for p in self.model._optimizer.param_groups:
-                    old_lr = p['lr']
-                    if old_lr > self.min_lr + 1e-4:
-                        new_lr = old_lr * self.factor
-                        new_lr = max(new_lr, self.min_lr)
-                        if self.verbose > 0:
-                            print('\nEpoch %05d: reducing lr from %0.3f to %0.3f' % 
-                                (epoch, old_lr, new_lr))
-                        p['lr'] = new_lr
-                        self.cooldown_counter = self.cooldown
-                        self.wait = 0
-
+            # loss didnt improve, and not in cooldown phase
+            elif not (self.cooldown_counter > 0):
+                if self.wait >= self.patience:
+                    for p in self.model._optimizer.param_groups:
+                        old_lr = p['lr']
+                        if old_lr > self.min_lr + 1e-4:
+                            new_lr = old_lr * self.factor
+                            new_lr = max(new_lr, self.min_lr)
+                            if self.verbose > 0:
+                                print('\nEpoch %05d: reducing lr from %0.3f to %0.3f' % 
+                                    (epoch, old_lr, new_lr))
+                            p['lr'] = new_lr
+                            self.cooldown_counter = self.cooldown
+                            self.wait = 0
+                self.wait += 1
 
 class CSVLogger(Callback):
     """
