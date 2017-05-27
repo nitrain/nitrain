@@ -383,7 +383,7 @@ class EarlyStopping(Callback):
                 (self.stopped_epoch))
 
 
-class LearningRateScheduler(Callback):
+class LRScheduler(Callback):
     """
     Schedule the learning rate according to some function of the 
     current epoch index, current learning rate, and current train/val loss.
@@ -411,7 +411,7 @@ class LearningRateScheduler(Callback):
             else:
                 self.fractional_bounds = True
         self.schedule = schedule
-        super(LearningRateScheduler, self).__init__()
+        super(LRScheduler, self).__init__()
 
     def schedule_from_dict(self, epoch, logs=None):
         for epoch_bound, learn_rate in self.schedule_dict.items():

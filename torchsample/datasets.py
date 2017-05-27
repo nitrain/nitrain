@@ -1,7 +1,7 @@
 
 from __future__ import absolute_import
 
-import torch
+import torch as th
 import torch.utils.data
 
 import os
@@ -17,6 +17,11 @@ except:
 
 try:
     from PIL import Image
+except:
+    pass
+
+try:
+    import pandas as pd
 except:
     pass
 
@@ -162,9 +167,9 @@ class FolderDataset(torch.utils.data.Dataset):
         target_sample = self.targets[index]
 
         # load samples into memory
-        input_sample = torch.from_numpy(self.file_loader(input_sample)).contiguous()
+        input_sample = th.from_numpy(self.file_loader(input_sample)).contiguous()
         if self.class_mode == 'image':
-            target_sample = torch.from_numpy(self.file_loader(target_sample)).contiguous()
+            target_sample = th.from_numpy(self.file_loader(target_sample)).contiguous()
         
         # apply transforms
         if self.transform is not None:
@@ -250,12 +255,14 @@ class FilemapDataset(torch.utils.data.Dataset):
                  filepath,
                  base_dir=None,
                  file_reader=None,
+                 map_reader=None,
                  input_transform=None,
                  target_transform=None,
                  co_transform=None):
         self.filepath = filepath
         self.base_dir = base_dir
-        self.file_reader = file_reader if file_reader is not None else self.file_reader
+        self.file_reader = file_reader if file_reader is not None else None
+        self.map_reader = map_reader if map_reader is not None else None
         self.input_transform = input_transform
         self.target_transform = target_transform
         self.co_transform = co_transform
@@ -275,14 +282,11 @@ class FilemapDataset(torch.utils.data.Dataset):
             for i in range(len(self.file_map)):
                 self.file_map[i,0] = os.path.join(self.base_dir, self.file_map[i,0])
 
-
     def map_reader(self, filepath):
-        if filepath.endswith('.csv'):
-            pass
-        elif filepath.endswith('.txt'):
-            pass
-        else:
-            raise Exception('Mapping File format %s not supported' % (filepath.split('.')[-1]))
+        try:
+            pd.read_csv(filepath)
+        except:
+            raise Exception('Cant load filemap')
 
     def file_reader(self, filepath):
         if filepath.endswith('.npy'):
@@ -331,9 +335,9 @@ class MultiTensorDataset(torch.utils.data.Dataset):
         Example:
         >>> import torch
         >>> from torch.utils.data import DataLoader
-        >>> x1 = torch.ones(100,5)
-        >>> x2 = torch.zeros(100,10)
-        >>> y = torch.ones(100,1)*10
+        >>> x1 = th.ones(100,5)
+        >>> x2 = th.zeros(100,10)
+        >>> y = th.ones(100,1)*10
         >>> dataset = MultiTensorDataset([x1,x2], None)
         >>> loader = DataLoader(dataset, 
         ...           sampler=SequentialSampler(x1.size(0)), batch_size=5)
