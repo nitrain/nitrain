@@ -7,6 +7,7 @@ import numpy as np
 import torch as th
 from torch.autograd import Variable
 
+from ..utils import th_random_choice
 
 class Compose(object):
     """
@@ -30,6 +31,24 @@ class Compose(object):
                 inputs = [inputs]
             inputs = transform(*inputs)
         return inputs
+
+
+class RandomChoiceCompose(object):
+    """
+    Randomly choose to apply one transform from a collection of transforms
+
+    e.g. to randomly apply EITHER 0-1 or -1-1 normalization to an input:
+        >>> transform = RandomChoiceCompose([RangeNormalize(0,1),
+                                             RangeNormalize(-1,1)])
+        >>> x_norm = transform(x) # only one of the two normalizations is applied
+    """
+    def __init__(self, transforms):
+        self.transforms = transforms
+
+    def __call__(self, *inputs):
+        tform = random.choice(self.transforms)
+        outputs = tform(*inputs)
+        return outputs
 
 
 class ToTensor(object):
@@ -294,7 +313,7 @@ class Transpose(object):
         return outputs if idx > 1 else outputs[0]
 
 
-class RangeNorm(object):
+class RangeNormalize(object):
     """
     Given min_val: (R, G, B) and max_val: (R,G,B),
     will normalize each channel of the th.*Tensor to
@@ -361,7 +380,7 @@ class RangeNorm(object):
         return outputs if idx > 1 else outputs[0]
 
 
-class StdNorm(object):
+class StdNormalize(object):
     """
     Normalize torch tensor to have zero mean and unit std deviation
     """

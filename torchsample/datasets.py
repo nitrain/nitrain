@@ -13,13 +13,12 @@ import numpy as np
 try:
     import nibabel
 except:
-    warnings.warn('Cant import nibabel.. Cant load brain images')
+    pass
 
 try:
     from PIL import Image
 except:
-    warnings.warn('Cant import PIL.. Cant load PIL images')
-
+    pass
 
 def pil_loader(path):
     return Image.open(path).convert('RGB')
@@ -245,15 +244,78 @@ class TensorDataset(torch.utils.data.Dataset):
         return self.inputs.size(0)
 
 
-class CSVDataset(torch.utils.data.Dataset):
+class FilemapDataset(torch.utils.data.Dataset):
 
     def __init__(self,
                  filepath,
+                 base_dir=None,
+                 file_reader=None,
                  input_transform=None,
                  target_transform=None,
                  co_transform=None):
-        pass
+        self.filepath = filepath
+        self.base_dir = base_dir
+        self.file_reader = file_reader if file_reader is not None else self.file_reader
+        self.input_transform = input_transform
+        self.target_transform = target_transform
+        self.co_transform = co_transform
 
+        # read the input file
+        self.file_map = self.map_reader(filepath)
+        if self.file_map.shape[1] > 1:
+            self.has_target = True
+            if self.file_map[0,0].split('.')[-1] == self.file_map[0,1].split('.')[-1]:
+                self.has_image_target = True
+        else:
+            self.has_target = False
+            self.has_image_target = False
+
+
+        if self.base_dir is not None:
+            for i in range(len(self.file_map)):
+                self.file_map[i,0] = os.path.join(self.base_dir, self.file_map[i,0])
+
+
+    def map_reader(self, filepath):
+        if filepath.endswith('.csv'):
+            pass
+        elif filepath.endswith('.txt'):
+            pass
+        else:
+            raise Exception('Mapping File format %s not supported' % (filepath.split('.')[-1]))
+
+    def file_reader(self, filepath):
+        if filepath.endswith('.npy'):
+            return np.load(filepath)
+        elif filepath.endswith('.pth'):
+            return th.load(filepath)
+        else:
+            # assumes its an image that PIL can read
+            return np.fromarray(Image.open(filepath))
+
+    def __getitem__(self, index):
+        input_sample = self.file_reader(self.file_map[index,0])
+        if self.has_target:
+            target_sample = self.file_map[index,1]
+            # if target sample is an image and has same extension as input sample
+            if self.has_image_target:
+                target_sample = self.file_reader(target_sample)
+
+        # apply transforms
+        if self.input_transform is not None:
+            input_sample = self.input_transform(input_sample)
+        if self.has_target and self.target_transform is not None:
+            target_sample = self.target_transform(target_sample)
+        if self.has_target and self.co_transform is not None:
+            input_sample, target_sample = self.co_transform(input_sample, target_sample)
+
+        if self.has_target:
+            return input_sample, target_sample
+        else:
+            return input_sample
+
+    def __len__(self):
+        return len(self.file)
 
 class MultiTensorDataset(torch.utils.data.Dataset):
 

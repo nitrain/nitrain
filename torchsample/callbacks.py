@@ -15,13 +15,15 @@ import time
 from tempfile import NamedTemporaryFile
 import shutil
 import math
+import datetime
 
 from tqdm import tqdm
 
 import torch as th
 
-from .modules._utils import _get_current_time
 
+def _get_current_time():
+    return datetime.datetime.now().strftime("%B %d, %Y - %I:%M%p")
 
 class CallbackContainer(object):
     """
