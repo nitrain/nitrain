@@ -261,8 +261,8 @@ class FilemapDataset(torch.utils.data.Dataset):
                  co_transform=None):
         self.filepath = filepath
         self.base_dir = base_dir
-        self.file_reader = file_reader if file_reader is not None else None
-        self.map_reader = map_reader if map_reader is not None else None
+        self.file_reader = file_reader if file_reader is not None else self.file_reader
+        self.map_reader = map_reader if map_reader is not None else self.map_reader
         self.input_transform = input_transform
         self.target_transform = target_transform
         self.co_transform = co_transform
@@ -271,22 +271,24 @@ class FilemapDataset(torch.utils.data.Dataset):
         self.file_map = self.map_reader(filepath)
         if self.file_map.shape[1] > 1:
             self.has_target = True
-            if self.file_map[0,0].split('.')[-1] == self.file_map[0,1].split('.')[-1]:
+            if isinstance(self.file_map.ix[0,1], str):
                 self.has_image_target = True
+            else:
+                self.has_image_target = False
         else:
             self.has_target = False
             self.has_image_target = False
 
-
         if self.base_dir is not None:
             for i in range(len(self.file_map)):
-                self.file_map[i,0] = os.path.join(self.base_dir, self.file_map[i,0])
+                self.file_map.ix[i,0] = os.path.join(self.base_dir, self.file_map.ix[i,0])
 
     def map_reader(self, filepath):
         try:
-            pd.read_csv(filepath)
+            filemap = pd.read_csv(filepath)
         except:
             raise Exception('Cant load filemap')
+        return filemap
 
     def file_reader(self, filepath):
         if filepath.endswith('.npy'):
@@ -298,9 +300,9 @@ class FilemapDataset(torch.utils.data.Dataset):
             return np.fromarray(Image.open(filepath))
 
     def __getitem__(self, index):
-        input_sample = self.file_reader(self.file_map[index,0])
+        input_sample = self.file_reader(self.file_map.ix[index,0])
         if self.has_target:
-            target_sample = self.file_map[index,1]
+            target_sample = self.file_map.ix[index,1]
             # if target sample is an image and has same extension as input sample
             if self.has_image_target:
                 target_sample = self.file_reader(target_sample)
@@ -319,7 +321,8 @@ class FilemapDataset(torch.utils.data.Dataset):
             return input_sample
 
     def __len__(self):
-        return len(self.file)
+        return len(self.file_map)
+
 
 class MultiTensorDataset(torch.utils.data.Dataset):
 
