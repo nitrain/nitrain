@@ -494,6 +494,9 @@ class ModuleTrainer(object):
             initializers = InitializerModule(self._initializers)
             initializers(self.model)
 
+        if cuda_device > -1:
+            self.model.cuda(cuda_device)
+
         # enter context-manager for progress bar
         with TQDM() as pbar:
             # create callbacks
@@ -547,7 +550,6 @@ class ModuleTrainer(object):
                         input_batch = [ins.cuda(cuda_device) for ins in input_batch]
                         if has_target:
                             target_batch = [targs.cuda(cuda_device) for targs in target_batch]
-                        self.model.cuda(cuda_device)
 
                     # apply input, target, and input+target transforms if necessary
                     if self._has_input_transform:
