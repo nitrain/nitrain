@@ -724,7 +724,7 @@ class ModuleTrainer(object):
         nb_batches = int(math.ceil(len(inputs[0]) / batch_size))
         prediction_list = []
         for batch_idx in range(nb_batches):
-            input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size]) for x in inputs]
+            input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size], volatile=True) for x in inputs]
 
             if cuda_device > -1:
                 input_batch = [ins.cuda(cuda_device) for ins in input_batch]
@@ -753,7 +753,7 @@ class ModuleTrainer(object):
             input_batch = batch_data[0]
             if not isinstance(input_batch, (list,tuple)):
                 input_batch = [input_batch]
-            input_batch = [Variable(ins) for ins in input_batch]
+            input_batch = [Variable(ins, volatile=True) for ins in input_batch]
             if cuda_device > -1:
                 input_batch = [ins.cuda(cuda_device) for ins in input_batch]
 
@@ -806,9 +806,9 @@ class ModuleTrainer(object):
         total_samples = 0.
         nb_batches = int(math.ceil(len(inputs[0]) / batch_size))
         for batch_idx in range(nb_batches):
-            input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size]) for x in inputs]
+            input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size], volatile=True) for x in inputs]
             if has_target:
-                target_batch = [Variable(y[batch_idx*batch_size:(batch_idx+1)*batch_size]) for y in targets]
+                target_batch = [Variable(y[batch_idx*batch_size:(batch_idx+1)*batch_size], volatile=True) for y in targets]
 
             if cuda_device > -1:
                 input_batch = [ins.cuda(cuda_device) for ins in input_batch]
@@ -864,11 +864,11 @@ class ModuleTrainer(object):
                 has_target = True
             if not isinstance(input_batch, (list,tuple)):
                 input_batch = [input_batch]
-            input_batch = [Variable(ins) for ins in input_batch]
+            input_batch = [Variable(ins, volatile=True) for ins in input_batch]
             if has_target:
                 if not isinstance(target_batch, (list,tuple)):
                     target_batch = [target_batch]
-                target_batch = [Variable(targs) for targs in target_batch]
+                target_batch = [Variable(targs, volatile=True) for targs in target_batch]
                 nb_targets = len(target_batch)
 
             if cuda_device > -1:
@@ -928,9 +928,9 @@ class ModuleTrainer(object):
         else:
             has_multiple_loss_fns = False
 
-        input_batch = [Variable(x) for x in inputs]
+        input_batch = [Variable(x, volatile=True) for x in inputs]
         if has_target:
-            target_batch = [Variable(y) for y in targets]
+            target_batch = [Variable(y, volatile=True) for y in targets]
 
         if cuda_device > -1:
             input_batch = [ins.cuda(cuda_device) for ins in input_batch]
