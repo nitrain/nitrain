@@ -163,9 +163,9 @@ class FolderDataset(torch.utils.data.Dataset):
         target_sample = self.targets[index]
 
         # load samples into memory
-        input_sample = torch.from_numpy(self.file_loader(input_sample)).contiguous()
+        input_sample = self.file_loader(input_sample)
         if self.class_mode == 'image':
-            target_sample = torch.from_numpy(self.file_loader(target_sample)).contiguous()
+            target_sample = self.file_loader(target_sample)
         
         # apply transforms
         if self.transform is not None:
