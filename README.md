@@ -43,7 +43,7 @@ trainer.compile(loss='nll_loss',
                 optimizer='adadelta')
 
 trainer.fit(x_train, y_train, 
-            validation_data=(x_test, y_test),
+            val_data=(x_test, y_test),
             nb_epoch=20, 
             batch_size=128,
             verbose=1)
