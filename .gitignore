@@ -1,5 +1,6 @@
 .git/
 sandbox/
+tests/_data
 
 *.DS_Store
 *.pyc

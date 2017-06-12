@@ -283,6 +283,7 @@ class ModuleTrainer(object):
         if cuda_device > -1:
             inputs = [x.cuda(cuda_device) for x in inputs]
             targets = [y.cuda(cuda_device) for y in targets]
+            self.model.cuda(cuda_device)
 
         # enter context-manager for progress bar
         with TQDM() as pbar:
@@ -391,6 +392,271 @@ class ModuleTrainer(object):
 
         _CALLBACK_CONTAINER.on_train_end(logs=train_logs)
 
+    def fit_loader(self, loader,nb_epoch=100,cuda_device=-1,verbose=1):
+        if verbose > 0:
+            print('Taking one sample to get data structure')
+            # type 1 = one input, no target
+            # type 2 = one input, one target
+            # type 3 = one input, multiple targets
+            # type 4 = multiple input, no target
+            # type 5 = multiple input, one target
+            # type 6 = multiple input, multiple target
+            loader_type = get_loader_info(loader)
+            
+
+        #inputs, targets = _standardize_user_data(inputs, targets)
+        #nb_targets = len(targets)
+        nb_losses = len(self._loss_fns)
+        #if (nb_targets > nb_losses) and (nb_losses > 1):
+        #    raise Exception('Must give either a) only one loss function or '
+        #                    'b) one for every target')
+        #if nb_targets > nb_losses:
+        #    self._loss_fns = [self._loss_fns[0]]*nb_targets
+
+        if cuda_device > -1:
+            self.model.cuda(cuda_device)
+
+        # enter context-manager for progress bar
+        with TQDM() as pbar:
+            # create callbacks
+            progressbar = []
+            # add progress bar if necessary
+            if verbose > 0:
+                progressbar = [pbar]
+            _CALLBACK_CONTAINER = CallbackContainer(self._callbacks + progressbar)
+            _CALLBACK_CONTAINER.set_model(self)
+
+            train_logs = {
+                'has_validation_data': False
+            }
+            _CALLBACK_CONTAINER.on_train_begin(logs=train_logs)
+
+            # calculate total number of batches
+            nb_batches = int(math.ceil(len(loader.dataset) / loader.batch_size))
+
+            # loop through each epoch
+            for epoch_idx in range(nb_epoch):
+                epoch_logs = {
+                    'nb_batches': nb_batches,
+                    'nb_epoch': nb_epoch,
+                    'has_validation_data': False
+                }
+                _CALLBACK_CONTAINER.on_epoch_begin(epoch_idx, epoch_logs)
+
+                # reset metric counts
+                if self._has_metrics:
+                    self._METRIC_CONTAINER.reset()
+
+                # loop through each batch
+                for batch_idx, loader_batch in enumerate(loader):
+                    # reset regularizer each batch
+                    self._REGULARIZER_CONTAINER.reset()
+
+                    batch_logs = {'batch_idx': batch_idx}
+                    _CALLBACK_CONTAINER.on_batch_begin(batch_idx, batch_logs) 
+
+                    # grab an input batch and a target batch if necessary
+                    input_batch, target_batch = parse_loader_batch(loader_batch, loader_type)
+
+                    # run transforms if necessary
+                    if self._has_input_transform:
+                        input_batch = [self._transforms[0](x) for x in input_batch]
+                    if self._has_target_transform:
+                        target_batch = [self._transforms[1](y) for y in target_batch]
+                    if self._has_co_transform:
+                        input_batch, target_batch = zip(*[self._transforms[2](x, y) 
+                            for x, y in zip(input_batch, target_batch)])
+
+                    if cuda_device > -1:
+                        input_batch = [x.cuda(cuda_device) for x in input_batch]
+                        target_batch = [y.cuda(cuda_device) for y in target_batch]
+
+                    batch_logs['batch_samples'] = len(input_batch[0])
+
+                    # zero grads and forward pass
+                    self._optimizer.zero_grad()
+                    output_batch = self.model(*input_batch)
+
+                    # apply multiple loss functions if necessary
+                    if not isinstance(output_batch, (list,tuple)):
+                        output_batch = [output_batch]
+
+                    # multiple outputs, but they all go into one loss function
+                    loss = sum([self._loss_fns[loss_idx](output_batch[loss_idx], target_batch[loss_idx]) 
+                                    for loss_idx in range(nb_targets)])
+                    # add regularizers to loss if necessary
+                    if self._has_regularizers:
+                        regularizer_loss = self._REGULARIZER_CONTAINER.get_value()
+                        loss += regularizer_loss
+                        batch_logs['regularizer_loss'] = regularizer_loss.data[0]
+
+                    # calculate metrics if necessary
+                    if self._has_metrics:
+                        metrics_logs = self._METRIC_CONTAINER(output_batch[0], target_batch[0])
+                        batch_logs.update(metrics_logs)
+
+                    batch_logs['loss'] = loss.data[0]
+
+                    # backward pass and optimizer step
+                    loss.backward()
+                    self._optimizer.step()
+
+                    # apply batch constraints
+                    if self._has_constraints:
+                        self._CONSTRAINT_CONTAINER.apply_batch_constraints(batch_idx)
+
+                    _CALLBACK_CONTAINER.on_batch_end(batch_idx, batch_logs)
+
+                # END OF EPOCH
+                if self._has_constraints:
+                    self._CONSTRAINT_CONTAINER.apply_epoch_constraints(epoch_idx)
+
+                epoch_logs.update(self.history.batch_metrics)
+                _CALLBACK_CONTAINER.on_epoch_end(epoch_idx, epoch_logs)
+
+                # exit the training loop if necessary (e.g. EarlyStopping)
+                if self._stop_training:
+                    break
+
+        _CALLBACK_CONTAINER.on_train_end(logs=train_logs)
+
+    def predict(self, 
+                inputs, 
+                batch_size=32,
+                cuda_device=-1, 
+                verbose=1):
+        if not isinstance(inputs, (list,tuple)):
+            inputs = [inputs]
+
+        if cuda_device >= 0:
+            inputs = [x.cuda(cuda_device) for x in inputs]
+            self.model.cuda(cuda_device)
+
+        nb_batches = int(math.ceil(inputs[0].size(0) / batch_size))
+        prediction_list = []
+        for batch_idx in range(nb_batches):
+            input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size]) for x in inputs]
+            prediction_list.append(self.model(*input_batch))
+        return th.cat(prediction_list,0)
+
+    def predict_loader(self,
+                       loader,
+                       cuda_device=-1,
+                       verbose=1):
+
+        if cuda_device > 0:
+            self.model.cuda(cuda_device)
+
+        prediction_list = []
+        for batch_idx, batch_data in enumerate(loader):
+            if not isinstance(batch_data, (tuple,list)):
+                batch_data = [batch_data]
+            input_batch = batch_data[0]
+            if not isinstance(input_batch, (list,tuple)):
+                input_batch = [input_batch]
+            input_batch = [Variable(ins) for ins in input_batch]
+            if cuda_device > -1:
+                input_batch = [ins.cuda(cuda_device) for ins in input_batch]
+
+            prediction_list.append(self.model(*input_batch))
+        return th.cat(prediction_list,0)
+
+    def evaluate(self,
+                 inputs, 
+                 targets, 
+                 batch_size=32,
+                 cuda_device=-1, 
+                 verbose=1):
+        inputs, targets = _standardize_user_data(inputs, targets)
+        nb_targets = len(targets)
+        nb_losses = len(self._loss_fns)
+        if (nb_targets > nb_losses) and (nb_losses > 1):
+            raise Exception('Must give either a) only one loss function or '
+                            'b) one for every target')
+        if nb_targets > nb_losses:
+            self._loss_fns = [self._loss_fns[0]]*nb_targets
+
+        if cuda_device > -1:
+            inputs = [x.cuda(cuda_device) for x in inputs]
+            targets = [y.cuda(cuda_device) for y in targets]
+            self.model.cuda(cuda_device)
+
+        # enter context-manager for progress bar
+        with TQDM() as pbar:
+            # create callbacks
+            progressbar = []
+            # add progress bar if necessary
+            if verbose > 0:
+                progressbar = [pbar]
+            _CALLBACK_CONTAINER = CallbackContainer(self._callbacks + progressbar)
+            _CALLBACK_CONTAINER.set_model(self)
+
+            train_logs = {
+                'has_validation_data': False
+            }
+            _CALLBACK_CONTAINER.on_train_begin(logs=train_logs)
+
+            # calculate total number of batches
+            nb_batches = int(math.ceil(len(inputs[0]) / batch_size))
+
+            # reset metric counts
+            if self._has_metrics:
+                self._METRIC_CONTAINER.reset()
+
+            # loop through each batch
+            for batch_idx in range(nb_batches):
+                # reset regularizer each batch
+                self._REGULARIZER_CONTAINER.reset()
+
+                batch_logs = {'batch_idx': batch_idx}
+                _CALLBACK_CONTAINER.on_batch_begin(batch_idx, batch_logs) 
+
+                # grab an input batch and a target batch if necessary
+                input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size]) for x in inputs]
+                target_batch = [Variable(y[batch_idx*batch_size:(batch_idx+1)*batch_size]) for y in targets]
+
+                # run transforms if necessary
+                if self._has_input_transform:
+                    input_batch = [self._transforms[0](x) for x in inputs]
+                if self._has_target_transform:
+                    target_batch = [self._transforms[1](y) for y in targets]
+                if self._has_co_transform:
+                    input_batch, target_batch = zip(*[self._transforms[2](x, y) 
+                        for x, y in zip(input_batch, target_batch)])
+
+                batch_logs['batch_samples'] = len(input_batch[0])
+
+                # zero grads and forward pass
+                self._optimizer.zero_grad()
+                output_batch = self.model(*input_batch)
+
+                # apply multiple loss functions if necessary
+                if not isinstance(output_batch, (list,tuple)):
+                    output_batch = [output_batch]
+
+                # multiple outputs, but they all go into one loss function
+                loss = sum([self._loss_fns[loss_idx](output_batch[loss_idx], target_batch[loss_idx]) 
+                                for loss_idx in range(nb_targets)])
+                # add regularizers to loss if necessary
+                if self._has_regularizers:
+                    regularizer_loss = self._REGULARIZER_CONTAINER.get_value()
+                    loss += regularizer_loss
+                    batch_logs['regularizer_loss'] = regularizer_loss.data[0]
+
+                # calculate metrics if necessary
+                if self._has_metrics:
+                    metrics_logs = self._METRIC_CONTAINER(output_batch[0], target_batch[0])
+                    batch_logs.update(metrics_logs)
+
+                batch_logs['loss'] = loss.data[0]
+
+                _CALLBACK_CONTAINER.on_batch_end(batch_idx, batch_logs)
+
+        return batch_logs
+
+    def evaluate_loader(self):
+        pass
+
     def save_state_dict(self, file):
         """
         Save a model parameters to disk
@@ -399,6 +665,56 @@ class ModuleTrainer(object):
         state_dict = self.model.state_dict()
         th.save(state_dict, file)
 
+
+def parse_loader_batch(loader_batch, loader_type):
+    if loader_type == 1:
+        return [loader_batch[0]], []
+    elif loader_type == 2:
+        return [loader_batch[0]], [loader_batch[1]]
+    elif loader_type == 3:
+        return [loader_batch[0]], loader_batch[1]
+    elif loader_type == 4:
+        return loader_batch[0], []
+    elif loader_type == 5:
+        return loader_batch[0], [loader_batch[1]]
+    elif loader_type == 6:
+        return loader_batch[0], loader_batch[1]
+
+def get_loader_info(loader):
+    batch = next(iter(loader))
+    # type 1 = one input, no target
+    # type 2 = one input, one target
+    # type 3 = one input, multiple targets
+    # type 4 = multiple input, no target
+    # type 5 = multiple input, one target
+    # type 6 = multiple input, multiple target
+    if len(batch) == 2:
+        # has target
+        input_batch = batch[0]
+        target_batch = batch[1]
+
+        if isinstance(input_batch, (tuple,list)):
+            # multiple inputs
+            if isinstance(target_batch, (tuple,list)):
+                return 6
+            else:
+                return 5
+        else:
+            # one input
+            if isinstance(target_batch, (tuple,list)):
+                return 3
+            else:
+                return 2
+    elif len(batch) == 1:
+        # no target
+        input_batch = batch[0]
+        if isinstance(input_batch, (tuple,list)):
+            return 4
+        else:
+            return 1
+    else:
+        # cant figure it out
+        return -1
 
 
 

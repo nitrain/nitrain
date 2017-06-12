@@ -56,6 +56,7 @@ class Network(nn.Module):
 model = Network()
 trainer = ModuleTrainer(model)
 
+
 callbacks = [EarlyStopping(patience=10),
              ReduceLROnPlateau(factor=0.5, patience=5)]
 regularizers = [L1Regularizer(scale=1e-3, module_filter='conv*'),
