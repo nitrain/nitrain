@@ -12,7 +12,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 
 # local imports
-from ._utils import (_validate_loss_input, _validate_metric_input, 
+from ._utils import (_validate_loss_input, _validate_metric_input,
                      _validate_optimizer_input, _validate_initializer_input,
                      _standardize_user_data)
 
@@ -103,7 +103,7 @@ class ModuleTrainer(object):
                 if hasattr(module, 'bias'):
                     params +=  th.prod(th.LongTensor(list(module.bias.size())))
                 summary[m_key]['nb_params'] = params
-                
+
             if not isinstance(module, nn.Sequential) and \
                not isinstance(module, nn.ModuleList) and \
                not (module == self.model):
@@ -223,7 +223,7 @@ class ModuleTrainer(object):
             self.set_constraints(constraints)
             self._CONSTRAINT_CONTAINER = ConstraintContainer(self._constraints)
             self._CONSTRAINT_CONTAINER.register_constraints(self.model)
-        
+
         if metrics is not None:
             self.set_metrics(metrics)
             self._METRIC_CONTAINER = MetricsContainer(self._metrics)
@@ -328,7 +328,7 @@ class ModuleTrainer(object):
                     self._REGULARIZER_CONTAINER.reset()
 
                     batch_logs = {'batch_idx': batch_idx}
-                    _CALLBACK_CONTAINER.on_batch_begin(batch_idx, batch_logs) 
+                    _CALLBACK_CONTAINER.on_batch_begin(batch_idx, batch_logs)
 
                     # grab an input batch and a target batch if necessary
                     input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size]) for x in inputs]
@@ -340,7 +340,7 @@ class ModuleTrainer(object):
                     if self._has_target_transform:
                         target_batch = [self._transforms[1](y) for y in targets]
                     if self._has_co_transform:
-                        input_batch, target_batch = zip(*[self._transforms[2](x, y) 
+                        input_batch, target_batch = zip(*[self._transforms[2](x, y)
                             for x, y in zip(input_batch, target_batch)])
 
                     batch_logs['batch_samples'] = len(input_batch[0])
@@ -354,7 +354,7 @@ class ModuleTrainer(object):
                         output_batch = [output_batch]
 
                     # multiple outputs, but they all go into one loss function
-                    loss = sum([self._loss_fns[loss_idx](output_batch[loss_idx], target_batch[loss_idx]) 
+                    loss = sum([self._loss_fns[loss_idx](output_batch[loss_idx], target_batch[loss_idx])
                                     for loss_idx in range(nb_targets)])
                     # add regularizers to loss if necessary
                     if self._has_regularizers:
@@ -402,7 +402,7 @@ class ModuleTrainer(object):
             # type 5 = multiple input, one target
             # type 6 = multiple input, multiple target
             loader_type = get_loader_info(loader)
-            
+
 
         #inputs, targets = _standardize_user_data(inputs, targets)
         #nb_targets = len(targets)
@@ -453,7 +453,7 @@ class ModuleTrainer(object):
                     self._REGULARIZER_CONTAINER.reset()
 
                     batch_logs = {'batch_idx': batch_idx}
-                    _CALLBACK_CONTAINER.on_batch_begin(batch_idx, batch_logs) 
+                    _CALLBACK_CONTAINER.on_batch_begin(batch_idx, batch_logs)
 
                     # grab an input batch and a target batch if necessary
                     input_batch, target_batch = parse_loader_batch(loader_batch, loader_type)
@@ -464,7 +464,7 @@ class ModuleTrainer(object):
                     if self._has_target_transform:
                         target_batch = [self._transforms[1](y) for y in target_batch]
                     if self._has_co_transform:
-                        input_batch, target_batch = zip(*[self._transforms[2](x, y) 
+                        input_batch, target_batch = zip(*[self._transforms[2](x, y)
                             for x, y in zip(input_batch, target_batch)])
 
                     if cuda_device > -1:
@@ -482,7 +482,7 @@ class ModuleTrainer(object):
                         output_batch = [output_batch]
 
                     # multiple outputs, but they all go into one loss function
-                    loss = sum([self._loss_fns[loss_idx](output_batch[loss_idx], target_batch[loss_idx]) 
+                    loss = sum([self._loss_fns[loss_idx](output_batch[loss_idx], target_batch[loss_idx])
                                     for loss_idx in range(nb_targets)])
                     # add regularizers to loss if necessary
                     if self._has_regularizers:
@@ -520,10 +520,10 @@ class ModuleTrainer(object):
 
         _CALLBACK_CONTAINER.on_train_end(logs=train_logs)
 
-    def predict(self, 
-                inputs, 
+    def predict(self,
+                inputs,
                 batch_size=32,
-                cuda_device=-1, 
+                cuda_device=-1,
                 verbose=1):
         if not isinstance(inputs, (list,tuple)):
             inputs = [inputs]
@@ -562,10 +562,10 @@ class ModuleTrainer(object):
         return th.cat(prediction_list,0)
 
     def evaluate(self,
-                 inputs, 
-                 targets, 
+                 inputs,
+                 targets,
                  batch_size=32,
-                 cuda_device=-1, 
+                 cuda_device=-1,
                  verbose=1):
         inputs, targets = _standardize_user_data(inputs, targets)
         nb_targets = len(targets)
@@ -609,7 +609,7 @@ class ModuleTrainer(object):
                 self._REGULARIZER_CONTAINER.reset()
 
                 batch_logs = {'batch_idx': batch_idx}
-                _CALLBACK_CONTAINER.on_batch_begin(batch_idx, batch_logs) 
+                _CALLBACK_CONTAINER.on_batch_begin(batch_idx, batch_logs)
 
                 # grab an input batch and a target batch if necessary
                 input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size]) for x in inputs]
@@ -621,7 +621,7 @@ class ModuleTrainer(object):
                 if self._has_target_transform:
                     target_batch = [self._transforms[1](y) for y in targets]
                 if self._has_co_transform:
-                    input_batch, target_batch = zip(*[self._transforms[2](x, y) 
+                    input_batch, target_batch = zip(*[self._transforms[2](x, y)
                         for x, y in zip(input_batch, target_batch)])
 
                 batch_logs['batch_samples'] = len(input_batch[0])
@@ -635,7 +635,7 @@ class ModuleTrainer(object):
                     output_batch = [output_batch]
 
                 # multiple outputs, but they all go into one loss function
-                loss = sum([self._loss_fns[loss_idx](output_batch[loss_idx], target_batch[loss_idx]) 
+                loss = sum([self._loss_fns[loss_idx](output_batch[loss_idx], target_batch[loss_idx])
                                 for loss_idx in range(nb_targets)])
                 # add regularizers to loss if necessary
                 if self._has_regularizers:
@@ -715,9 +715,3 @@ def get_loader_info(loader):
     else:
         # cant figure it out
         return -1
-
-
-
-
-
-
