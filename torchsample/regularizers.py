@@ -10,12 +10,10 @@ class RegularizerModule(object):
         self.loss = 0.
 
     def _apply(self, module, regularizer):
-        if isinstance(module, th.nn.DataParallel):
-            module = module.module      #DataParallel wraps the module so unwrap before continuing
         for name, module in module.named_children():
             if fnmatch(name, regularizer.module_filter) and hasattr(module, 'weight'):
                 self.loss += regularizer(module)
-                self._apply(module, regularizer)
+            self._apply(module, regularizer)
 
     def __call__(self, model):
         self.loss = 0.

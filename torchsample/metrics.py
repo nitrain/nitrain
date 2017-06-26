@@ -40,7 +40,7 @@ class CategoricalAccuracy(Metric):
         self.total_count = 0
         self.accuracy = 0
 
-        self._name = 'acc_metric'
+        self._name = 'top_'+str(top_k)+':acc_metric'
 
     def reset(self):
         self.correct_count = 0

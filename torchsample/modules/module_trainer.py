@@ -10,6 +10,7 @@ from collections import OrderedDict
 import torch as th
 import torch.nn as nn
 from torch.autograd import Variable
+import torch.backends.cudnn as cudnn
 
 # local imports
 from ._utils import (_validate_loss_input, _validate_metric_input, 
@@ -29,6 +30,7 @@ class ModuleTrainer(object):
         ModelTrainer for high-level training of Pytorch models
         """
         self.model = model
+        self._final_epoch = 0
 
         # callbacks
         self.history = History(self)
@@ -243,11 +245,15 @@ class ModuleTrainer(object):
             nb_epoch=100,
             batch_size=32,
             shuffle=False,
-            cuda_device=-1,
+            cuda_devices=[],
             verbose=1):
         # convert inputs to a list if not already
         if not isinstance(inputs, (list,tuple)):
             inputs = [inputs]
+
+        if cuda_devices and th.cuda.is_available():
+            # turn on the cudnn autotuner that selects efficient algorithms
+            cudnn.benchmark = True
 
         # determine whether targets were given
         # and convert targets to list if not already
@@ -339,11 +345,11 @@ class ModuleTrainer(object):
                     if has_target:
                         target_batch = [Variable(y[batch_idx*batch_size:(batch_idx+1)*batch_size]) for y in targets]
 
-                    # move batch to GPU if necessary
-                    if cuda_device > -1:
-                        input_batch = [ins.cuda(cuda_device) for ins in input_batch]
+                    # move batch to GPU if necessary (note: all tensors must start on the same GPU (hence we select first GPU in the list))
+                    if cuda_devices:
+                        input_batch = [ins.cuda(device_id=cuda_devices[0]) for ins in input_batch]
                         if has_target:
-                            target_batch = [targs.cuda(cuda_device) for targs in target_batch]
+                            target_batch = [targs.cuda(device_id=cuda_devices[0]) for targs in target_batch]
 
                     # apply input, target, and input+target transforms if necessary
                     if self._has_input_transform:
@@ -415,7 +421,7 @@ class ModuleTrainer(object):
                 if has_validation_data:
                     val_loss = self.evaluate(*val_data, 
                                              batch_size=batch_size,
-                                             cuda_device=cuda_device)
+                                             cuda_device=cuda_devices[0])
                     if self._has_metrics:
                         val_loss, val_metric_logs = val_loss
                         epoch_logs.update(val_metric_logs)
@@ -454,9 +460,13 @@ class ModuleTrainer(object):
                    loader, 
                    val_loader=None, 
                    nb_epoch=100,
-                   cuda_device=-1,
+                   cuda_devices=[],
                    metrics=None,
                    verbose=1):
+
+        if cuda_devices and th.cuda.is_available():
+            # turn on the cudnn autotuner that selects efficient algorithms
+            cudnn.benchmark = True
 
         # store whether validation data was given
         if val_loader is None:
@@ -494,8 +504,11 @@ class ModuleTrainer(object):
             initializers = InitializerModule(self._initializers)
             initializers(self.model)
 
-        if cuda_device > -1:
-            self.model.cuda(cuda_device)
+        # Handle multiple GPUs. Single gpu gets normal treatment while multi-GPU must be wrapped in DataParallel
+        if len(cuda_devices) == 1:
+            self.model.cuda(device_id=cuda_devices[0])
+        elif len(cuda_devices) > 1:
+            self.model = th.nn.DataParallel(self.model, device_ids=cuda_devices)
 
         # enter context-manager for progress bar
         with TQDM() as pbar:
@@ -516,6 +529,7 @@ class ModuleTrainer(object):
             # calculate total number of batches
             nb_batches = int(math.ceil(len(loader.dataset) / loader.batch_size))
 
+            self._final_epoch = 0
             # loop through each epoch
             for epoch_idx in range(nb_epoch):
                 epoch_logs = {
@@ -546,10 +560,10 @@ class ModuleTrainer(object):
                         target_batch = [Variable(targs) for targs in target_batch]
                         nb_targets = len(target_batch)
 
-                    if cuda_device > -1:
-                        input_batch = [ins.cuda(cuda_device) for ins in input_batch]
+                    if cuda_devices:
+                        input_batch = [ins.cuda(device_id=cuda_devices[0]) for ins in input_batch]
                         if has_target:
-                            target_batch = [targs.cuda(cuda_device) for targs in target_batch]
+                            target_batch = [targs.cuda(device_id=cuda_devices[0]) for targs in target_batch]
 
                     # apply input, target, and input+target transforms if necessary
                     if self._has_input_transform:
@@ -618,8 +632,7 @@ class ModuleTrainer(object):
                         constraints.on_batch_end(batch_idx)
 
                 if has_validation_data:
-                    val_loss = self.evaluate_loader(val_loader,
-                                                    cuda_device=cuda_device)
+                    val_loss = self.evaluate_loader(val_loader, cuda_devices=cuda_devices)
                     if self._has_metrics:
                         val_loss, val_metric_logs = val_loss
                         epoch_logs.update(val_metric_logs)
@@ -639,6 +652,8 @@ class ModuleTrainer(object):
                 # reset all metric counters
                 if self._has_metrics:
                     metrics.reset()
+
+                self._final_epoch = epoch_idx
                 # exit the training loop if necessary (e.g. EarlyStopping)
                 if self._stop_training:
                     break
@@ -646,7 +661,8 @@ class ModuleTrainer(object):
         train_logs = {
             'final_loss': self.history.losses[-1],
             'best_loss': min(self.history.losses),
-            'end_time': _get_current_time()
+            'end_time': _get_current_time(),
+            'final_epoch': self._final_epoch
         }
         if has_validation_data:
             train_logs['final_val_loss'] = self.history.val_losses[-1]
@@ -660,7 +676,7 @@ class ModuleTrainer(object):
                        regularizers=None,
                        constraints=None,
                        callbacks=None,
-                       cuda_device=-1):
+                       cuda_devices=[]):
         if not isinstance(inputs, (list,tuple)):
             inputs = [inputs]
         if targets is not None:
@@ -675,10 +691,12 @@ class ModuleTrainer(object):
         if has_target:
             target_batch = [Variable(y) for y in targets]
 
-        if cuda_device > -1:
-            input_batch = [ins.cuda(cuda_device) for ins in input_batch]
+        if cuda_devices and th.cuda.is_available():
+            # turn on the cudnn autotuner that selects efficient algorithms
+            cudnn.benchmark = True
+            input_batch = [ins.cuda(device_id=cuda_devices[0]) for ins in input_batch]
             if has_target:
-                target_batch = [targs.cuda(cuda_device) for targs in target_batch]
+                target_batch = [targs.cuda(device_id=cuda_devices[0]) for targs in target_batch]
          
         ## ZERO GRAD AND FORWARD PASS
         self._optimizer.zero_grad()
@@ -716,18 +734,22 @@ class ModuleTrainer(object):
     def predict(self, 
                 inputs, 
                 batch_size=32,
-                cuda_device=-1, 
+                cuda_devices=[],
                 verbose=1):
         if not isinstance(inputs, (list,tuple)):
             inputs = [inputs]
+
+        if cuda_devices and th.cuda.is_available():
+            # turn on the cudnn autotuner that selects efficient algorithms
+            cudnn.benchmark = True
 
         nb_batches = int(math.ceil(len(inputs[0]) / batch_size))
         prediction_list = []
         for batch_idx in range(nb_batches):
             input_batch = [Variable(x[batch_idx*batch_size:(batch_idx+1)*batch_size], volatile=True) for x in inputs]
 
-            if cuda_device > -1:
-                input_batch = [ins.cuda(cuda_device) for ins in input_batch]
+            if cuda_devices:
+                input_batch = [ins.cuda(device_id=cuda_devices[0]) for ins in input_batch]
 
             prediction_list.append(self.model(*input_batch))
         
@@ -744,9 +766,14 @@ class ModuleTrainer(object):
 
     def predict_loader(self,
                        loader,
-                       cuda_device=-1,
+                       cuda_devices=[],
                        verbose=1):
         prediction_list = []
+
+        if cuda_devices and th.cuda.is_available():
+            # turn on the cudnn autotuner that selects efficient algorithms
+            cudnn.benchmark = True
+
         for batch_idx, batch_data in enumerate(loader):
             if not isinstance(batch_data, (tuple,list)):
                 batch_data = [batch_data]
@@ -754,8 +781,8 @@ class ModuleTrainer(object):
             if not isinstance(input_batch, (list,tuple)):
                 input_batch = [input_batch]
             input_batch = [Variable(ins, volatile=True) for ins in input_batch]
-            if cuda_device > -1:
-                input_batch = [ins.cuda(cuda_device) for ins in input_batch]
+            if cuda_devices:
+                input_batch = [ins.cuda(device_id=cuda_devices[0]) for ins in input_batch]
 
             prediction_list.append(self.model(*input_batch))
             
@@ -772,11 +799,15 @@ class ModuleTrainer(object):
 
     def predict_on_batch(self, 
                          inputs, 
-                         cuda_device=-1):
+                         cuda_devices=[]):
         if not isinstance(inputs, (list,tuple)):
             inputs = [inputs]
-        if cuda_device > -1:
-            inputs = [ins.cuda(cuda_device) for ins in inputs]
+
+        if cuda_devices and th.cuda.is_available():
+            # turn on the cudnn autotuner that selects efficient algorithms
+            cudnn.benchmark = True
+            inputs = [ins.cuda(device_id=cuda_devices[0]) for ins in inputs]
+
         preds = self.model(*inputs)
         return preds
 
@@ -784,12 +815,16 @@ class ModuleTrainer(object):
                  inputs, 
                  targets=None, 
                  batch_size=32,
-                 cuda_device=-1, 
+                 cuda_devices=[],
                  verbose=1):
         # put model in evaluation mode
         self.model.eval()
         if not isinstance(inputs, (list,tuple)):
             inputs = [inputs]
+
+        if cuda_devices and th.cuda.is_available():
+            # turn on the cudnn autotuner that selects efficient algorithms
+            cudnn.benchmark = True
 
         if targets is None:
             has_target = False
@@ -810,10 +845,10 @@ class ModuleTrainer(object):
             if has_target:
                 target_batch = [Variable(y[batch_idx*batch_size:(batch_idx+1)*batch_size], volatile=True) for y in targets]
 
-            if cuda_device > -1:
-                input_batch = [ins.cuda(cuda_device) for ins in input_batch]
+            if cuda_devices:
+                input_batch = [ins.cuda(device_id=cuda_devices[0]) for ins in input_batch]
                 if has_target:
-                    target_batch = [targs.cuda(cuda_device) for targs in target_batch]
+                    target_batch = [targs.cuda(device_id=cuda_devices[0]) for targs in target_batch]
 
             outputs = self.model(*input_batch)
             if not isinstance(outputs, (list,tuple)):
@@ -846,7 +881,12 @@ class ModuleTrainer(object):
 
     def evaluate_loader(self, 
                         loader, 
-                        cuda_device=-1):
+                        cuda_devices=[]):
+
+        if cuda_devices and th.cuda.is_available():
+            # turn on the cudnn autotuner that selects efficient algorithms
+            cudnn.benchmark = True
+
         self.model.eval()
         if self._has_metrics:
             metrics = MetricsModule(self._metrics, prefix='val_')
@@ -871,10 +911,10 @@ class ModuleTrainer(object):
                 target_batch = [Variable(targs, volatile=True) for targs in target_batch]
                 nb_targets = len(target_batch)
 
-            if cuda_device > -1:
-                input_batch = [ins.cuda(cuda_device) for ins in input_batch]
+            if cuda_devices:
+                input_batch = [ins.cuda(device_id=cuda_devices[0]) for ins in input_batch]
                 if has_target:
-                    target_batch = [targs.cuda(cuda_device) for targs in target_batch]
+                    target_batch = [targs.cuda(device_id=cuda_devices[0]) for targs in target_batch]
 
             outputs = self.model(*input_batch)
 
@@ -910,7 +950,7 @@ class ModuleTrainer(object):
     def evaluate_on_batch(self, 
                           inputs, 
                           targets, 
-                          cuda_device=-1):
+                          cuda_devices=[]):
         self.model.eval()
         if not isinstance(inputs, (list,tuple)):
             inputs = [inputs]
@@ -932,10 +972,12 @@ class ModuleTrainer(object):
         if has_target:
             target_batch = [Variable(y, volatile=True) for y in targets]
 
-        if cuda_device > -1:
-            input_batch = [ins.cuda(cuda_device) for ins in input_batch]
+        if cuda_devices and th.cuda.is_available():
+            # turn on the cudnn autotuner that selects efficient algorithms
+            cudnn.benchmark = True
+            input_batch = [ins.cuda(device_id=cuda_devices[0]) for ins in input_batch]
             if has_target:
-                target_batch = [targs.cuda(cuda_device) for targs in target_batch]
+                target_batch = [targs.cuda(device_id=cuda_devices[0]) for targs in target_batch]
 
         outputs = self.model(*input_batch)
         if not isinstance(outputs, (list,tuple)):
