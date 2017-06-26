@@ -6,7 +6,6 @@ from fnmatch import fnmatch
 
 import torch as th
 
-
 class ConstraintModule(object):
 
     def __init__(self, constraints):
@@ -24,22 +23,16 @@ class ConstraintModule(object):
         self.model = model
 
     def _apply(self, module, constraint):
-        if isinstance(module, th.nn.DataParallel):
-            module = module.module      #DataParallel wraps the module so unwrap before continuing
-            
         for name, module in module.named_children():
             if fnmatch(name, constraint.module_filter) and hasattr(module, 'weight'):
                 constraint(module)
-                self._apply(module, constraint)
+            self._apply(module, constraint)
 
     def _lagrangian_apply(self, module, constraint):
-        if isinstance(module, th.nn.DataParallel):
-            module = module.module      #DataParallel wraps the module so unwrap before continuing
-            
         for name, module in module.named_children():
             if fnmatch(name, constraint.module_filter) and hasattr(module, 'weight'):
                 self.loss += constraint(module)
-                self._lagrangian_apply(module, constraint)
+            self._lagrangian_apply(module, constraint)
 
     def on_batch_end(self, batch):
         for constraint in self.batch_constraints:

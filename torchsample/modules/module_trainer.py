@@ -30,6 +30,7 @@ class ModuleTrainer(object):
         ModelTrainer for high-level training of Pytorch models
         """
         self.model = model
+        self._final_epoch = 0
 
         # callbacks
         self.history = History(self)
@@ -528,6 +529,7 @@ class ModuleTrainer(object):
             # calculate total number of batches
             nb_batches = int(math.ceil(len(loader.dataset) / loader.batch_size))
 
+            self._final_epoch = 0
             # loop through each epoch
             for epoch_idx in range(nb_epoch):
                 epoch_logs = {
@@ -630,8 +632,7 @@ class ModuleTrainer(object):
                         constraints.on_batch_end(batch_idx)
 
                 if has_validation_data:
-                    val_loss = self.evaluate_loader(val_loader,
-                                                    cuda_device=cuda_devices[0])
+                    val_loss = self.evaluate_loader(val_loader, cuda_devices=cuda_devices)
                     if self._has_metrics:
                         val_loss, val_metric_logs = val_loss
                         epoch_logs.update(val_metric_logs)
@@ -651,6 +652,8 @@ class ModuleTrainer(object):
                 # reset all metric counters
                 if self._has_metrics:
                     metrics.reset()
+
+                self._final_epoch = epoch_idx
                 # exit the training loop if necessary (e.g. EarlyStopping)
                 if self._stop_training:
                     break
@@ -658,7 +661,8 @@ class ModuleTrainer(object):
         train_logs = {
             'final_loss': self.history.losses[-1],
             'best_loss': min(self.history.losses),
-            'end_time': _get_current_time()
+            'end_time': _get_current_time(),
+            'final_epoch': self._final_epoch
         }
         if has_validation_data:
             train_logs['final_val_loss'] = self.history.val_losses[-1]
