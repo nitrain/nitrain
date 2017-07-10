@@ -840,7 +840,7 @@ class ModuleTrainer(object):
         # put model back in training mode
         self.model.train()
         if self._has_metrics:
-            return total_loss / float(total_samples), {k.split('_metric')[0]:v for k,v in metric_logs.items()}
+            return total_loss / float(total_samples), metric_logs.items()
         else:
             return total_loss / float(total_samples)
 
