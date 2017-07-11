@@ -14,7 +14,9 @@ import torch.optim as optim
 from ..metrics import Metric, CategoricalAccuracy, BinaryAccuracy
 from ..initializers import GeneralInitializer
 
-
+def _is_iterable(x):
+    return isinstance(x, (tuple, list))
+    
 def _parse_num_inputs_and_targets(inputs, targets=None):
     if isinstance(inputs, (list, tuple)):
         num_inputs = len(inputs)
@@ -58,6 +60,10 @@ def _validate_loss_input(loss):
     if isinstance(loss, str):
         if loss.lower() == 'unconstrained':
             return lambda x: x
+        elif loss.lower() == 'unconstrained_sum':
+            return lambda x: x.sum()
+        elif loss.lower() == 'unconstrained_mean':
+            return lambda x: x.mean()
         else:
             try:
                 str_idx = loss_fns.index(loss.lower())

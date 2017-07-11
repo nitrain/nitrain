@@ -36,7 +36,7 @@ class Network(nn.Module):
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3)
         self.fc1 = nn.Linear(1600, 128)
-        self.fc2 = nn.Linear(128, 10)
+        self.fc2 = nn.Linear(128, 1)
 
     def forward(self, x):
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
@@ -45,19 +45,22 @@ class Network(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
-        return F.log_softmax(x)
+        return th.abs(10 - x)
 
 
 model = Network()
 trainer = ModuleTrainer(model)
 
-trainer.compile(loss='nll_loss',
+trainer.compile(loss='unconstrained_sum',
                 optimizer='adadelta')
 
-trainer.fit(x_train, y_train, 
-            #val_data=(x_test, y_test),
-            nb_epoch=3, 
+trainer.fit(x_train,
+            nb_epoch=1, 
             batch_size=128,
             verbose=1)
 
+ypred = trainer.predict(x_train)
+print(ypred.size())
 
+eval_loss = trainer.evaluate(x_train, None)
+print(eval_loss)

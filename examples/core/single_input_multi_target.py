@@ -38,25 +38,42 @@ class Network(nn.Module):
         self.fc1 = nn.Linear(1600, 128)
         self.fc2 = nn.Linear(128, 10)
 
-    def forward(self, x, y, z):
+    def forward(self, x):
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
         x = F.relu(F.max_pool2d(self.conv2(x), 2))
         x = x.view(-1, 1600)
         x = F.relu(self.fc1(x))
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
-        return th.mean(x)
+        return F.log_softmax(x), F.log_softmax(x)
 
 
+# one loss function for multiple targets
 model = Network()
 trainer = ModuleTrainer(model)
-
-trainer.compile(loss='unconstrained',
+trainer.compile(loss='nll_loss',
                 optimizer='adadelta')
 
-trainer.fit([x_train, x_train, x_train],
+trainer.fit(x_train, 
+            [y_train, y_train], 
+            nb_epoch=1, 
+            batch_size=128,
+            verbose=1)
+ypred1, ypred2 = trainer.predict(x_train)
+print(ypred1.size(), ypred2.size())
+
+eval_loss = trainer.evaluate(x_train, [y_train, y_train])
+print(eval_loss)
+# multiple loss functions
+model = Network()
+trainer = ModuleTrainer(model)
+trainer.compile(loss=['nll_loss', 'nll_loss'],
+                optimizer='adadelta')
+trainer.fit(x_train, 
+            [y_train, y_train], 
             nb_epoch=3, 
             batch_size=128,
             verbose=1)
+
 
 
