@@ -408,7 +408,6 @@ class ModuleTrainer(object):
         return summary
 
 
-
 def _get_helper(trainer, num_inputs, num_targets):
     if (num_inputs == 1) and (num_targets == 1):
         helper = SingleInput_SingleTarget_Helper()
