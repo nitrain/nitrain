@@ -112,7 +112,6 @@ class ModuleTrainer(object):
     def set_initializers(self, initializers):
         initializers = [initializers] if not _is_iterable(initializers) else initializers
         initializers = [_validate_initializer_input(it) for it in initializers]
-        self._has_initializers = True
         self._initializers = initializers
 
     def set_constraints(self, constraints):
@@ -126,14 +125,29 @@ class ModuleTrainer(object):
         self._has_metrics = True
         self._metrics = metrics
 
+    def set_transforms(self, transforms):
+        if not _is_iterable(transforms):
+            transforms = (transforms, lambda x: x, lambda x,y: (x,y))
+        if len(transforms) == 1:
+            transforms = (transforms, lambda x: x, lambda x,y: (x,y))
+        elif len(transforms) == 2:
+            transforms = (transforms, transforms, lambda x,y: (x,y))
+
+        self._has_input_transform = transforms[0] is not None
+        self._has_target_transform = transforms[1] is not None
+        self._has_co_transform = transforms[2] is not None
+
+        self._has_transforms = True
+        self._transforms = transforms
+
     def compile(self,
                 optimizer,
                 loss,
+                callbacks=None,
                 regularizers=None,
                 initializers=None,
                 constraints=None,
                 metrics=None,
-                callbacks=None,
                 transforms=None):
         self.set_optimizer(optimizer)
         self.set_loss(loss)
@@ -166,6 +180,12 @@ class ModuleTrainer(object):
             self.metric_container = MetricContainer(self._metrics)
         else:
             self._has_metrics = False
+        
+        if transforms is not None:
+            self.set_transforms(transforms)
+        else:
+            self._has_transforms = False
+
 
     def fit(self,
             inputs,
@@ -191,10 +211,10 @@ class ModuleTrainer(object):
                 raise ValueError('num_inputs != num_val_inputs or num_targets != num_val_targets')
             val_inputs, val_targets = val_data[0], val_data[1]
 
-        fitter = _get_helper(self, num_inputs, num_targets)
+        fit_helper = _get_helper(self, num_inputs, num_targets)
 
         if cuda_device > -1:
-            inputs, targets = fitter.move_to_cuda(cuda_device, inputs, targets)
+            inputs, targets = fit_helper.move_to_cuda(cuda_device, inputs, targets)
 
         len_inputs = len(inputs) if not _is_iterable(inputs) else len(inputs[0])
         num_batches = int(math.ceil(len_inputs / batch_size))
@@ -208,7 +228,7 @@ class ModuleTrainer(object):
             if self._has_constraints:
                 tmp_callbacks.append(ConstraintCallback(self.constraint_container))
             if self._has_metrics:
-                tmp_callbacks.append(MetricCallback(self.metric_container, helper=fitter))
+                tmp_callbacks.append(MetricCallback(self.metric_container, helper=fit_helper))
 
             callback_container = CallbackContainer(self._callbacks+tmp_callbacks)
             callback_container.set_trainer(self)
@@ -224,17 +244,20 @@ class ModuleTrainer(object):
                 callback_container.on_epoch_begin(epoch_idx, epoch_logs)
 
                 if shuffle:
-                    inputs, targets = fitter.shuffle_arrays(inputs, targets)
+                    inputs, targets = fit_helper.shuffle_arrays(inputs, targets)
 
                 for batch_idx in range(num_batches):
                     batch_logs = {}
                     callback_container.on_batch_begin(batch_idx, batch_logs)
 
-                    input_batch, target_batch = fitter.grab_batch(batch_idx, batch_size, inputs, targets)
+                    input_batch, target_batch = fit_helper.grab_batch(batch_idx, batch_size, inputs, targets)
+
+                    if self._has_transforms:
+                        input_batch, target_batch = fit_helper.apply_transforms(self._transforms, input_batch, target_batch)
 
                     self._optimizer.zero_grad()
-                    output_batch = fitter.forward_pass(self.model, input_batch)
-                    loss = fitter.calculate_loss(self._loss_fn, output_batch, target_batch)
+                    output_batch = fit_helper.forward_pass(self.model, input_batch)
+                    loss = fit_helper.calculate_loss(self._loss_fn, output_batch, target_batch)
                     loss.backward()
 
                     if self._has_regularizers:
@@ -277,17 +300,17 @@ class ModuleTrainer(object):
         else:
             num_inputs = 1
             len_inputs = len(inputs)
-        predictor = _get_helper(self, num_inputs, num_targets=0)
+        predict_helper = _get_helper(self, num_inputs, num_targets=0)
 
         if cuda_device >= 0:
-            inputs = predictor.move_to_cuda(cuda_device, inputs)
+            inputs = predict_helper.move_to_cuda(cuda_device, inputs)
             self.model.cuda(cuda_device)
 
         num_batches = int(math.ceil(len_inputs / batch_size))
         
         for batch_idx in range(num_batches):
-            input_batch, _ = predictor.grab_batch(batch_idx, batch_size, inputs)
-            output_batch = predictor.forward_pass(self.model, input_batch)
+            input_batch, _ = predict_helper.grab_batch(batch_idx, batch_size, inputs)
+            output_batch = predict_helper.forward_pass(self.model, input_batch)
 
             if batch_idx == 0:
                 len_outputs = 1 if not _is_iterable(output_batch) else len(output_batch)
@@ -309,10 +332,10 @@ class ModuleTrainer(object):
                  cuda_device=-1,
                  verbose=1):
         num_inputs, num_targets = _parse_num_inputs_and_targets(inputs, targets)
-        evaluator = _get_helper(self, num_inputs, num_targets)
+        evaluate_helper = _get_helper(self, num_inputs, num_targets)
 
         if cuda_device > -1:
-            inputs, targets = evaluator.move_to_cuda(cuda_device, inputs, targets)
+            inputs, targets = evaluate_helper.move_to_cuda(cuda_device, inputs, targets)
 
         len_inputs = len(inputs) if not _is_iterable(inputs) else len(inputs[0])
         num_batches = int(math.ceil(len_inputs / batch_size))
@@ -322,11 +345,11 @@ class ModuleTrainer(object):
         }
         samples_seen = 0
         for batch_idx in range(num_batches):
-            input_batch, target_batch = evaluator.grab_batch(batch_idx, batch_size, inputs, targets)
+            input_batch, target_batch = evaluate_helper.grab_batch(batch_idx, batch_size, inputs, targets)
 
             self._optimizer.zero_grad()
-            output_batch = evaluator.forward_pass(self.model, input_batch)
-            loss = evaluator.calculate_loss(self._loss_fn, output_batch, target_batch)
+            output_batch = evaluate_helper.forward_pass(self.model, input_batch)
+            loss = evaluate_helper.calculate_loss(self._loss_fn, output_batch, target_batch)
             
             samples_seen += batch_size
             eval_logs['val_loss'] = (samples_seen*eval_logs['val_loss'] + loss.data[0]*batch_size) / (samples_seen+batch_size)
@@ -339,7 +362,7 @@ class ModuleTrainer(object):
 
 def _get_helper(trainer, num_inputs, num_targets):
     if (num_inputs == 1) and (num_targets == 1):
-        fitter = SingleInput_SingleTarget_Helper()
+        helper = SingleInput_SingleTarget_Helper()
 
     elif (num_inputs == 1) and (num_targets > 1):
         # use same loss function for all targets if multiple loss fns not explicitly given
@@ -348,13 +371,13 @@ def _get_helper(trainer, num_inputs, num_targets):
         else:
             if len(trainer._loss_fn) != num_targets:
                 raise ValueError('must give one loss function for every input if you give multiple')
-        fitter = SingleInput_MultiTarget_Helper()
+        helper = SingleInput_MultiTarget_Helper()
 
     elif (num_inputs == 1) and (num_targets == 0):
-        fitter = SingleInput_NoTarget_Helper()
+        helper = SingleInput_NoTarget_Helper()
 
     elif (num_inputs > 1) and (num_targets == 1):
-        fitter = MultiInput_SingleTarget_Helper()
+        helper = MultiInput_SingleTarget_Helper()
 
     elif (num_inputs > 1) and (num_targets > 1):
         # use same loss function for all targets if multiple loss fns not explicitly given
@@ -363,12 +386,12 @@ def _get_helper(trainer, num_inputs, num_targets):
         else:
             if len(trainer._loss_fn) != num_targets:
                 raise ValueError('must give one loss function for every input if you give multiple')
-        fitter = MultiInput_MultiTarget_Helper()
+        helper = MultiInput_MultiTarget_Helper()
 
     elif (num_inputs > 1) and (num_targets == 0):
-        fitter = MultiInput_NoTarget_Helper()
+        helper = MultiInput_NoTarget_Helper()
 
-    return fitter
+    return helper
 
 
 class SingleInput_SingleTarget_Helper(object):
@@ -384,6 +407,11 @@ class SingleInput_SingleTarget_Helper(object):
     def grab_batch(self, batch_idx, batch_size, inputs, targets):
         input_batch = Variable(inputs[batch_idx*batch_size:(batch_idx+1)*batch_size])
         target_batch = Variable(targets[batch_idx*batch_size:(batch_idx+1)*batch_size])
+        return input_batch, target_batch
+    def apply_transforms(self, tforms, input_batch, target_batch):
+        input_batch = tforms[0](input_batch)
+        target_batch = tforms[1](target_batch)
+        input_batch, target_batch = tforms[2](input_batch, target_batch)
         return input_batch, target_batch
     def forward_pass(self, model, input_batch):
         return model(input_batch)
@@ -405,6 +433,10 @@ class SingleInput_MultiTarget_Helper(object):
         input_batch = Variable(inputs[batch_idx*batch_size:(batch_idx+1)*batch_size])
         target_batch = [Variable(target_[batch_idx*batch_size:(batch_idx+1)*batch_size])
                         for target_ in targets]
+        return input_batch, target_batch
+    def apply_transforms(self, tforms, input_batch, target_batch):
+        input_batch = tforms[0](input_batch)
+        target_batch = [tforms[1](target_) for target_ in target_batch]
         return input_batch, target_batch
     def forward_pass(self, model, input_batch):
         return model(input_batch)
@@ -428,6 +460,10 @@ class MultiInput_SingleTarget_Helper(object):
                        for input_ in inputs]
         target_batch = Variable(targets[batch_idx*batch_size:(batch_idx+1)*batch_size])
         return input_batch, target_batch
+    def apply_transforms(self, tforms, input_batch, target_batch):
+        input_batch = [tforms[0](input_) for input_ in input_batch]
+        target_batch = tforms[1](target_batch)
+        return input_batch, target_batch
     def forward_pass(self, model, input_batch):
         return model(*input_batch)
     def calculate_loss(self, loss_fn, output_batch, target_batch):
@@ -450,6 +486,10 @@ class MultiInput_MultiTarget_Helper(object):
         target_batch = [Variable(target_[batch_idx*batch_size:(batch_idx+1)*batch_size])
                        for target_ in targets]
         return input_batch, target_batch
+    def apply_transforms(self, tforms, input_batch, target_batch):
+        input_batch = [tforms[0](input_) for input_ in input_batch]
+        target_batch = [tforms[1](target_) for target_ in target_batch]
+        return input_batch, target_batch
     def forward_pass(self, model, input_batch):
         return model(*input_batch)
     def calculate_loss(self, loss_fn, output_batch, target_batch):
@@ -468,6 +508,9 @@ class SingleInput_NoTarget_Helper(object):
     def grab_batch(self, batch_idx, batch_size, inputs, targets=None):
         input_batch = Variable(inputs[batch_idx*batch_size:(batch_idx+1)*batch_size])
         return input_batch, None
+    def apply_transforms(self, tforms, input_batch, target_batch=None):
+        input_batch = tforms[0](input_batch)
+        return input_batch, None
     def forward_pass(self, model, input_batch):
         return model(input_batch)
     def calculate_loss(self, loss_fn, output_batch, target_batch=None):
@@ -485,6 +528,9 @@ class MultiInput_NoTarget_Helper(object):
     def grab_batch(self, batch_idx, batch_size, inputs, targets=None):
         input_batch = [Variable(input_[batch_idx*batch_size:(batch_idx+1)*batch_size])
                        for input_ in inputs]
+        return input_batch, None
+    def apply_transforms(self, tforms, input_batch, target_batch=None):
+        input_batch = [tforms[0](input_) for input_ in input_batch]
         return input_batch, None
     def forward_pass(self, model, input_batch):
         return model(*input_batch)
