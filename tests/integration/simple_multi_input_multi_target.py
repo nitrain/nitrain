@@ -23,10 +23,10 @@ x_train = x_train.unsqueeze(1)
 x_test = x_test.unsqueeze(1)
 
 # only train on a subset
-x_train = x_train[:10000]
-y_train = y_train[:10000]
-x_test = x_test[:1000]
-y_test = y_test[:1000]
+x_train = x_train[:1000]
+y_train = y_train[:1000]
+x_test = x_test[:100]
+y_test = y_test[:100]
 
 
 # Define your model EXACTLY as if you were using nn.Module
@@ -45,22 +45,55 @@ class Network(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
-        return F.log_softmax(x)
+        return F.log_softmax(x), F.log_softmax(x), F.log_softmax(x)
 
-
+# with one loss function given
 model = Network()
 trainer = ModuleTrainer(model)
 
 trainer.compile(loss='nll_loss',
                 optimizer='adadelta')
 
-trainer.fit([x_train, x_train, x_train], y_train, 
-            nb_epoch=3, 
+trainer.fit([x_train, x_train, x_train], 
+            [y_train, y_train, y_train],
+            num_epoch=3, 
             batch_size=128,
             verbose=1)
 
-ypred = trainer.predict([x_train, x_train, x_train])
-print(ypred.size())
+yp1, yp2, yp3 = trainer.predict([x_train, x_train, x_train])
+print(yp1.size(), yp2.size(), yp3.size())
 
-eval_loss = trainer.evaluate([x_train, x_train, x_train], y_train)
+eval_loss = trainer.evaluate([x_train, x_train, x_train],
+                             [y_train, y_train, y_train])
 print(eval_loss)
+
+# With multiple loss functions given
+model = Network()
+trainer = ModuleTrainer(model)
+
+trainer.compile(loss=['nll_loss', 'nll_loss', 'nll_loss'],
+                optimizer='adadelta')
+
+trainer.fit([x_train, x_train, x_train], 
+            [y_train, y_train, y_train],
+            num_epoch=3, 
+            batch_size=128,
+            verbose=1)
+
+# should raise exception for giving multiple loss functions 
+# but not giving a loss function for every input
+try:
+    model = Network()
+    trainer = ModuleTrainer(model)
+
+    trainer.compile(loss=['nll_loss', 'nll_loss'],
+                    optimizer='adadelta')
+
+    trainer.fit([x_train, x_train, x_train], 
+                [y_train, y_train, y_train],
+                num_epoch=3, 
+                batch_size=128,
+                verbose=1)
+except:
+    print('Exception correctly caught')
+

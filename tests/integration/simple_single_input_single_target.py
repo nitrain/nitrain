@@ -4,6 +4,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from torchsample.modules import ModuleTrainer
+from torchsample import regularizers as reg
+from torchsample import constraints as con
 
 import os
 from torchvision import datasets
@@ -23,8 +25,8 @@ x_train = x_train.unsqueeze(1)
 x_test = x_test.unsqueeze(1)
 
 # only train on a subset
-x_train = x_train[:10000]
-y_train = y_train[:10000]
+x_train = x_train[:1000]
+y_train = y_train[:1000]
 x_test = x_test[:1000]
 y_test = y_test[:1000]
 
@@ -36,31 +38,36 @@ class Network(nn.Module):
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3)
         self.fc1 = nn.Linear(1600, 128)
-        self.fc2 = nn.Linear(128, 1)
+        self.fc2 = nn.Linear(128, 10)
 
     def forward(self, x):
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
         x = F.relu(F.max_pool2d(self.conv2(x), 2))
         x = x.view(-1, 1600)
         x = F.relu(self.fc1(x))
-        x = F.dropout(x, training=self.training)
+        #x = F.dropout(x, training=self.training)
         x = self.fc2(x)
-        return th.abs(10 - x)
+        return F.log_softmax(x)
 
 
 model = Network()
 trainer = ModuleTrainer(model)
 
-trainer.compile(loss='unconstrained_sum',
+trainer.compile(loss='nll_loss',
                 optimizer='adadelta')
 
-trainer.fit(x_train,
-            nb_epoch=1, 
+trainer.fit(x_train, y_train, 
+            val_data=(x_test, y_test),
+            num_epoch=3, 
             batch_size=128,
             verbose=1)
 
 ypred = trainer.predict(x_train)
 print(ypred.size())
 
-eval_loss = trainer.evaluate(x_train, None)
+eval_loss = trainer.evaluate(x_train, y_train)
 print(eval_loss)
+
+print(trainer.history)
+#print(trainer.history['loss'])
+

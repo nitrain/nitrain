@@ -23,8 +23,8 @@ x_train = x_train.unsqueeze(1)
 x_test = x_test.unsqueeze(1)
 
 # only train on a subset
-x_train = x_train[:10000]
-y_train = y_train[:10000]
+x_train = x_train[:1000]
+y_train = y_train[:1000]
 x_test = x_test[:1000]
 y_test = y_test[:1000]
 
@@ -38,7 +38,7 @@ class Network(nn.Module):
         self.fc1 = nn.Linear(1600, 128)
         self.fc2 = nn.Linear(128, 1)
 
-    def forward(self, x, y, z):
+    def forward(self, x):
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
         x = F.relu(F.max_pool2d(self.conv2(x), 2))
         x = x.view(-1, 1600)
@@ -54,14 +54,13 @@ trainer = ModuleTrainer(model)
 trainer.compile(loss='unconstrained_sum',
                 optimizer='adadelta')
 
-trainer.fit([x_train, x_train, x_train],
-            nb_epoch=3, 
+trainer.fit(x_train,
+            num_epoch=3, 
             batch_size=128,
             verbose=1)
 
-ypred = trainer.predict([x_train, x_train, x_train])
+ypred = trainer.predict(x_train)
 print(ypred.size())
 
-eval_loss = trainer.evaluate([x_train, x_train, x_train])
+eval_loss = trainer.evaluate(x_train, None)
 print(eval_loss)
-

@@ -262,6 +262,7 @@ class ModuleTrainer(object):
                     if self._has_regularizers:
                         regularizer_loss = self.regularizer_container.get_value()
                         loss += regularizer_loss
+                        batch_logs['reg_loss'] = regularizer_loss.data[0]
 
                     loss.backward()
                     self._optimizer.step() 
@@ -271,8 +272,6 @@ class ModuleTrainer(object):
                         batch_logs.update(metrics_logs)
 
                     batch_logs['loss'] = loss.data[0]
-                    batch_logs['reg_loss'] = regularizer_loss.data[0]
-
                     callback_container.on_batch_end(batch_idx, batch_logs)
 
                 if has_val_data:
