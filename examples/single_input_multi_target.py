@@ -45,19 +45,32 @@ class Network(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
-        return F.log_softmax(x)
+        return F.log_softmax(x), F.log_softmax(x)
 
 
+# one loss function for multiple targets
 model = Network()
 trainer = ModuleTrainer(model)
-
 trainer.compile(loss='nll_loss',
                 optimizer='adadelta')
 
-trainer.fit(x_train, y_train, 
-          val_data=(x_test, y_test),
-          nb_epoch=20, 
-          batch_size=128,
-          verbose=1)
+trainer.fit(x_train, 
+            [y_train, y_train], 
+            nb_epoch=3, 
+            batch_size=128,
+            verbose=1)
+
+
+# multiple loss functions
+model = Network()
+trainer = ModuleTrainer(model)
+trainer.compile(loss=['nll_loss', 'nll_loss'],
+                optimizer='adadelta')
+trainer.fit(x_train, 
+            [y_train, y_train], 
+            nb_epoch=3, 
+            batch_size=128,
+            verbose=1)
+
 
 
