@@ -200,6 +200,8 @@ class ModuleTrainer(object):
         Fit a model on in-memory tensors using ModuleTrainer
         """
         num_inputs, num_targets = _parse_num_inputs_and_targets(inputs, targets)
+        fit_helper = _get_helper(self, num_inputs, num_targets)
+
         has_val_data = val_data is not None
         if has_val_data:
             if num_targets == 0:
@@ -210,8 +212,6 @@ class ModuleTrainer(object):
             if (num_inputs != num_val_inputs) or (num_targets != num_val_targets):
                 raise ValueError('num_inputs != num_val_inputs or num_targets != num_val_targets')
             val_inputs, val_targets = val_data[0], val_data[1]
-
-        fit_helper = _get_helper(self, num_inputs, num_targets)
 
         if cuda_device > -1:
             inputs, targets = fit_helper.move_to_cuda(cuda_device, inputs, targets)
@@ -258,13 +258,12 @@ class ModuleTrainer(object):
                     self._optimizer.zero_grad()
                     output_batch = fit_helper.forward_pass(self.model, input_batch)
                     loss = fit_helper.calculate_loss(self._loss_fn, output_batch, target_batch)
-                    loss.backward()
-
+                    
                     if self._has_regularizers:
                         regularizer_loss = self.regularizer_container.get_value()
                         loss += regularizer_loss
-                        batch_logs['reg_loss'] = regularizer_loss.data[0]
 
+                    loss.backward()
                     self._optimizer.step() 
 
                     if self._has_metrics:
@@ -272,6 +271,8 @@ class ModuleTrainer(object):
                         batch_logs.update(metrics_logs)
 
                     batch_logs['loss'] = loss.data[0]
+                    batch_logs['reg_loss'] = regularizer_loss.data[0]
+
                     callback_container.on_batch_end(batch_idx, batch_logs)
 
                 if has_val_data:
