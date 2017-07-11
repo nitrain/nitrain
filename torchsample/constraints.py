@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from fnmatch import fnmatch
 
 import torch as th
+from .callbacks import Callback
 
 
 class ConstraintContainer(object):
@@ -49,6 +50,18 @@ class ConstraintContainer(object):
                     self.constraints[c_idx](module)
 
 
+class ConstraintCallback(Callback):
+
+    def __init__(self, container):
+        self.container = container
+
+    def on_batch_end(self, batch_idx, logs):
+        self.container.apply_batch_constraints(batch_idx)
+
+    def on_epoch_end(self, epoch_idx, logs):
+        self.container.apply_epoch_constraints(epoch_idx)
+
+
 class Constraint(object):
 
     def __call__(self):
@@ -72,7 +85,7 @@ class UnitNorm(Constraint):
 
     def __call__(self, module):
         w = module.weight.data
-        module.weight.data = w.div(th.norm(w,2,1).expand_as(w))
+        module.weight.data = w.div(th.norm(w,2,0))
 
 
 class MaxNorm(Constraint):

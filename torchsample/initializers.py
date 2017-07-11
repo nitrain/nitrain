@@ -27,7 +27,7 @@ class InitializerContainer(object):
     def __init__(self, initializers):
         self._initializers = initializers
 
-    def __call__(self, model):
+    def apply(self, model):
         for initializer in self._initializers:
             model.apply(initializer)
 
