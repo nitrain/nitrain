@@ -360,6 +360,54 @@ class ModuleTrainer(object):
         else:
             return eval_logs['val_loss']
 
+    def summary(self, input_size):
+        def register_hook(module):
+            def hook(module, input, output):
+                class_name = str(module.__class__).split('.')[-1].split("'")[0]
+                module_idx = len(summary)
+
+                m_key = '%s-%i' % (class_name, module_idx+1)
+                summary[m_key] = OrderedDict()
+                summary[m_key]['input_shape'] = list(input[0].size())
+                summary[m_key]['input_shape'][0] = -1
+                summary[m_key]['output_shape'] = list(output.size())
+                summary[m_key]['output_shape'][0] = -1
+
+                params = 0
+                if hasattr(module, 'weight'):
+                    params += th.prod(th.LongTensor(list(module.weight.size())))
+                    if module.weight.requires_grad:
+                        summary[m_key]['trainable'] = True
+                    else:
+                        summary[m_key]['trainable'] = False
+                if hasattr(module, 'bias'):
+                    params +=  th.prod(th.LongTensor(list(module.bias.size())))
+                summary[m_key]['nb_params'] = params
+
+            if not isinstance(module, nn.Sequential) and \
+               not isinstance(module, nn.ModuleList) and \
+               not (module == self.model):
+                hooks.append(module.register_forward_hook(hook))
+
+        if isinstance(input_size[0], list):
+            x = [Variable(th.rand(1,*in_size)) for in_size in input_size]
+        else:
+            x = Variable(th.rand(1,*input_size))
+
+        # create properties
+        summary = OrderedDict()
+        hooks = []
+        # register hook
+        self.model.apply(register_hook)
+        # make a forward pass
+        self.model(x)
+        # remove these hooks
+        for h in hooks:
+            h.remove()
+
+        return summary
+
+
 
 def _get_helper(trainer, num_inputs, num_targets):
     if (num_inputs == 1) and (num_targets == 1):
