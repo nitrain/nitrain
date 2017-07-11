@@ -242,7 +242,7 @@ class ModuleTrainer(object):
                         loss += regularizer_loss
                         batch_logs['reg_loss'] = regularizer_loss.data[0]
 
-                    self._optimizer.step()
+                    self._optimizer.step() 
 
                     if self._has_metrics:
                         metrics_logs = self.metric_container(output_batch, target_batch)
