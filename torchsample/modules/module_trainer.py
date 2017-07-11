@@ -20,7 +20,7 @@ from torch.autograd import Variable
 from ._utils import (_validate_loss_input, _validate_metric_input,
                      _validate_optimizer_input, _validate_initializer_input,
                      _standardize_user_data, _parse_num_inputs_and_targets,
-                     _is_iterable)
+                     _is_tuple_or_list, _parse_num_input_and_targets_from_loader)
 
 from ..callbacks import CallbackContainer, History, TQDM
 from ..regularizers import RegularizerContainer, RegularizerCallback
@@ -82,7 +82,7 @@ class ModuleTrainer(object):
 
     def set_loss(self, loss):
         self._loss = loss
-        if _is_iterable(loss):
+        if _is_tuple_or_list(loss):
             self._loss_fn = [_validate_loss_input(l) for l in loss]
         else:
             self._loss_fn = _validate_loss_input(loss)
@@ -100,33 +100,33 @@ class ModuleTrainer(object):
             self._optimizer = optimizer
 
     def set_callbacks(self, callbacks):
-        if not _is_iterable(callbacks):
+        if not _is_tuple_or_list(callbacks):
             callbacks = [callbacks]
         self._callbacks = [self.history] + callbacks
 
     def set_regularizers(self, regularizers):
-        regularizers = [regularizers] if not _is_iterable(regularizers) else regularizers
+        regularizers = [regularizers] if not _is_tuple_or_list(regularizers) else regularizers
         self._regularizers = regularizers
         self._has_regularizers = True
 
     def set_initializers(self, initializers):
-        initializers = [initializers] if not _is_iterable(initializers) else initializers
+        initializers = [initializers] if not _is_tuple_or_list(initializers) else initializers
         initializers = [_validate_initializer_input(it) for it in initializers]
         self._initializers = initializers
 
     def set_constraints(self, constraints):
-        constraints = [constraints] if not _is_iterable(constraints) else constraints
+        constraints = [constraints] if not _is_tuple_or_list(constraints) else constraints
         self._has_constraints = True
         self._constraints = constraints
 
     def set_metrics(self, metrics):
-        metrics = [metrics] if not _is_iterable(metrics) else metrics
+        metrics = [metrics] if not _is_tuple_or_list(metrics) else metrics
         metrics = [_validate_metric_input(m) for m in metrics]
         self._has_metrics = True
         self._metrics = metrics
 
     def set_transforms(self, transforms):
-        if not _is_iterable(transforms):
+        if not _is_tuple_or_list(transforms):
             transforms = (transforms, lambda x: x, lambda x,y: (x,y))
         if len(transforms) == 1:
             transforms = (transforms, lambda x: x, lambda x,y: (x,y))
@@ -213,10 +213,10 @@ class ModuleTrainer(object):
                 raise ValueError('num_inputs != num_val_inputs or num_targets != num_val_targets')
             val_inputs, val_targets = val_data[0], val_data[1]
 
-        if cuda_device > -1:
+        if cuda_device >= 0:
             inputs, targets = fit_helper.move_to_cuda(cuda_device, inputs, targets)
 
-        len_inputs = len(inputs) if not _is_iterable(inputs) else len(inputs[0])
+        len_inputs = len(inputs) if not _is_tuple_or_list(inputs) else len(inputs[0])
         num_batches = int(math.ceil(len_inputs / batch_size))
 
         with TQDM() as pbar:
@@ -290,12 +290,24 @@ class ModuleTrainer(object):
                 if self._stop_training:
                     break
 
+    def fit_loader(self,
+                   loader,
+                   val_loader=None,
+                   num_epoch=100,
+                   batch_size=32,
+                   shuffle=False,
+                   cuda_device=-1,
+                   verbose=1):
+        num_inputs, num_targets = _parse_num_input_and_targets_from_loader(loader)
+        fit_helper = _get_helper(self, num_inputs, num_targets)
+
+
     def predict(self,
                 inputs,
                 batch_size=32,
                 cuda_device=-1,
                 verbose=1):
-        if _is_iterable(inputs):
+        if _is_tuple_or_list(inputs):
             num_inputs = len(inputs)
             len_inputs = len(inputs[0])
         else:
@@ -314,7 +326,7 @@ class ModuleTrainer(object):
             output_batch = predict_helper.forward_pass(self.model, input_batch)
 
             if batch_idx == 0:
-                len_outputs = 1 if not _is_iterable(output_batch) else len(output_batch)
+                len_outputs = 1 if not _is_tuple_or_list(output_batch) else len(output_batch)
                 prediction_lists = [[] for _ in range(len_outputs)]
 
             if len_outputs == 1:
@@ -335,10 +347,10 @@ class ModuleTrainer(object):
         num_inputs, num_targets = _parse_num_inputs_and_targets(inputs, targets)
         evaluate_helper = _get_helper(self, num_inputs, num_targets)
 
-        if cuda_device > -1:
+        if cuda_device >= 0:
             inputs, targets = evaluate_helper.move_to_cuda(cuda_device, inputs, targets)
 
-        len_inputs = len(inputs) if not _is_iterable(inputs) else len(inputs[0])
+        len_inputs = len(inputs) if not _is_tuple_or_list(inputs) else len(inputs[0])
         num_batches = int(math.ceil(len_inputs / batch_size))
 
         eval_logs= {
@@ -389,18 +401,19 @@ class ModuleTrainer(object):
                not (module == self.model):
                 hooks.append(module.register_forward_hook(hook))
 
-        if isinstance(input_size[0], list):
-            x = [Variable(th.rand(1,*in_size)) for in_size in input_size]
-        else:
-            x = Variable(th.rand(1,*input_size))
-
         # create properties
         summary = OrderedDict()
         hooks = []
-        # register hook
+        # register forward hooks
         self.model.apply(register_hook)
-        # make a forward pass
-        self.model(x)
+
+        if isinstance(input_size[0], (list, tuple)):
+            x = [Variable(th.rand(1,*in_size)) for in_size in input_size]
+            self.model(*x)
+        else:
+            x = Variable(th.rand(1,*input_size))
+            self.model(x)
+
         # remove these hooks
         for h in hooks:
             h.remove()
@@ -414,7 +427,7 @@ def _get_helper(trainer, num_inputs, num_targets):
 
     elif (num_inputs == 1) and (num_targets > 1):
         # use same loss function for all targets if multiple loss fns not explicitly given
-        if not _is_iterable(trainer._loss_fn):
+        if not _is_tuple_or_list(trainer._loss_fn):
             trainer._loss_fn = [trainer._loss_fn] * num_targets
         else:
             if len(trainer._loss_fn) != num_targets:
@@ -429,7 +442,7 @@ def _get_helper(trainer, num_inputs, num_targets):
 
     elif (num_inputs > 1) and (num_targets > 1):
         # use same loss function for all targets if multiple loss fns not explicitly given
-        if not _is_iterable(trainer._loss_fn):
+        if not _is_tuple_or_list(trainer._loss_fn):
             trainer._loss_fn = [trainer._loss_fn] * num_targets
         else:
             if len(trainer._loss_fn) != num_targets:
