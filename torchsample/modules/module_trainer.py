@@ -198,6 +198,7 @@ class ModuleTrainer(object):
         """
         Fit a model on in-memory tensors using ModuleTrainer
         """
+        self.model.train(True)
         # ----------------------------------------------------------------------
         num_inputs, num_targets = _parse_num_inputs_and_targets(inputs, targets)
         len_inputs = len(inputs) if not _is_tuple_or_list(inputs) else len(inputs[0])
@@ -290,6 +291,7 @@ class ModuleTrainer(object):
 
                 if self._stop_training:
                     break
+        self.model.train(mode=False)
 
     def fit_loader(self,
                    loader,
@@ -300,6 +302,7 @@ class ModuleTrainer(object):
         """
         Fit a model on in-memory tensors using ModuleTrainer
         """
+        self.model.train(mode=True)
         # ----------------------------------------------------------------------
         num_inputs = loader.dataset.num_inputs
         num_targets = loader.dataset.num_targets
@@ -385,12 +388,14 @@ class ModuleTrainer(object):
 
                 if self._stop_training:
                     break
+        self.model.train(mode=False)
 
     def predict(self,
                 inputs,
                 batch_size=32,
                 cuda_device=-1,
                 verbose=1):
+        self.model.train(mode=True)
         # --------------------------------------------------------
         num_inputs, _ = _parse_num_inputs_and_targets(inputs, None)
         len_inputs = len(inputs) if not _is_tuple_or_list(inputs) else len(inputs[0])
@@ -417,12 +422,14 @@ class ModuleTrainer(object):
                     prediction_lists[out_idx].append(output_batch[out_idx])
             
         final_pred_list = [th.cat(pred_list,0) for pred_list in prediction_lists]
+        self.model.train(mode=True)
         return final_pred_list if len_outputs > 1 else final_pred_list[0]
 
     def predict_loader(self,
                        loader,
                        cuda_device=-1,
                        verbose=1):
+        self.model.train(mode=False)
         # --------------------------------------------------------
         num_inputs, num_targets = _parse_num_inputs_and_targets_from_loader(loader)
         batch_size = loader.batch_size
@@ -448,6 +455,7 @@ class ModuleTrainer(object):
                     prediction_lists[out_idx].append(output_batch[out_idx])
             
         final_pred_list = [th.cat(pred_list,0) for pred_list in prediction_lists]
+        self.model.train(mode=True)
         return final_pred_list if len_outputs > 1 else final_pred_list[0]
 
     def evaluate(self,
@@ -456,6 +464,7 @@ class ModuleTrainer(object):
                  batch_size=32,
                  cuda_device=-1,
                  verbose=1):
+        self.model.train(mode=False)
         num_inputs, num_targets = _parse_num_inputs_and_targets(inputs, targets)
         len_inputs = len(inputs) if not _is_tuple_or_list(inputs) else len(inputs[0])
         num_batches = int(math.ceil(len_inputs / batch_size))
@@ -482,11 +491,13 @@ class ModuleTrainer(object):
             return eval_logs
         else:
             return eval_logs['val_loss']
+        self.model.train(mode=True)
 
     def evaluate_loader(self,
                         loader,
                         cuda_device=-1,
                         verbose=1):
+        self.model.train(mode=False)
         num_inputs, num_targets = _parse_num_inputs_and_targets_from_loader(loader)
         batch_size = loader.batch_size
         len_inputs = len(loader.dataset)
@@ -515,6 +526,7 @@ class ModuleTrainer(object):
             return eval_logs
         else:
             return eval_logs['val_loss']
+        self.model.train(mode=True)
 
     def summary(self, input_size):
         def register_hook(module):
