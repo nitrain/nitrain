@@ -4,11 +4,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from torchsample.modules import ModuleTrainer
-from torchsample.callbacks import *
-from torchsample.regularizers import *
-from torchsample.constraints import *
-from torchsample.initializers import *
-from torchsample.metrics import *
+from torchsample.callbacks import EarlyStopping, ReduceLROnPlateau
+from torchsample.regularizers import L1Regularizer, L2Regularizer
+from torchsample.constraints import UnitNorm
+from torchsample.initializers import XavierUniform
+from torchsample.metrics import CategoricalAccuracy
 
 import os
 from torchvision import datasets

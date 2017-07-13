@@ -6,11 +6,11 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 from torchsample.modules import ModuleTrainer
-from torchsample.callbacks import *
-from torchsample.regularizers import *
-from torchsample.constraints import *
-from torchsample.initializers import *
-from torchsample.metrics import *
+from torchsample.callbacks import EarlyStopping, ReduceLROnPlateau
+from torchsample.regularizers import L1Regularizer, L2Regularizer
+from torchsample.constraints import UnitNorm
+from torchsample.initializers import XavierUniform
+from torchsample.metrics import CategoricalAccuracy
 from torchsample import TensorDataset
 
 import os
