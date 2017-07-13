@@ -4,11 +4,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from torchsample.modules import ModuleTrainer
-from torchsample.callbacks import EarlyStopping, ReduceLROnPlateau
-from torchsample.regularizers import L1Regularizer, L2Regularizer
-from torchsample.constraints import UnitNorm
-from torchsample.initializers import XavierUniform
-from torchsample.metrics import CategoricalAccuracy
 
 import os
 from torchvision import datasets
@@ -28,8 +23,8 @@ x_train = x_train.unsqueeze(1)
 x_test = x_test.unsqueeze(1)
 
 # only train on a subset
-x_train = x_train[:10000]
-y_train = y_train[:10000]
+x_train = x_train[:1000]
+y_train = y_train[:1000]
 x_test = x_test[:1000]
 y_test = y_test[:1000]
 
@@ -43,7 +38,7 @@ class Network(nn.Module):
         self.fc1 = nn.Linear(1600, 128)
         self.fc2 = nn.Linear(128, 10)
 
-    def forward(self, x):
+    def forward(self, x, y, z):
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
         x = F.relu(F.max_pool2d(self.conv2(x), 2))
         x = x.view(-1, 1600)
@@ -56,29 +51,16 @@ class Network(nn.Module):
 model = Network()
 trainer = ModuleTrainer(model)
 
-
-callbacks = [EarlyStopping(patience=10),
-             ReduceLROnPlateau(factor=0.5, patience=5)]
-regularizers = [L1Regularizer(scale=1e-3, module_filter='conv*'),
-                L2Regularizer(scale=1e-5, module_filter='fc*')]
-constraints = [UnitNorm(frequency=3, unit='batch', module_filter='fc*')]
-initializers = [XavierUniform(bias=False, module_filter='fc*')]
-metrics = [CategoricalAccuracy(top_k=3)]
-
 trainer.compile(loss='nll_loss',
-                optimizer='adadelta',
-                regularizers=regularizers,
-                constraints=constraints,
-                initializers=initializers,
-                metrics=metrics)
+                optimizer='adadelta')
 
-summary = trainer.summary([1,28,28])
-#print(summary)
+trainer.fit([x_train, x_train, x_train], y_train, 
+            num_epoch=3, 
+            batch_size=128,
+            verbose=1)
 
-trainer.fit(x_train, y_train, 
-          val_data=(x_test, y_test),
-          num_epoch=20, 
-          batch_size=128,
-          verbose=1)
+ypred = trainer.predict([x_train, x_train, x_train])
+print(ypred.size())
 
-
+eval_loss = trainer.evaluate([x_train, x_train, x_train], y_train)
+print(eval_loss)

@@ -2,13 +2,10 @@
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
 
 from torchsample.modules import ModuleTrainer
-from torchsample.callbacks import EarlyStopping, ReduceLROnPlateau
-from torchsample.regularizers import L1Regularizer, L2Regularizer
-from torchsample.constraints import UnitNorm
-from torchsample.initializers import XavierUniform
-from torchsample.metrics import CategoricalAccuracy
+from torchsample import TensorDataset
 
 import os
 from torchvision import datasets
@@ -28,11 +25,13 @@ x_train = x_train.unsqueeze(1)
 x_test = x_test.unsqueeze(1)
 
 # only train on a subset
-x_train = x_train[:10000]
-y_train = y_train[:10000]
+x_train = x_train[:1000]
+y_train = y_train[:1000]
 x_test = x_test[:1000]
 y_test = y_test[:1000]
 
+train_data = TensorDataset(x_train, [y_train, y_train])
+train_loader = DataLoader(train_data, batch_size=128)
 
 # Define your model EXACTLY as if you were using nn.Module
 class Network(nn.Module):
@@ -50,35 +49,31 @@ class Network(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
-        return F.log_softmax(x)
+        return F.log_softmax(x), F.log_softmax(x)
 
 
+# one loss function for multiple targets
 model = Network()
 trainer = ModuleTrainer(model)
-
-
-callbacks = [EarlyStopping(patience=10),
-             ReduceLROnPlateau(factor=0.5, patience=5)]
-regularizers = [L1Regularizer(scale=1e-3, module_filter='conv*'),
-                L2Regularizer(scale=1e-5, module_filter='fc*')]
-constraints = [UnitNorm(frequency=3, unit='batch', module_filter='fc*')]
-initializers = [XavierUniform(bias=False, module_filter='fc*')]
-metrics = [CategoricalAccuracy(top_k=3)]
-
 trainer.compile(loss='nll_loss',
-                optimizer='adadelta',
-                regularizers=regularizers,
-                constraints=constraints,
-                initializers=initializers,
-                metrics=metrics)
+                optimizer='adadelta')
 
-summary = trainer.summary([1,28,28])
-#print(summary)
+trainer.fit_loader(train_loader,
+                    num_epoch=3, 
+                    verbose=1)
+ypred1, ypred2 = trainer.predict(x_train)
+print(ypred1.size(), ypred2.size())
 
-trainer.fit(x_train, y_train, 
-          val_data=(x_test, y_test),
-          num_epoch=20, 
-          batch_size=128,
-          verbose=1)
+eval_loss = trainer.evaluate(x_train, [y_train, y_train])
+print(eval_loss)
+# multiple loss functions
+model = Network()
+trainer = ModuleTrainer(model)
+trainer.compile(loss=['nll_loss', 'nll_loss'],
+                optimizer='adadelta')
+trainer.fit_loader(train_loader,
+                   num_epoch=3, 
+                   verbose=1)
+
 
 

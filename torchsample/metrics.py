@@ -6,22 +6,30 @@ import torch as th
 
 from .utils import th_matrixcorr
 
+from .callbacks import Callback
 
-class MetricsModule(object):
+class MetricContainer(object):
 
 
     def __init__(self, metrics, prefix=''):
-        self._metrics = metrics
-        self._prefix = prefix
+        self.metrics = metrics
+        self.helper = None
+        self.prefix = prefix
 
-    def __call__(self, y_pred, y_true):
-        logs = {self._prefix+metric._name: metric(y_pred, y_true) for metric in self._metrics}
-        return logs
+    def set_helper(self, helper):
+        self.helper = helper
 
     def reset(self):
-        for metric in self._metrics:
+        for metric in self.metrics:
             metric.reset()
 
+    def __call__(self, output_batch, target_batch):
+        logs = {}
+        for metric in self.metrics:
+            logs[self.prefix+metric._name] = self.helper.calculate_loss(output_batch,
+                                                                        target_batch,
+                                                                        metric) 
+        return logs
 
 class Metric(object):
 
@@ -31,6 +39,13 @@ class Metric(object):
     def reset(self):
         raise NotImplementedError('Custom Metrics must implement this function')
 
+
+class MetricCallback(Callback):
+
+    def __init__(self, container):
+        self.container = container
+    def on_epoch_begin(self, epoch_idx, logs):
+        self.container.reset()
 
 class CategoricalAccuracy(Metric):
 

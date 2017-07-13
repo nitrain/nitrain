@@ -1,9 +1,15 @@
 # High-Level Training, Data Augmentation, and Utilities for Pytorch
 
+<b>[https://github.com/ncullen93/torchsample/releases](v0.1.3) JUST RELEASED - contains significant improvements, bug fixes, and additional
+support. Get it from the releases, or pull the master branch.</b>
+
 This package provides a few things:
 - A high-level module for Keras-like training with callbacks, constraints, and regularizers.
 - Comprehensive data augmentation, transforms, sampling, and loading
 - Utility tensor and variable functions so you don't need numpy as often
+
+<b>Have any feature requests?</b> Submit an issue! I'll make it happen. Specifically,
+any data augmentation, data loading, or sampling functions.
 
 <b>Want to contribute?</b> Check the [issues page](https://github.com/ncullen93/torchsample/issues)
  for those tagged with [contributions welcome].
@@ -43,7 +49,7 @@ trainer.compile(loss='nll_loss',
                 optimizer='adadelta')
 
 trainer.fit(x_train, y_train, 
-            val_data=(x_test, y_test),
+            validation_data=(x_test, y_test),
             nb_epoch=20, 
             batch_size=128,
             verbose=1)

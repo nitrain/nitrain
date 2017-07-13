@@ -5,61 +5,61 @@ from __future__ import absolute_import
 from fnmatch import fnmatch
 
 import torch as th
+from .callbacks import Callback
 
 
-class ConstraintModule(object):
+class ConstraintContainer(object):
 
     def __init__(self, constraints):
         self.constraints = constraints
-        self.lagrangian_constraints = [c for c in self.constraints if c.lagrangian]
-        if len(self.lagrangian_constraints) > 0:
-            self.has_lagrangian = True
-        else:
-            self.has_lagrangian = False
-        self.batch_constraints = [c for c in self.constraints if c.unit == 'batch']
-        self.epoch_constraints = [c for c in self.constraints if c.unit == 'epoch']
-        self.loss = 0.
+        self.batch_constraints = [c for c in self.constraints if c.unit.upper() == 'BATCH']
+        self.epoch_constraints = [c for c in self.constraints if c.unit.upper() == 'EPOCH']
 
-    def set_model(self, model):
-        self.model = model
+    def register_constraints(self, model):
+        """
+        Grab pointers to the weights which will be modified by constraints so
+        that we dont have to search through the entire network using `apply`
+        each time
+        """
+        # get batch constraint pointers
+        self._batch_c_ptrs = {}
+        for c_idx, constraint in enumerate(self.batch_constraints):
+            self._batch_c_ptrs[c_idx] = []
+            for name, module in model.named_modules():
+                if fnmatch(name, constraint.module_filter) and hasattr(module, 'weight'):
+                    self._batch_c_ptrs[c_idx].append(module)
 
-    def _apply(self, module, constraint):
-        if isinstance(module, th.nn.DataParallel):
-            module = module.module      #DataParallel wraps the module so unwrap before continuing
-            
-        for name, module in module.named_children():
-            if fnmatch(name, constraint.module_filter) and hasattr(module, 'weight'):
-                constraint(module)
-                self._apply(module, constraint)
+        # get epoch constraint pointers
+        self._epoch_c_ptrs = {}
+        for c_idx, constraint in enumerate(self.epoch_constraints):
+            self._epoch_c_ptrs[c_idx] = []
+            for name, module in model.named_modules():
+                if fnmatch(name, constraint.module_filter) and hasattr(module, 'weight'):
+                    self._epoch_c_ptrs[c_idx].append(module)
 
-    def _lagrangian_apply(self, module, constraint):
-        if isinstance(module, th.nn.DataParallel):
-            module = module.module      #DataParallel wraps the module so unwrap before continuing
-            
-        for name, module in module.named_children():
-            if fnmatch(name, constraint.module_filter) and hasattr(module, 'weight'):
-                self.loss += constraint(module)
-                self._lagrangian_apply(module, constraint)
+    def apply_batch_constraints(self, batch_idx):
+        for c_idx, modules in self._batch_c_ptrs.items():
+            if (batch_idx+1) % self.constraints[c_idx].frequency == 0:
+                for module in modules:
+                    self.constraints[c_idx](module)
 
-    def on_batch_end(self, batch):
-        for constraint in self.batch_constraints:
-            if ((batch+1) % constraint.frequency == 0):
-                self._apply(self.model, constraint)
+    def apply_epoch_constraints(self, epoch_idx):
+        for c_idx, modules in self._epoch_c_ptrs.items():
+            if (epoch_idx+1) % self.constraints[c_idx].frequency == 0:
+                for module in modules:
+                    self.constraints[c_idx](module)
 
-    def on_epoch_end(self, epoch):
-        for constraint in self.epoch_constraints:
-            if ((epoch+1) % constraint.frequency == 0):
-                self._apply(self.model, constraint)
 
-    def __call__(self, model):
-        self.loss = 0.
-        for constraint in self.lagrangian_constraints:
-            self._lagrangian_apply(model, constraint)
-        return self.loss
+class ConstraintCallback(Callback):
 
-    def __len__(self):
-        return len([c for c in self.constraints if c.lagrangian])
+    def __init__(self, container):
+        self.container = container
 
+    def on_batch_end(self, batch_idx, logs):
+        self.container.apply_batch_constraints(batch_idx)
+
+    def on_epoch_end(self, epoch_idx, logs):
+        self.container.apply_epoch_constraints(epoch_idx)
 
 
 class Constraint(object):
@@ -77,23 +77,16 @@ class UnitNorm(Constraint):
     def __init__(self, 
                  frequency=1, 
                  unit='batch',
-                 lagrangian=False,
-                 scale=0.,
                  module_filter='*'):
 
         self.frequency = frequency
         self.unit = unit
-        self.lagrangian = lagrangian
         self.module_filter = module_filter
 
     def __call__(self, module):
-        if self.lagrangian:
-            w = module.weight
-            norm_diff = th.norm(w, 2, 1).sub(1.)
-            return self.scale * th.sum(norm_diff.gt(0).float().mul(norm_diff))
-        else:
-            w = module.weight
-            w = w.div(th.norm(w,2,1).expand_as(w))
+        w = module.weight.data
+        module.weight.data = w.div(th.norm(w,2,0))
+
 
 class MaxNorm(Constraint):
     """
@@ -111,25 +104,18 @@ class MaxNorm(Constraint):
                  axis=0, 
                  frequency=1, 
                  unit='batch',
-                 lagrangian=False,
-                 scale=0.,
                  module_filter='*'):
         self.value = float(value)
         self.axis = axis
 
         self.frequency = frequency
         self.unit = unit
-        self.lagrangian = lagrangian
-        self.scale = scale
         self.module_filter = module_filter
 
     def __call__(self, module):
-        if self.lagrangian:
-            w = module.weight
-            norm_diff = th.norm(w,2,self.axis).sub(self.value)
-            return self.scale * th.sum(norm_diff.gt(0).float().mul(norm_diff))
-        else:
-            module.weight.data = th.renorm(module.weight.data, 2, self.axis, self.value)
+        w = module.weight.data
+        module.weight.data = th.renorm(w, 2, self.axis, self.value)
+
 
 class NonNeg(Constraint):
     """
@@ -138,20 +124,14 @@ class NonNeg(Constraint):
     def __init__(self, 
                  frequency=1, 
                  unit='batch',
-                 lagrangian=False,
-                 scale=0.,
                  module_filter='*'):
         self.frequency = frequency
         self.unit = unit
         self.module_filter = module_filter
 
     def __call__(self, module):
-        if self.lagrangian:
-            w = module.weight
-            return -1 * self.scale * th.sum(w.gt(0).float().mul(w))
-        else:
-            w = module.weight
-            w = w.gt(0).float().mul(w)
+        w = module.weight.data
+        module.weight.data = w.gt(0).float().mul(w)
 
 
 
