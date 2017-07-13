@@ -1,6 +1,6 @@
 # High-Level Training, Data Augmentation, and Utilities for Pytorch
 
-<b>[https://github.com/ncullen93/torchsample/releases](v0.1.3) JUST RELEASED - contains significant improvements, bug fixes, and additional
+<b>[v0.1.3](https://github.com/ncullen93/torchsample/releases) JUST RELEASED - contains significant improvements, bug fixes, and additional
 support. Get it from the releases, or pull the master branch.</b>
 
 This package provides a few things:
