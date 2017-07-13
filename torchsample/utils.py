@@ -114,15 +114,15 @@ def th_affine2d(x, matrix, mode='bilinear', center=True):
 
     if center:
         # shift the coordinates so center is the origin
-        coords[:,:,0] = coords[:,:,0] - (x.size(1) / 2. + 0.5)
-        coords[:,:,1] = coords[:,:,1] - (x.size(2) / 2. + 0.5)
+        coords[:,:,0] = coords[:,:,0] - (x.size(1) / 2. - 0.5)
+        coords[:,:,1] = coords[:,:,1] - (x.size(2) / 2. - 0.5)
     # apply the coordinate transformation
     new_coords = coords.bmm(A_batch.transpose(1,2)) + b_batch.expand_as(coords)
 
     if center:
         # shift the coordinates back so origin is origin
-        new_coords[:,:,0] = new_coords[:,:,0] + (x.size(1) / 2. + 0.5)
-        new_coords[:,:,1] = new_coords[:,:,1] + (x.size(2) / 2. + 0.5)
+        new_coords[:,:,0] = new_coords[:,:,0] + (x.size(1) / 2. - 0.5)
+        new_coords[:,:,1] = new_coords[:,:,1] + (x.size(2) / 2. - 0.5)
 
     # map new coordinates using bilinear interpolation
     if mode == 'nearest':
@@ -202,9 +202,9 @@ def th_affine3d(x, matrix, mode='trilinear', center=True):
 
     if center:
         # shift the coordinates so center is the origin
-        coords[:,0] = coords[:,0] - (x.size(1) / 2. + 0.5)
-        coords[:,1] = coords[:,1] - (x.size(2) / 2. + 0.5)
-        coords[:,2] = coords[:,2] - (x.size(3) / 2. + 0.5)
+        coords[:,0] = coords[:,0] - (x.size(1) / 2. - 0.5)
+        coords[:,1] = coords[:,1] - (x.size(2) / 2. - 0.5)
+        coords[:,2] = coords[:,2] - (x.size(3) / 2. - 0.5)
 
     
     # apply the coordinate transformation
@@ -212,9 +212,9 @@ def th_affine3d(x, matrix, mode='trilinear', center=True):
 
     if center:
         # shift the coordinates back so origin is origin
-        new_coords[:,0] = new_coords[:,0] + (x.size(1) / 2. + 0.5)
-        new_coords[:,1] = new_coords[:,1] + (x.size(2) / 2. + 0.5)
-        new_coords[:,2] = new_coords[:,2] + (x.size(3) / 2. + 0.5)
+        new_coords[:,0] = new_coords[:,0] + (x.size(1) / 2. - 0.5)
+        new_coords[:,1] = new_coords[:,1] + (x.size(2) / 2. - 0.5)
+        new_coords[:,2] = new_coords[:,2] + (x.size(3) / 2. - 0.5)
 
     # map new coordinates using bilinear interpolation
     if mode == 'nearest':
