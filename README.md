@@ -14,11 +14,10 @@ any data augmentation, data loading, or sampling functions.
 <b>Want to contribute?</b> Check the [issues page](https://github.com/ncullen93/torchsample/issues)
  for those tagged with [contributions welcome].
 
-## SuperModule
-The `SuperModule` class provides a high-level training interface which abstracts
-away the training loop while providing callbacks, constraints, and regularizers. 
-Most importantly, you lose ZERO flexibility since this model inherits directly
-from `nn.Module`.
+## ModuleTrainer
+The `ModuleTrainer` class provides a high-level training interface which abstracts
+away the training loop while providing callbacks, constraints, initializers, regularizers,
+and more.
 
 Example:
 ```python
