@@ -11,10 +11,13 @@ from .callbacks import Callback
 class MetricContainer(object):
 
 
-    def __init__(self, metrics, helper, prefix=''):
+    def __init__(self, metrics, prefix=''):
         self.metrics = metrics
-        self.helper = helper
+        self.helper = None
         self.prefix = prefix
+
+    def set_helper(self, helper):
+        self.helper = helper
 
     def reset(self):
         for metric in self.metrics:
@@ -23,9 +26,9 @@ class MetricContainer(object):
     def __call__(self, output_batch, target_batch):
         logs = {}
         for metric in self.metrics:
-            logs[self.prefix+metric._name] = self.helper.calculate_loss(metric, 
-                                                                        output_batch,
-                                                                        target_batch) 
+            logs[self.prefix+metric._name] = self.helper.calculate_loss(output_batch,
+                                                                        target_batch,
+                                                                        metric) 
         return logs
 
 class Metric(object):
