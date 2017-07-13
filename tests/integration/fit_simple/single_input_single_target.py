@@ -1,4 +1,4 @@
-
+ 
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
@@ -54,7 +54,8 @@ model = Network()
 trainer = ModuleTrainer(model)
 
 trainer.compile(loss='nll_loss',
-                optimizer='adadelta')
+                optimizer='adadelta',
+                regularizers=[reg.L1Regularizer(1e-4)])
 
 trainer.fit(x_train, y_train, 
             val_data=(x_test, y_test),

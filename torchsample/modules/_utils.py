@@ -25,10 +25,12 @@ def _is_iterable(x):
 def _is_tuple_or_list(x):
     return isinstance(x, (tuple, list))
 
-def _parse_num_input_and_targets_from_loader(loader):
+def _parse_num_inputs_and_targets_from_loader(loader):
     """ NOT IMPLEMENTED """
     #batch = next(iter(loader))
-    pass
+    num_inputs = loader.dataset.num_inputs
+    num_targets = loader.dataset.num_targets
+    return num_inputs, num_targets
 
 def _parse_num_inputs_and_targets(inputs, targets=None):
     if isinstance(inputs, (list, tuple)):

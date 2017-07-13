@@ -14,8 +14,8 @@ from torchsample.transforms import (ToTensor,
                                     TypeCast,
                                     AddChannel,
                                     Transpose,
-                                    RangeNorm,
-                                    StdNorm,
+                                    RangeNormalize,
+                                    StdNormalize,
                                     RandomCrop,
                                     SpecialCrop,
                                     Pad,
@@ -152,20 +152,20 @@ def Transpose_setup():
 
     return tforms
 
-def RangeNorm_setup():
+def RangeNormalize_setup():
     tforms = {}
 
-    tforms['rangenorm_01'] = RangeNorm(0, 1)
-    tforms['rangenorm_-11'] = RangeNorm(-1, 1)
-    tforms['rangenorm_-33'] = RangeNorm(-3, 3)
-    tforms['rangenorm_02'] = RangeNorm(0, 2)
+    tforms['rangenorm_01'] = RangeNormalize(0, 1)
+    tforms['rangenorm_-11'] = RangeNormalize(-1, 1)
+    tforms['rangenorm_-33'] = RangeNormalize(-3, 3)
+    tforms['rangenorm_02'] = RangeNormalize(0, 2)
 
     return tforms
 
-def StdNorm_setup():
+def StdNormalize_setup():
     tforms = {}
 
-    tforms['stdnorm'] = StdNorm()
+    tforms['stdnorm'] = StdNormalize()
 
     return tforms
 
@@ -273,8 +273,8 @@ def test_image_transforms_runtime(verbose=1):
     tforms.update(TypeCast_setup())
     tforms.update(AddChannel_setup())
     tforms.update(Transpose_setup())
-    tforms.update(RangeNorm_setup())
-    tforms.update(StdNorm_setup())
+    tforms.update(RangeNormalize_setup())
+    tforms.update(StdNormalize_setup())
     tforms.update(RandomCrop_setup())
     tforms.update(SpecialCrop_setup())
     tforms.update(Pad_setup())

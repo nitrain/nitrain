@@ -9,6 +9,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import warnings
+import functools
 import math
 from collections import OrderedDict
 
@@ -20,7 +21,7 @@ from torch.autograd import Variable
 from ._utils import (_validate_loss_input, _validate_metric_input,
                      _validate_optimizer_input, _validate_initializer_input,
                      _standardize_user_data, _parse_num_inputs_and_targets,
-                     _is_tuple_or_list, _parse_num_input_and_targets_from_loader,
+                     _is_tuple_or_list, _parse_num_inputs_and_targets_from_loader,
                      _add_regularizer_to_loss_fn)
 
 from ..callbacks import CallbackContainer, History, TQDM
@@ -201,12 +202,11 @@ class ModuleTrainer(object):
         """
         Fit a model on in-memory tensors using ModuleTrainer
         """
+        # ----------------------------------------------------------------------
         num_inputs, num_targets = _parse_num_inputs_and_targets(inputs, targets)
-        fit_helper = _get_helper(self, num_inputs, num_targets)
-        fit_loss_fn = fit_helper.get_loss_fn(self._loss_fn)
-
-        has_val_data = val_data is not None
-        if has_val_data:
+        len_inputs = len(inputs) if not _is_tuple_or_list(inputs) else len(inputs[0])
+        
+        if val_data is not None:
             if num_targets == 0:
                 val_data = (val_data, None)
             if len(val_data) != 2:
@@ -214,13 +214,14 @@ class ModuleTrainer(object):
             num_val_inputs, num_val_targets = _parse_num_inputs_and_targets(val_data[0], val_data[1])
             if (num_inputs != num_val_inputs) or (num_targets != num_val_targets):
                 raise ValueError('num_inputs != num_val_inputs or num_targets != num_val_targets')
-            val_inputs, val_targets = val_data[0], val_data[1]
-
-        if cuda_device >= 0:
-            inputs, targets = fit_helper.move_to_cuda(cuda_device, inputs, targets)
-
-        len_inputs = len(inputs) if not _is_tuple_or_list(inputs) else len(inputs[0])
+            val_inputs, val_targets = val_data
+        has_val_data = val_data is not None
         num_batches = int(math.ceil(len_inputs / batch_size))
+        # ----------------------------------------------------------------------
+
+        fit_helper = _get_helper(self, num_inputs, num_targets)
+        fit_loss_fn = fit_helper.get_partial_loss_fn(self._loss_fn)
+        fit_forward_fn = fit_helper.get_partial_forward_fn(self.model)
 
         with TQDM() as pbar:
             tmp_callbacks = []
@@ -256,15 +257,18 @@ class ModuleTrainer(object):
                     callback_container.on_batch_begin(batch_idx, batch_logs)
 
                     input_batch, target_batch = fit_helper.grab_batch(batch_idx, batch_size, inputs, targets)
-
+                    if cuda_device >= 0:
+                        input_batch, target_batch = fit_helper.move_to_cuda(cuda_device, input_batch, target_batch)
                     if self._has_transforms:
                         input_batch, target_batch = fit_helper.apply_transforms(self._transforms, input_batch, target_batch)
 
+                    # ---------------------------------------------
                     self._optimizer.zero_grad()
-                    output_batch = fit_helper.forward_pass(self.model, input_batch)
+                    output_batch = fit_forward_fn(input_batch)
                     loss = fit_loss_fn(output_batch, target_batch)
                     loss.backward()
                     self._optimizer.step()
+                    # ---------------------------------------------
 
                     if self._has_regularizers:
                         batch_logs['reg_loss'] = self.regularizer_container.current_value
@@ -299,13 +303,24 @@ class ModuleTrainer(object):
         """
         Fit a model on in-memory tensors using ModuleTrainer
         """
+        # ----------------------------------------------------------------------
         num_inputs = loader.dataset.num_inputs
         num_targets = loader.dataset.num_targets
-        fit_helper = _get_helper(self, num_inputs, num_targets)
-        fit_loss_fn = fit_helper.get_loss_fn(self._loss_fn)
-
         len_inputs = len(loader.dataset)
-        num_batches = int(math.ceil(len_inputs / loader.batch_size))
+        batch_size = loader.batch_size
+
+        if val_loader is not None:
+            num_val_inputs = val_loader.dataset.num_inputs
+            num_val_targets = val_loader.dataset.num_targets
+            if (num_inputs != num_val_inputs) or (num_targets != num_val_targets):
+                raise ValueError('num_inputs != num_val_inputs or num_targets != num_val_targets')
+        has_val_data = val_loader is not None
+        num_batches = int(math.ceil(len_inputs / batch_size))
+        # ----------------------------------------------------------------------
+
+        fit_helper = _get_helper(self, num_inputs, num_targets)
+        fit_loss_fn = fit_helper.get_partial_loss_fn(self._loss_fn)
+        fit_forward_fn = fit_helper.get_partial_forward_fn(self.model)
 
         with TQDM() as pbar:
             tmp_callbacks = []
@@ -325,7 +340,7 @@ class ModuleTrainer(object):
             callback_container.on_train_begin({'batch_size': loader.batch_size,
                                                'num_batches': num_batches,
                                                'num_epoch': num_epoch,
-                                               'has_val_data': False,
+                                               'has_val_data': has_val_data,
                                                'has_regularizers': self._has_regularizers,
                                                'has_metrics': self._has_metrics})
 
@@ -342,12 +357,14 @@ class ModuleTrainer(object):
                     input_batch, target_batch = fit_helper.grab_batch_from_loader(loader_iter)
                     if cuda_device >= 0:
                         input_batch, target_batch = fit_helper.move_to_cuda(cuda_device, input_batch, target_batch)
-
+                    
+                    # ---------------------------------------------
                     self._optimizer.zero_grad()
-                    output_batch = fit_helper.forward_pass(self.model, input_batch)
+                    output_batch = fit_forward_fn(input_batch)
                     loss = fit_loss_fn(output_batch, target_batch)
                     loss.backward()
                     self._optimizer.step()
+                    # ---------------------------------------------
 
                     if self._has_regularizers:
                         batch_logs['reg_loss'] = self.regularizer_container.current_value
@@ -357,6 +374,14 @@ class ModuleTrainer(object):
 
                     batch_logs['loss'] = loss.data[0]
                     callback_container.on_batch_end(batch_idx, batch_logs)
+
+                if has_val_data:
+                    self._in_train_loop = True
+                    val_epoch_logs = self.evaluate_loader(val_loader,
+                                                          cuda_device=cuda_device,
+                                                          verbose=verbose)
+                    self._in_train_loop = False
+                    self.history.batch_metrics.update(val_epoch_logs)
 
                 callback_container.on_epoch_end(epoch_idx, epoch_logs)
 
@@ -368,23 +393,51 @@ class ModuleTrainer(object):
                 batch_size=32,
                 cuda_device=-1,
                 verbose=1):
-        if _is_tuple_or_list(inputs):
-            num_inputs = len(inputs)
-            len_inputs = len(inputs[0])
-        else:
-            num_inputs = 1
-            len_inputs = len(inputs)
-        predict_helper = _get_helper(self, num_inputs, num_targets=0)
-
-        if cuda_device >= 0:
-            inputs = predict_helper.move_to_cuda(cuda_device, inputs)
-            self.model.cuda(cuda_device)
-
+        # --------------------------------------------------------
+        num_inputs, _ = _parse_num_inputs_and_targets(inputs, None)
+        len_inputs = len(inputs) if not _is_tuple_or_list(inputs) else len(inputs[0])
         num_batches = int(math.ceil(len_inputs / batch_size))
+        # --------------------------------------------------------
+
+        predict_helper = _get_helper(self, num_inputs, num_targets=0)
+        pred_forward_fn = predict_helper.get_partial_forward_fn(self.model)
         
         for batch_idx in range(num_batches):
-            input_batch, _ = predict_helper.grab_batch(batch_idx, batch_size, inputs)
-            output_batch = predict_helper.forward_pass(self.model, input_batch)
+            input_batch, _ = predict_helper.grab_batch(batch_idx, batch_size, inputs, None)
+            if cuda_device >= 0:
+                inputs = predict_helper.move_to_cuda(cuda_device, inputs)
+            output_batch = pred_forward_fn(input_batch)
+
+            if batch_idx == 0:
+                len_outputs = 1 if not _is_tuple_or_list(output_batch) else len(output_batch)
+                prediction_lists = [[] for _ in range(len_outputs)]
+
+            if len_outputs == 1:
+                prediction_lists[0].append(output_batch)
+            else:
+                for out_idx in range(len_outputs):
+                    prediction_lists[out_idx].append(output_batch[out_idx])
+            
+        final_pred_list = [th.cat(pred_list,0) for pred_list in prediction_lists]
+        return final_pred_list if len_outputs > 1 else final_pred_list[0]
+
+    def predict_loader(self,
+                       loader,
+                       cuda_device=-1,
+                       verbose=1):
+        # --------------------------------------------------------
+        num_inputs, num_targets = _parse_num_inputs_and_targets_from_loader(loader)
+        batch_size = loader.batch_size
+        len_inputs = len(loader.dataset)
+        num_batches = int(math.ceil(len_inputs / batch_size))
+        # --------------------------------------------------------
+
+        predict_helper = _get_helper(self, num_inputs, num_targets=0)
+        pred_forward_fn = predict_helper.get_partial_forward_fn(self.model)
+        
+        for batch_idx in range(num_batches):
+            input_batch, _ = predict_helper.grab_batch_from_loader(loader)
+            output_batch = pred_forward_fn(input_batch)
 
             if batch_idx == 0:
                 len_outputs = 1 if not _is_tuple_or_list(output_batch) else len(output_batch)
@@ -406,24 +459,56 @@ class ModuleTrainer(object):
                  cuda_device=-1,
                  verbose=1):
         num_inputs, num_targets = _parse_num_inputs_and_targets(inputs, targets)
-        evaluate_helper = _get_helper(self, num_inputs, num_targets)
-
-        if cuda_device >= 0:
-            inputs, targets = evaluate_helper.move_to_cuda(cuda_device, inputs, targets)
-
         len_inputs = len(inputs) if not _is_tuple_or_list(inputs) else len(inputs[0])
         num_batches = int(math.ceil(len_inputs / batch_size))
 
-        eval_logs= {
-            'val_loss': 0.
-        }
+        evaluate_helper = _get_helper(self, num_inputs, num_targets)
+        eval_loss_fn = evaluate_helper.get_partial_loss_fn(self._loss_fn)
+        eval_forward_fn = evaluate_helper.get_partial_forward_fn(self.model)
+        eval_logs= {'val_loss': 0.}
+
         samples_seen = 0
         for batch_idx in range(num_batches):
             input_batch, target_batch = evaluate_helper.grab_batch(batch_idx, batch_size, inputs, targets)
+            if cuda_device >= 0:
+                input_batch, target_batch = evaluate_helper.move_to_cuda(cuda_device, input_batch, target_batch)
 
             self._optimizer.zero_grad()
-            output_batch = evaluate_helper.forward_pass(self.model, input_batch)
-            loss = evaluate_helper.calculate_loss(self._loss_fn, output_batch, target_batch)
+            output_batch = eval_forward_fn(input_batch)
+            loss = eval_loss_fn(output_batch, target_batch)
+            
+            samples_seen += batch_size
+            eval_logs['val_loss'] = (samples_seen*eval_logs['val_loss'] + loss.data[0]*batch_size) / (samples_seen+batch_size)
+
+        if self._in_train_loop:
+            return eval_logs
+        else:
+            return eval_logs['val_loss']
+
+    def evaluate_loader(self,
+                        loader,
+                        cuda_device=-1,
+                        verbose=1):
+        num_inputs, num_targets = _parse_num_inputs_and_targets_from_loader(loader)
+        batch_size = loader.batch_size
+        len_inputs = len(loader.dataset)
+        num_batches = int(math.ceil(len_inputs / batch_size))
+
+        evaluate_helper = _get_helper(self, num_inputs, num_targets)
+        eval_loss_fn = evaluate_helper.get_partial_loss_fn(self._loss_fn)
+        eval_forward_fn = evaluate_helper.get_partial_forward_fn(self.model)
+        eval_logs= {'val_loss': 0.}
+        loader_iter = iter(loader)
+
+        samples_seen = 0
+        for batch_idx in range(num_batches):
+            input_batch, target_batch = evaluate_helper.grab_batch_from_loader(loader_iter)
+            if cuda_device >= 0:
+                input_batch, target_batch = evaluate_helper.move_to_cuda(cuda_device, input_batch, target_batch)
+
+            self._optimizer.zero_grad()
+            output_batch = eval_forward_fn(input_batch)
+            loss = eval_loss_fn(output_batch, target_batch)
             
             samples_seen += batch_size
             eval_logs['val_loss'] = (samples_seen*eval_logs['val_loss'] + loss.data[0]*batch_size) / (samples_seen+batch_size)
@@ -538,14 +623,17 @@ class SingleInput_SingleTarget_Helper(object):
         target_batch = tforms[1](target_batch)
         input_batch, target_batch = tforms[2](input_batch, target_batch)
         return input_batch, target_batch
-    def forward_pass(self, model, input_batch):
+    def forward_pass(self, input_batch, model):
         return model(input_batch)
-    def calculate_loss(self, loss_fn, output_batch, target_batch):
+    def get_partial_forward_fn(self, model):
+        return functools.partial(self.forward_pass, model=model)
+    def calculate_loss(self, output_batch, target_batch, loss_fn):
         return loss_fn(output_batch, target_batch)
-    def get_loss_fn(self, loss_fn):
-        def new_loss_fn(output_batch, target_batch):
-            return self.calculate_loss(loss_fn, output_batch, target_batch)
-        return new_loss_fn
+    def get_partial_loss_fn(self, loss_fn):
+        return functools.partial(self.calculate_loss, loss_fn=loss_fn)
+        #def new_loss_fn(output_batch, target_batch):
+        #    return self.calculate_loss(output_batch, target_batch, loss_fn)
+        #return new_loss_fn
 
 
 class SingleInput_MultiTarget_Helper(object):
@@ -570,15 +658,15 @@ class SingleInput_MultiTarget_Helper(object):
         input_batch = tforms[0](input_batch)
         target_batch = [tforms[1](target_) for target_ in target_batch]
         return input_batch, target_batch
-    def forward_pass(self, model, input_batch):
+    def forward_pass(self, input_batch, model):
         return model(input_batch)
-    def calculate_loss(self, loss_fn, output_batch, target_batch):
+    def get_partial_forward_fn(self, model):
+        return functools.partial(self.forward_pass, model=model)
+    def calculate_loss(self, output_batch, target_batch, loss_fn):
         return sum([loss_fn[idx](output_batch[idx], target_batch[idx]) 
                     for idx in range(len(output_batch))])
-    def get_loss_fn(self, loss_fn):
-        def new_loss_fn(output_batch, target_batch):
-            return self.calculate_loss(loss_fn, output_batch, target_batch)
-        return new_loss_fn
+    def get_partial_loss_fn(self, loss_fn):
+        return functools.partial(self.calculate_loss, loss_fn=loss_fn)
 
 class MultiInput_SingleTarget_Helper(object):
     def move_to_cuda(self, cuda_device, inputs, targets):
@@ -602,14 +690,14 @@ class MultiInput_SingleTarget_Helper(object):
         input_batch = [tforms[0](input_) for input_ in input_batch]
         target_batch = tforms[1](target_batch)
         return input_batch, target_batch
-    def forward_pass(self, model, input_batch):
+    def forward_pass(self, input_batch, model):
         return model(*input_batch)
-    def calculate_loss(self, loss_fn, output_batch, target_batch):
+    def get_partial_forward_fn(self, model):
+        return functools.partial(self.forward_pass, model=model)
+    def calculate_loss(self, output_batch, target_batch, loss_fn):
         return loss_fn(output_batch, target_batch)
-    def get_loss_fn(self, loss_fn):
-        def new_loss_fn(output_batch, target_batch):
-            return self.calculate_loss(loss_fn, output_batch, target_batch)
-        return new_loss_fn
+    def get_partial_loss_fn(self, loss_fn):
+        return functools.partial(self.calculate_loss, loss_fn=loss_fn)
 
 class MultiInput_MultiTarget_Helper(object):
     def move_to_cuda(self, cuda_device, inputs, targets):
@@ -634,15 +722,15 @@ class MultiInput_MultiTarget_Helper(object):
         input_batch = [tforms[0](input_) for input_ in input_batch]
         target_batch = [tforms[1](target_) for target_ in target_batch]
         return input_batch, target_batch
-    def forward_pass(self, model, input_batch):
+    def forward_pass(self, input_batch, model):
         return model(*input_batch)
-    def calculate_loss(self, loss_fn, output_batch, target_batch):
+    def get_partial_forward_fn(self, model):
+        return functools.partial(self.forward_pass, model=model)
+    def calculate_loss(self, output_batch, target_batch, loss_fn):
         return sum([loss_fn[idx](output_batch[idx], target_batch[idx]) 
                     for idx in range(len(output_batch))])
-    def get_loss_fn(self, loss_fn):
-        def new_loss_fn(output_batch, target_batch):
-            return self.calculate_loss(loss_fn, output_batch, target_batch)
-        return new_loss_fn
+    def get_partial_loss_fn(self, loss_fn):
+        return functools.partial(self.calculate_loss, loss_fn=loss_fn)
 
 class SingleInput_NoTarget_Helper(object):
     def move_to_cuda(self, cuda_device, inputs, targets=None):
@@ -661,14 +749,14 @@ class SingleInput_NoTarget_Helper(object):
     def apply_transforms(self, tforms, input_batch, target_batch=None):
         input_batch = tforms[0](input_batch)
         return input_batch, None
-    def forward_pass(self, model, input_batch):
+    def forward_pass(self, input_batch, model):
         return model(input_batch)
-    def calculate_loss(self, loss_fn, output_batch, target_batch=None):
+    def get_partial_forward_fn(self, model):
+        return functools.partial(self.forward_pass, model=model)
+    def calculate_loss(self, output_batch, target_batch, loss_fn):
         return loss_fn(output_batch)
-    def get_loss_fn(self, loss_fn):
-        def new_loss_fn(output_batch, target_batch=None):
-            return self.calculate_loss(loss_fn, output_batch, target_batch)
-        return new_loss_fn
+    def get_partial_loss_fn(self, loss_fn):
+        return functools.partial(self.calculate_loss, loss_fn=loss_fn)
 
 class MultiInput_NoTarget_Helper(object):
     def move_to_cuda(self, cuda_device, inputs, targets=None):
@@ -688,11 +776,11 @@ class MultiInput_NoTarget_Helper(object):
     def apply_transforms(self, tforms, input_batch, target_batch=None):
         input_batch = [tforms[0](input_) for input_ in input_batch]
         return input_batch, None
-    def forward_pass(self, model, input_batch):
+    def forward_pass(self, input_batch, model):
         return model(*input_batch)
-    def calculate_loss(self, loss_fn, output_batch, target_batch=None):
+    def get_partial_forward_fn(self, model):
+        return functools.partial(self.forward_pass, model=model)
+    def calculate_loss(self, output_batch, target_batch, loss_fn):
         return loss_fn(output_batch)
-    def get_loss_fn(self, loss_fn):
-        def new_loss_fn(output_batch, target_batch=None):
-            return self.calculate_loss(loss_fn, output_batch, target_batch)
-        return new_loss_fn
+    def get_partial_loss_fn(self, loss_fn):
+        return functools.partial(self.calculate_loss, loss_fn=loss_fn)
