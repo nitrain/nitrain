@@ -334,7 +334,8 @@ class ModuleTrainer(object):
             if self._has_constraints:
                 tmp_callbacks.append(ConstraintCallback(self.constraint_container))
             if self._has_metrics:
-                tmp_callbacks.append(MetricCallback(self.metric_container, helper=fit_helper))
+                self.metric_container.set_helper(fit_helper)
+                tmp_callbacks.append(MetricCallback(self.metric_container))
 
             callback_container = CallbackContainer(self._callbacks+tmp_callbacks)
             callback_container.set_trainer(self)

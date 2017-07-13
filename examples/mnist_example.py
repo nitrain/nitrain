@@ -61,8 +61,7 @@ callbacks = [EarlyStopping(patience=10),
              ReduceLROnPlateau(factor=0.5, patience=5)]
 regularizers = [L1Regularizer(scale=1e-3, module_filter='conv*'),
                 L2Regularizer(scale=1e-5, module_filter='fc*')]
-constraints = [UnitNorm(frequency=3, unit='batch', module_filter='fc*'),
-               MaxNorm(value=2., lagrangian=True, scale=1e-2, module_filter='conv*')]
+constraints = [UnitNorm(frequency=3, unit='batch', module_filter='fc*')]
 initializers = [XavierUniform(bias=False, module_filter='fc*')]
 metrics = [CategoricalAccuracy(top_k=3)]
 
@@ -74,11 +73,11 @@ trainer.compile(loss='nll_loss',
                 metrics=metrics)
 
 summary = trainer.summary([1,28,28])
-print(summary)
+#print(summary)
 
 trainer.fit(x_train, y_train, 
           val_data=(x_test, y_test),
-          nb_epoch=20, 
+          num_epoch=20, 
           batch_size=128,
           verbose=1)
 
