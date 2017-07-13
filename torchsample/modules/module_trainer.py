@@ -1,9 +1,5 @@
 """
-SuperModule for high level training on Pytorch models
-
-NOTES
------
-- only supporting one loss function right now
+ModuleTrainer for high level training on Pytorch models
 """
 from __future__ import print_function
 from __future__ import absolute_import
