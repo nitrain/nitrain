@@ -14,6 +14,12 @@ import torch.optim as optim
 from ..metrics import Metric, CategoricalAccuracy, BinaryAccuracy
 from ..initializers import GeneralInitializer
 
+def _add_regularizer_to_loss_fn(loss_fn, 
+                                regularizer_container):
+    def new_loss_fn(output_batch, target_batch):
+        return loss_fn(output_batch, target_batch) + regularizer_container.get_value()
+    return new_loss_fn
+
 def _is_iterable(x):
     return isinstance(x, (tuple, list))
 def _is_tuple_or_list(x):
@@ -21,7 +27,8 @@ def _is_tuple_or_list(x):
 
 def _parse_num_input_and_targets_from_loader(loader):
     """ NOT IMPLEMENTED """
-    batch = next(iter(loader))
+    #batch = next(iter(loader))
+    pass
 
 def _parse_num_inputs_and_targets(inputs, targets=None):
     if isinstance(inputs, (list, tuple)):

@@ -25,7 +25,7 @@ class BaseDataset(object):
     """
 
     def __len__(self):
-        return len(self.inputs)
+        return len(self.inputs) if not isinstance(self.inputs, (tuple,list)) else len(self.inputs[0])
 
     def add_input_transform(self, transform, add_to_front=True, idx=None):
         if idx is None:
@@ -234,8 +234,8 @@ class TensorDataset(BaseDataset):
 
         if self.has_target:
             target_sample = [self.target_transform[i](self.targets[i][index]) for i in range(self.num_targets)]
-            for i in range(self.min_inputs_or_targets):
-                input_sample[i], target_sample[i] = self.co_transform[i](input_sample[i], target_sample[i])
+            #for i in range(self.min_inputs_or_targets):
+            #    input_sample[i], target_sample[i] = self.co_transform[i](input_sample[i], target_sample[i])
 
             return self.input_return_processor(input_sample), self.target_return_processor(target_sample)
         else:

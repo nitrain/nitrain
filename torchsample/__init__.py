@@ -3,8 +3,8 @@ from __future__ import absolute_import
 
 from .version import __version__
 
-#from .datasets import *
-#from .samplers import *
+from .datasets import *
+from .samplers import *
 
 #from .callbacks import *
 #from .constraints import *
