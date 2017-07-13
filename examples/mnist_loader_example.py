@@ -3,7 +3,7 @@ import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 
 from torchsample.modules import ModuleTrainer
 from torchsample.callbacks import *
@@ -11,10 +11,11 @@ from torchsample.regularizers import *
 from torchsample.constraints import *
 from torchsample.initializers import *
 from torchsample.metrics import *
+from torchsample import TensorDataset
 
 import os
 from torchvision import datasets
-ROOT = '/users/ncullen/data'
+ROOT = '/users/ncullen/desktop/data/mnist'
 dataset = datasets.MNIST(ROOT, train=True, download=True)
 x_train, y_train = th.load(os.path.join(dataset.root, 'processed/training.pt'))
 x_test, y_test = th.load(os.path.join(dataset.root, 'processed/test.pt'))
@@ -66,20 +67,19 @@ callbacks = [EarlyStopping(patience=10),
              ReduceLROnPlateau(factor=0.5, patience=5)]
 regularizers = [L1Regularizer(scale=1e-3, module_filter='conv*'),
                 L2Regularizer(scale=1e-5, module_filter='fc*')]
-constraints = [UnitNorm(frequency=3, unit='batch', module_filter='fc*'),
-               MaxNorm(value=2., lagrangian=True, scale=1e-2, module_filter='conv*')]
+constraints = [UnitNorm(frequency=3, unit='batch', module_filter='fc*')]
 initializers = [XavierUniform(bias=False, module_filter='fc*')]
 metrics = [CategoricalAccuracy(top_k=3)]
 
 trainer.compile(loss='nll_loss',
-                optimizer='adadelta')
-                #regularizers=regularizers,
-                #constraints=constraints,
-                #initializers=initializers,
-                #metrics=metrics, 
-                #callbacks=callbacks)
+                optimizer='adadelta',
+                regularizers=regularizers,
+                constraints=constraints,
+                initializers=initializers,
+                metrics=metrics, 
+                callbacks=callbacks)
 
-trainer.fit_loader(train_loader, val_loader, nb_epoch=20, verbose=1)
+trainer.fit_loader(train_loader, val_loader, num_epoch=20, verbose=1)
 
 
 
