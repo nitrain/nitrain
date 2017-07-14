@@ -207,10 +207,11 @@ class ModuleTrainer(object):
             if num_targets == 0:
                 val_data = (val_data, None)
             if len(val_data) != 2:
-                raise ValueError('val_data must be a 2-tuple')
+                raise Exception('val_data must be a 2-tuple')
             num_val_inputs, num_val_targets = _parse_num_inputs_and_targets(val_data[0], val_data[1])
             if (num_inputs != num_val_inputs) or (num_targets != num_val_targets):
-                raise ValueError('num_inputs != num_val_inputs or num_targets != num_val_targets')
+                raise Exception('The number of input/target tensors must be the same for training and validation data\n'
+                                 'Num Input tensors: (%i train, %i val), Num Target tensors: (%i train, %i val)' % (num_inputs, num_val_inputs, num_targets, num_val_targets) )
             val_inputs, val_targets = val_data
         has_val_data = val_data is not None
         num_batches = int(math.ceil(len_inputs / batch_size))

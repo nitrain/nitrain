@@ -25,8 +25,8 @@ x_test = x_test.unsqueeze(1)
 # only train on a subset
 x_train = x_train[:1000]
 y_train = y_train[:1000]
-x_test = x_test[:1000]
-y_test = y_test[:1000]
+x_test = x_test[:100]
+y_test = y_test[:100]
 
 
 # Define your model EXACTLY as if you were using nn.Module
@@ -54,7 +54,8 @@ trainer = ModuleTrainer(model)
 trainer.compile(loss='nll_loss',
                 optimizer='adadelta')
 
-trainer.fit([x_train, x_train, x_train], y_train, 
+trainer.fit([x_train, x_train, x_train], y_train,
+            val_data=([x_test, x_test, x_test], y_test),
             num_epoch=3, 
             batch_size=128,
             verbose=1)
