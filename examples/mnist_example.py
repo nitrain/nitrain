@@ -72,7 +72,7 @@ trainer.compile(loss='nll_loss',
                 initializers=initializers,
                 metrics=metrics)
 
-summary = trainer.summary([1,28,28])
+#summary = trainer.summary([1,28,28])
 #print(summary)
 
 trainer.fit(x_train, y_train, 
