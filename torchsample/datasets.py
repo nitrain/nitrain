@@ -103,14 +103,25 @@ class BaseDataset(object):
 
                 if enum_idx == 0:
                     if self.num_inputs == 1:
-                        inputs = np.empty((len(load_range), *_parse_shape(input_sample)))
+                        _shape = [len(load_range)] + list(_parse_shape(input_sample))
+                        inputs = np.empty(_shape)
                     else:
-                        inputs = [np.empty((len(load_range), *_parse_shape(input_sample[i]))) for i in range(self.num_inputs)]
+                        inputs = []
+                        for i in range(self.num_inputs):
+                            _shape = [len(load_range)] + list(_parse_shape(input_sample[i]))
+                            inputs.append(np.empty(_shape))
+                        #inputs = [np.empty((len(load_range), *_parse_shape(input_sample[i]))) for i in range(self.num_inputs)]
 
                     if self.num_targets == 1:
-                        targets = np.empty((len(load_range), *_parse_shape(target_sample)))
+                        _shape = [len(load_range)] + list(_parse_shape(target_sample))
+                        targets = np.empty(_shape)
+                        #targets = np.empty((len(load_range), *_parse_shape(target_sample)))
                     else:
-                        targets = [np.empty((len(load_range), *_parse_shape(target_sample[i]))) for i in range(self.num_targets)]
+                        targets = []
+                        for i in range(self.num_targets):
+                            _shape = [len(load_range)] + list(_parse_shape(target_sample[i]))
+                            targets.append(np.empty(_shape))
+                        #targets = [np.empty((len(load_range), *_parse_shape(target_sample[i]))) for i in range(self.num_targets)]
 
                 if self.num_inputs == 1:
                     inputs[enum_idx] = input_sample
@@ -131,9 +142,15 @@ class BaseDataset(object):
 
                 if enum_idx == 0:
                     if self.num_inputs == 1:
-                        inputs = np.empty((len(load_range), *_parse_shape(input_sample)))
+                        _shape = [len(load_range)] + list(_parse_shape(input_sample))
+                        inputs = np.empty(_shape)
+                        #inputs = np.empty((len(load_range), *_parse_shape(input_sample)))
                     else:
-                        inputs = [np.empty((len(load_range), *_parse_shape(input_sample[i]))) for i in range(self.num_inputs)]
+                        inputs = []
+                        for i in range(self.num_inputs):
+                            _shape = [len(load_range)] + list(_parse_shape(input_sample[i]))
+                            inputs.append(np.empty(_shape))
+                        #inputs = [np.empty((len(load_range), *_parse_shape(input_sample[i]))) for i in range(self.num_inputs)]
 
                 if self.num_inputs == 1:
                     inputs[enum_idx] = input_sample
