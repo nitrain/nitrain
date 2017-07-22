@@ -376,7 +376,7 @@ class ModuleTrainer(object):
 
                     batch_logs['loss'] = loss.data[0]
                     callback_container.on_batch_end(batch_idx, batch_logs)
-                    
+
                 if has_val_data:
                     val_epoch_logs = self.evaluate_loader(val_loader,
                                                           cuda_device=cuda_device,
