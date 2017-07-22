@@ -479,6 +479,7 @@ class ModuleTrainer(object):
         if self._has_metrics:
             metric_container = MetricContainer(self._metrics, prefix='val_')
             metric_container.set_helper(evaluate_helper)
+            metric_container.reset()
 
         samples_seen = 0
         for batch_idx in range(num_batches):
@@ -494,7 +495,6 @@ class ModuleTrainer(object):
             eval_logs['val_loss'] = (samples_seen*eval_logs['val_loss'] + loss.data[0]*batch_size) / (samples_seen+batch_size)
             
             if self._has_metrics:
-                metric_container.reset()
                 metrics_logs = metric_container(output_batch, target_batch)
                 eval_logs.update(metrics_logs)
 
@@ -520,6 +520,7 @@ class ModuleTrainer(object):
         if self._has_metrics:
             metric_container = MetricContainer(self._metrics, prefix='val_')
             metric_container.set_helper(evaluate_helper)
+            metric_container.reset()
 
         samples_seen = 0
         for batch_idx in range(num_batches):
@@ -535,7 +536,6 @@ class ModuleTrainer(object):
             eval_logs['val_loss'] = (samples_seen*eval_logs['val_loss'] + loss.data[0]*batch_size) / (samples_seen+batch_size)
             
             if self._has_metrics:
-                metric_container.reset()
                 metrics_logs = metric_container(output_batch, target_batch)
                 eval_logs.update(metrics_logs)
 
