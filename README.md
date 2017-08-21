@@ -50,7 +50,7 @@ trainer.compile(loss='nll_loss',
                 optimizer='adadelta')
 
 trainer.fit(x_train, y_train, 
-            validation_data=(x_test, y_test),
+            val_data=(x_test, y_test),
             num_epoch=20, 
             batch_size=128,
             verbose=1)
@@ -122,7 +122,7 @@ train_loader = DataLoader(train_dataset, batch_size=32)
 val_dataset = TensorDataset(x_val, y_val)
 val_loader = DataLoader(val_dataset, batch_size=32)
 
-model.fit_loader(loader, val_loader=val_loader, nb_epoch=100)
+trainer.fit_loader(loader, val_loader=val_loader, num_epoch=100)
 ```
 
 ## Utility Functions
