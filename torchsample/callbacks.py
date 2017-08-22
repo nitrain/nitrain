@@ -15,6 +15,7 @@ import time
 from tempfile import NamedTemporaryFile
 import shutil
 import datetime
+import numpy as np
 
 from tqdm import tqdm
 
