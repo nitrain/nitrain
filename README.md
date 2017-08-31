@@ -1,4 +1,4 @@
-## I am actively looking for PhD, consulting, or other research opportunities. Contact me at ncullen at seas dot upenn dot edu.
+## I am actively looking for PhD or research assistant opportunities. Contact me at ncullen at seas dot upenn dot edu.
 
 # High-Level Training, Data Augmentation, and Utilities for Pytorch
 
