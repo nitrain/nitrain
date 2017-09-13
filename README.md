@@ -1,5 +1,3 @@
-## I am actively looking for PhD or research assistant opportunities. Contact me at ncullen at seas dot upenn dot edu.
-
 # High-Level Training, Data Augmentation, and Utilities for Pytorch
 
 <b>[v0.1.3](https://github.com/ncullen93/torchsample/releases) JUST RELEASED - contains significant improvements, bug fixes, and additional
