@@ -307,7 +307,7 @@ class ModuleTrainer(object):
         # ----------------------------------------------------------------------
         num_inputs = loader.dataset.num_inputs
         num_targets = loader.dataset.num_targets
-        len_inputs = len(loader.dataset)
+        len_inputs = len(loader.sampler) if loader.sampler else len(loader.dataset)
         batch_size = loader.batch_size
 
         if val_loader is not None:
@@ -434,7 +434,7 @@ class ModuleTrainer(object):
         # --------------------------------------------------------
         num_inputs, num_targets = _parse_num_inputs_and_targets_from_loader(loader)
         batch_size = loader.batch_size
-        len_inputs = len(loader.dataset)
+        len_inputs = len(loader.sampler) if loader.sampler else len(loader.dataset)
         num_batches = int(math.ceil(len_inputs / batch_size))
         # --------------------------------------------------------
 
@@ -501,7 +501,7 @@ class ModuleTrainer(object):
         self.model.train(mode=False)
         num_inputs, num_targets = _parse_num_inputs_and_targets_from_loader(loader)
         batch_size = loader.batch_size
-        len_inputs = len(loader.dataset)
+        len_inputs = len(loader) 
         num_batches = int(math.ceil(len_inputs / batch_size))
 
         evaluate_helper = _get_helper(self, num_inputs, num_targets)
