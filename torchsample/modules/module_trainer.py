@@ -74,7 +74,6 @@ class ModuleTrainer(object):
         self._loss_fn = None
 
         # other properties
-        self._in_train_loop = False
         self._stop_training = False
 
     def set_loss(self, loss):
@@ -251,8 +250,8 @@ class ModuleTrainer(object):
                 if shuffle:
                     inputs, targets = fit_helper.shuffle_arrays(inputs, targets)
 
+                batch_logs = {}
                 for batch_idx in range(num_batches):
-                    batch_logs = {}
                     callback_container.on_batch_begin(batch_idx, batch_logs)
 
                     input_batch, target_batch = fit_helper.grab_batch(batch_idx, batch_size, inputs, targets)
@@ -279,14 +278,15 @@ class ModuleTrainer(object):
                     callback_container.on_batch_end(batch_idx, batch_logs)
 
                 if has_val_data:
-                    self._in_train_loop = True
                     val_epoch_logs = self.evaluate(val_inputs,
                                                    val_targets,
                                                    batch_size=batch_size,
                                                    cuda_device=cuda_device,
                                                    verbose=verbose)
-                    self._in_train_loop = False
-                    self.history.batch_metrics.update(val_epoch_logs)
+                    epoch_logs.update(val_epoch_logs)
+                    epoch_logs.update(batch_logs)
+                    # TODO how to fix this?
+                    # self.history.batch_metrics.update(val_epoch_logs)
 
                 callback_container.on_epoch_end(epoch_idx, epoch_logs)
 
@@ -350,10 +350,10 @@ class ModuleTrainer(object):
                 epoch_logs = {}
                 callback_container.on_epoch_begin(epoch_idx, epoch_logs)
 
+                batch_logs = {}
                 loader_iter = iter(loader)
                 for batch_idx in range(num_batches):
 
-                    batch_logs = {}
                     callback_container.on_batch_begin(batch_idx, batch_logs)
 
                     input_batch, target_batch = fit_helper.grab_batch_from_loader(loader_iter)
@@ -378,12 +378,13 @@ class ModuleTrainer(object):
                     callback_container.on_batch_end(batch_idx, batch_logs)
 
                 if has_val_data:
-                    self._in_train_loop = True
                     val_epoch_logs = self.evaluate_loader(val_loader,
                                                           cuda_device=cuda_device,
                                                           verbose=verbose)
-                    self._in_train_loop = False
-                    self.history.batch_metrics.update(val_epoch_logs)
+                    epoch_logs.update(val_epoch_logs)
+                    epoch_logs.update(batch_logs)
+                    # TODO how to fix this?
+                    # self.history.batch_metrics.update(val_epoch_logs)
 
                 callback_container.on_epoch_end(epoch_idx, epoch_logs)
 
@@ -396,7 +397,7 @@ class ModuleTrainer(object):
                 batch_size=32,
                 cuda_device=-1,
                 verbose=1):
-        self.model.train(mode=True)
+        self.model.train(mode=False)
         # --------------------------------------------------------
         num_inputs, _ = _parse_num_inputs_and_targets(inputs, None)
         len_inputs = len(inputs) if not _is_tuple_or_list(inputs) else len(inputs[0])
@@ -474,6 +475,11 @@ class ModuleTrainer(object):
         eval_loss_fn = evaluate_helper.get_partial_loss_fn(self._loss_fn)
         eval_forward_fn = evaluate_helper.get_partial_forward_fn(self.model)
         eval_logs= {'val_loss': 0.}
+        
+        if self._has_metrics:
+            metric_container = MetricContainer(self._metrics, prefix='val_')
+            metric_container.set_helper(evaluate_helper)
+            metric_container.reset()
 
         samples_seen = 0
         for batch_idx in range(num_batches):
@@ -487,12 +493,13 @@ class ModuleTrainer(object):
             
             samples_seen += batch_size
             eval_logs['val_loss'] = (samples_seen*eval_logs['val_loss'] + loss.data[0]*batch_size) / (samples_seen+batch_size)
+            
+            if self._has_metrics:
+                metrics_logs = metric_container(output_batch, target_batch)
+                eval_logs.update(metrics_logs)
 
-        if self._in_train_loop:
-            return eval_logs
-        else:
-            return eval_logs['val_loss']
         self.model.train(mode=True)
+        return eval_logs
 
     def evaluate_loader(self,
                         loader,
@@ -509,6 +516,11 @@ class ModuleTrainer(object):
         eval_forward_fn = evaluate_helper.get_partial_forward_fn(self.model)
         eval_logs= {'val_loss': 0.}
         loader_iter = iter(loader)
+        
+        if self._has_metrics:
+            metric_container = MetricContainer(self._metrics, prefix='val_')
+            metric_container.set_helper(evaluate_helper)
+            metric_container.reset()
 
         samples_seen = 0
         for batch_idx in range(num_batches):
@@ -522,12 +534,13 @@ class ModuleTrainer(object):
             
             samples_seen += batch_size
             eval_logs['val_loss'] = (samples_seen*eval_logs['val_loss'] + loss.data[0]*batch_size) / (samples_seen+batch_size)
+            
+            if self._has_metrics:
+                metrics_logs = metric_container(output_batch, target_batch)
+                eval_logs.update(metrics_logs)
 
-        if self._in_train_loop:
-            return eval_logs
-        else:
-            return eval_logs['val_loss']
         self.model.train(mode=True)
+        return eval_logs
 
     def summary(self, input_size):
         def register_hook(module):
