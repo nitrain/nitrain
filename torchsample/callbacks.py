@@ -284,12 +284,25 @@ class ModelCheckpoint(Callback):
         self.best_loss = float('inf')
         super(ModelCheckpoint, self).__init__()
 
-    def save_checkpoint(self, state, is_best=False):
-        th.save(state, self.file)
+    def save_checkpoint(self, epoch, file, is_best=False):
+        th.save({ 
+            'epoch': epoch + 1,
+             #'arch': args.arch,
+            'state_dict': self.trainer.model.state_dict(),
+            #'best_prec1': best_prec1,
+            'optimizer' : self.trainer._optimizer.state_dict(),
+            #'loss':{},
+                #            #'regularizers':{},
+                #            #'constraints':{},
+                #            #'initializers':{},
+                #            #'metrics':{},
+                #            #'val_loss':{}
+            }, file)
         if is_best:
-            shutil.copyfile(self.file, 'model_best.pth.tar')
+            shutil.copyfile(file, 'model_best.pth.tar')
 
     def on_epoch_end(self, epoch, logs=None):
+
         file = self.file.format(epoch='%03i'%(epoch+1), 
                                 loss='%0.4f'%logs[self.monitor])
         if self.save_best_only:
@@ -303,21 +316,8 @@ class ModelCheckpoint(Callback):
                               (epoch+1, self.best_loss, current_loss, file))
                     self.best_loss = current_loss
                     #if self.save_weights_only:
-                    self.trainer.save_state_dict(file)
                     #else:
-                    #    self.save_checkpoint({
-                    #            'epoch': epoch + 1,
-                    #            #'arch': args.arch,
-                    #            'state_dict': self.trainer.state_dict(),
-                    #            #'best_prec1': best_prec1,
-                    #            'optimizer' : self.trainer.optimizer.state_dict(),
-                    #            #'loss':{},
-                    #            #'regularizers':{},
-                    #            #'constraints':{},
-                    #            #'initializers':{},
-                    #            #'metrics':{},
-                    #            #'val_loss':{}
-                    #        })
+                    self.save_checkpoint(epoch, file)
                     if self.max_save > 0:
                         if len(self.old_files) == self.max_save:
                             try:
@@ -329,7 +329,7 @@ class ModelCheckpoint(Callback):
         else:
             if self.verbose > 0:
                 print('\nEpoch %i: saving model to %s' % (epoch+1, file))
-            self.trainer.save_state_dict(file)
+            self.save_checkpoint(epoch, file)
             if self.max_save > 0:
                 if len(self.old_files) == self.max_save:
                     try:
