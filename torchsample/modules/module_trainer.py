@@ -288,7 +288,7 @@ class ModuleTrainer(object):
                     self._in_train_loop = False
                     self.history.batch_metrics.update(val_epoch_logs)
 
-                callback_container.on_epoch_end(epoch_idx, epoch_logs)
+                callback_container.on_epoch_end(epoch_idx, self.history.epoch_metrics)
 
                 if self._stop_training:
                     break
@@ -377,6 +377,7 @@ class ModuleTrainer(object):
                     batch_logs['loss'] = loss.data[0]
                     callback_container.on_batch_end(batch_idx, batch_logs)
 
+                epoch_logs.update(self.history.batch_metrics)
                 if has_val_data:
                     self._in_train_loop = True
                     val_epoch_logs = self.evaluate_loader(val_loader,
@@ -384,6 +385,7 @@ class ModuleTrainer(object):
                                                           verbose=verbose)
                     self._in_train_loop = False
                     self.history.batch_metrics.update(val_epoch_logs)
+                    epoch_logs.update(val_epoch_logs)
 
                 callback_container.on_epoch_end(epoch_idx, epoch_logs)
 
@@ -576,7 +578,6 @@ class ModuleTrainer(object):
             h.remove()
 
         return summary
-
 
 def _get_helper(trainer, num_inputs, num_targets):
     if (num_inputs == 1) and (num_targets == 1):
