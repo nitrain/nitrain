@@ -14,8 +14,8 @@ import csv
 import time
 from tempfile import NamedTemporaryFile
 import shutil
-import math
 import datetime
+import numpy as np
 
 from tqdm import tqdm
 
@@ -286,7 +286,7 @@ class ModelCheckpoint(Callback):
             self.old_files = []
 
         # mode = 'min' only supported
-        self.best_loss = math.inf
+        self.best_loss = np.inf
         super(ModelCheckpoint, self).__init__()
 
     def save_checkpoint(self, state, is_best=False):
