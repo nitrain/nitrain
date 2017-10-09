@@ -26,6 +26,8 @@ from ..initializers import InitializerContainer
 from ..constraints import ConstraintContainer, ConstraintCallback
 from ..metrics import MetricContainer, MetricCallback
 
+from tqdm import tqdm
+
 
 class ModuleTrainer(object):
 
@@ -190,6 +192,7 @@ class ModuleTrainer(object):
             inputs,
             targets=None,
             val_data=None,
+            initial_epoch=0,
             num_epoch=100,
             batch_size=32,
             shuffle=False,
@@ -244,7 +247,7 @@ class ModuleTrainer(object):
                                                'has_regularizers': self._has_regularizers,
                                                'has_metrics': self._has_metrics})
 
-            for epoch_idx in range(num_epoch):
+            for epoch_idx in range(initial_epoch,num_epoch):
                 epoch_logs = {}
                 callback_container.on_epoch_begin(epoch_idx, epoch_logs)
 
@@ -297,6 +300,7 @@ class ModuleTrainer(object):
     def fit_loader(self,
                    loader,
                    val_loader=None,
+                   initial_epoch=0,
                    num_epoch=100,
                    cuda_device=-1,
                    verbose=1):
@@ -346,7 +350,7 @@ class ModuleTrainer(object):
                                                'has_regularizers': self._has_regularizers,
                                                'has_metrics': self._has_metrics})
 
-            for epoch_idx in range(num_epoch):
+            for epoch_idx in range(initial_epoch,num_epoch):
                 epoch_logs = {}
                 callback_container.on_epoch_begin(epoch_idx, epoch_logs)
 
@@ -442,9 +446,16 @@ class ModuleTrainer(object):
 
         predict_helper = _get_helper(self, num_inputs, num_targets=0)
         pred_forward_fn = predict_helper.get_partial_forward_fn(self.model)
-        
-        for batch_idx in range(num_batches):
-            input_batch, _ = predict_helper.grab_batch_from_loader(loader, volatile=True)
+
+        loader_iter = iter(loader)
+
+        _range = tqdm(range(num_batches)) if verbose > 0 else range(num_batches)
+
+        for batch_idx in _range:
+            input_batch, _ = predict_helper.grab_batch_from_loader(loader_iter, volatile=True)
+            if cuda_device >= 0:
+                input_batch, _ = predict_helper.move_to_cuda(cuda_device, input_batch)
+
             output_batch = pred_forward_fn(input_batch)
 
             if batch_idx == 0:
