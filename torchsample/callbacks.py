@@ -14,8 +14,8 @@ import csv
 import time
 from tempfile import NamedTemporaryFile
 import shutil
-import math
 import datetime
+import numpy as np
 
 from tqdm import tqdm
 
@@ -151,6 +151,8 @@ class TQDM(Callback):
         for k, v in logs.items():
             if k.endswith('metric'):
                 log_data[k.split('_metric')[0]] = '%.02f' % v
+            else:
+                 log_data[k] = v
         self.progbar.set_postfix(log_data)
         self.progbar.update()
         self.progbar.close()
@@ -199,8 +201,11 @@ class History(Callback):
         self.samples_seen = 0.
 
     def on_epoch_end(self, epoch, logs=None):
-        for k in self.batch_metrics:
-            self.epoch_metrics[k].append(self.batch_metrics[k])
+        #for k in self.batch_metrics:
+        #    k_log = k.split('_metric')[0]
+        # self.epoch_metrics.update(self.batch_metrics)
+        # TODO
+        pass
 
     def on_batch_end(self, batch, logs=None):
         for k in self.batch_metrics:

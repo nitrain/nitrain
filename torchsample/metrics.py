@@ -53,14 +53,12 @@ class CategoricalAccuracy(Metric):
         self.top_k = top_k
         self.correct_count = 0
         self.total_count = 0
-        self.accuracy = 0
 
         self._name = 'acc_metric'
 
     def reset(self):
         self.correct_count = 0
         self.total_count = 0
-        self.accuracy = 0
 
     def __call__(self, y_pred, y_true):
         top_k = y_pred.topk(self.top_k,1)[1]
@@ -76,14 +74,12 @@ class BinaryAccuracy(Metric):
     def __init__(self):
         self.correct_count = 0
         self.total_count = 0
-        self.accuracy = 0
 
         self._name = 'acc_metric'
 
     def reset(self):
         self.correct_count = 0
         self.total_count = 0
-        self.accuracy = 0
 
     def __call__(self, y_pred, y_true):
         y_pred_round = y_pred.round().long()
@@ -104,7 +100,6 @@ class ProjectionCorrelation(Metric):
     def reset(self):
         self.corr_sum = 0.
         self.total_count = 0.
-        self.average = 0.
 
     def __call__(self, y_pred, y_true=None):
         """
@@ -121,14 +116,12 @@ class ProjectionAntiCorrelation(Metric):
     def __init__(self):
         self.anticorr_sum = 0.
         self.total_count = 0.
-        self.average = 0.
 
         self._name = 'anticorr_metric'
 
     def reset(self):
         self.anticorr_sum = 0.
         self.total_count = 0.
-        self.average = 0.
 
     def __call__(self, y_pred, y_true=None):
         """
