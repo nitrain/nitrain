@@ -386,7 +386,7 @@ class RandomChoiceContrast(object):
         self.p = p
 
     def __call__(self, *inputs):
-        value = th_random_choice(self.values, p=None)
+        value = th_random_choice(self.values, p=self.p)
         outputs = Contrast(value)(*inputs)
         return outputs
 
