@@ -3,6 +3,8 @@
 <b>[v0.1.3](https://github.com/ncullen93/torchsample/releases) JUST RELEASED - contains significant improvements, bug fixes, and additional
 support. Get it from the releases, or pull the master branch.</b>
 
+## Overview
+
 This package provides a few things:
 - A high-level module for Keras-like training with callbacks, constraints, and regularizers.
 - Comprehensive data augmentation, transforms, sampling, and loading
@@ -13,6 +15,20 @@ any data augmentation, data loading, or sampling functions.
 
 <b>Want to contribute?</b> Check the [issues page](https://github.com/ncullen93/torchsample/issues)
  for those tagged with [contributions welcome].
+
+## Installation
+
+Install from the master branch using pip:
+
+```bash
+$ pip install -e git+https://github.com/ncullen93/torchsample.git#egg=torchsample
+```
+
+Or install a tagged release
+
+```bash
+$ pip install https://github.com/ncullen93/torchsample/archive/v0.1.3.tar.gz
+```
 
 ## ModuleTrainer
 The `ModuleTrainer` class provides a high-level training interface which abstracts
