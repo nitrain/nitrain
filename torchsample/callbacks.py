@@ -341,7 +341,6 @@ class ModelCheckpoint(Callback):
         else:
             if self.verbose > 0:
                 print('\nEpoch %i: saving model to %s' % (epoch+1, file))
-            self.save_checkpoint(epoch, file)
             if self.max_save > 0:
                 if len(self.old_files) == self.max_save:
                     try:
@@ -350,6 +349,7 @@ class ModelCheckpoint(Callback):
                         pass
                     self.old_files = self.old_files[1:]
                 self.old_files.append(file)
+            self.save_checkpoint(epoch, file)
 
 
 class EarlyStopping(Callback):
