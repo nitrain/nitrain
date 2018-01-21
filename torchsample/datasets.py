@@ -274,7 +274,7 @@ def default_file_reader(x):
     def npy_loader(path):
         return np.load(path)
     def nifti_loader(path):
-        check_module("nibabel")
+        check_import("nibabel")
         return nibabel.load(path).get_data()
     if isinstance(x, str):
         if x.endswith('.npy'):
@@ -385,7 +385,7 @@ class CSVDataset(BaseDataset):
             transform(s) to apply to both inputs and targets simultaneously
             during runtime loading
         """
-        check_module("pandas")
+        check_import("pandas")
         
         self.input_cols = _process_cols_argument(input_cols)
         self.target_cols = _process_cols_argument(target_cols)
