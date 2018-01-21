@@ -2,6 +2,7 @@
 Utility functions for th.Tensors
 """
 
+import sys
 import pickle
 import random
 import numpy as np
@@ -420,6 +421,11 @@ def load_transform(file):
         transform = pickle.load(input_file)
     return transform
     
-
+def check_import(module):
+    """
+    Checks whether the given module is imported.
+    """
+    if module not in sys.modules:
+        raise ImportError('{} module not imported. Please use "pip install {}".'.format(module,module))
 
     
