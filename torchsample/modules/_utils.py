@@ -8,6 +8,7 @@ except:
     warnings.warn('inspect.signature not available... '
         'you should upgrade to Python 3.x')
 
+import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
@@ -28,8 +29,11 @@ def _is_tuple_or_list(x):
 def _parse_num_inputs_and_targets_from_loader(loader):
     """ NOT IMPLEMENTED """
     #batch = next(iter(loader))
-    num_inputs = loader.dataset.num_inputs
-    num_targets = loader.dataset.num_targets
+    if isinstance(loader.dataset,torch.utils.data.dataset.Dataset):
+        num_inputs = num_targets = 1
+    else:
+        num_inputs = loader.dataset.num_inputs
+        num_targets = loader.dataset.num_targets
     return num_inputs, num_targets
 
 def _parse_num_inputs_and_targets(inputs, targets=None):

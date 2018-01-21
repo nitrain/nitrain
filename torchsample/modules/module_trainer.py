@@ -309,14 +309,12 @@ class ModuleTrainer(object):
         """
         self.model.train(mode=True)
         # ----------------------------------------------------------------------
-        num_inputs = loader.dataset.num_inputs
-        num_targets = loader.dataset.num_targets
+        num_inputs, num_targets = _parse_num_inputs_and_targets_from_loader(loader)
         len_inputs = len(loader.sampler) if loader.sampler else len(loader.dataset)
         batch_size = loader.batch_size
 
         if val_loader is not None:
-            num_val_inputs = val_loader.dataset.num_inputs
-            num_val_targets = val_loader.dataset.num_targets
+            num_val_inputs, num_val_targets = _parse_num_inputs_and_targets_from_loader(val_loader)
             if (num_inputs != num_val_inputs) or (num_targets != num_val_targets):
                 raise ValueError('num_inputs != num_val_inputs or num_targets != num_val_targets')
         has_val_data = val_loader is not None
