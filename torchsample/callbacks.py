@@ -226,6 +226,13 @@ class ModelCheckpoint(Callback):
     """
     Model Checkpoint to save model weights during training
 
+    Example:
+        >>> callback = [ModelCheckpoint('./', filename='ckpt.pth.tar', save_best_only=True, max_save=1)]
+        >>> trainer.compile(...,callbacks=callbacks,...)
+        >>> trainer.fit()
+        >>> checkpoint = torch.load('ckpt.pth.tar')
+        >>> model.load_state_dict(checkpoint["state_dict"])
+
     save_checkpoint({
                 'epoch': epoch + 1,
                 'arch': args.arch,
@@ -322,7 +329,6 @@ class ModelCheckpoint(Callback):
                     self.best_loss = current_loss
                     #if self.save_weights_only:
                     #else:
-                    self.save_checkpoint(epoch, file)
                     if self.max_save > 0:
                         if len(self.old_files) == self.max_save:
                             try:
@@ -331,6 +337,7 @@ class ModelCheckpoint(Callback):
                                 pass
                             self.old_files = self.old_files[1:]
                         self.old_files.append(file)
+                    self.save_checkpoint(epoch, file)
         else:
             if self.verbose > 0:
                 print('\nEpoch %i: saving model to %s' % (epoch+1, file))
