@@ -7,13 +7,22 @@ import os
 import fnmatch
 
 import numpy as np
-import pandas as pd
 import PIL.Image as Image
-import nibabel
 
 import torch as th
 
+try:
+    import pandas as pd
+except ImportError:
+    pass
+
+try:
+    import nibabel
+except ImportError:
+    pass
+
 from . import transforms
+from .utils import check_import
 
 
 class BaseDataset(object):
@@ -265,6 +274,7 @@ def default_file_reader(x):
     def npy_loader(path):
         return np.load(path)
     def nifti_loader(path):
+        check_module("nibabel")
         return nibabel.load(path).get_data()
     if isinstance(x, str):
         if x.endswith('.npy'):
@@ -375,6 +385,8 @@ class CSVDataset(BaseDataset):
             transform(s) to apply to both inputs and targets simultaneously
             during runtime loading
         """
+        check_module("pandas")
+        
         self.input_cols = _process_cols_argument(input_cols)
         self.target_cols = _process_cols_argument(target_cols)
         
