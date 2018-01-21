@@ -279,7 +279,7 @@ def default_file_reader(x):
     if isinstance(x, str):
         if x.endswith('.npy'):
             x = npy_loader(x)
-        elif x.endsiwth('.nii.gz'):
+        elif x.endswith('.nii.gz'):
             x = nifti_loader(x)
         else:
             try:
