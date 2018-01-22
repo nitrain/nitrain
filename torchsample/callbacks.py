@@ -573,7 +573,6 @@ class ReduceLROnPlateau(Callback):
             if self.monitor_op(current_loss, self.best_loss):
                 self.best_loss = current_loss
                 self.wait = 0
-                print(self.best_loss)
             # loss didnt improve, and not in cooldown phase
             elif not (self.cooldown_counter > 0):
                 if self.wait >= self.patience:
