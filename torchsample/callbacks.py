@@ -30,7 +30,7 @@ def _mode_dependent_param(mode, monitor, min_delta=0):
         mode = 'auto'
 
     if mode == "auto":
-        mode == 'min' if 'acc' in monitor else 'max'
+        mode = 'max' if 'acc' in monitor else 'min'
 
     if mode == 'min':
         monitor_op = np.less
