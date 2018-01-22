@@ -295,6 +295,8 @@ class ModuleTrainer(object):
 
                 if self._stop_training:
                     break
+
+        #callback_container.on_train_end()
         self.model.train(mode=False)
 
     def fit_loader(self,
@@ -396,6 +398,7 @@ class ModuleTrainer(object):
 
                 if self._stop_training:
                     break
+
         self.model.train(mode=False)
 
     def predict(self,

@@ -21,6 +21,27 @@ from tqdm import tqdm
 
 import torch as th
 
+def _mode_dependent_param(mode, monitor, min_delta=0):
+    """Given the mode it returns the operator, best loss and delta respectively."""
+    if mode not in ['auto', 'min', 'max']:
+        warnings.warn('EarlyStopping mode %s is unknown, '
+                      'fallback to auto mode.' % mode,
+                      RuntimeWarning)
+        mode = 'auto'
+
+    if mode == "auto":
+        mode == 'min' if 'acc' in monitor else 'max'
+
+    if mode == 'min':
+        monitor_op = np.less
+        best_loss = np.Inf
+        min_delta *= -1
+    else: #max
+        monitor_op = np.greater
+        best_loss = -np.Inf
+        min_delta *= 1
+
+    return monitor_op, best_loss, min_delta
 
 def _get_current_time():
     return datetime.datetime.now().strftime("%B %d, %Y - %I:%M%p")
@@ -254,7 +275,8 @@ class ModelCheckpoint(Callback):
                  save_best_only=False, 
                  save_weights_only=True,
                  max_save=-1,
-                 verbose=0):
+                 verbose=0,
+                 mode="auto"):
         """
         Model Checkpoint to save model weights during training
 
@@ -264,8 +286,8 @@ class ModelCheckpoint(Callback):
             file to which model will be saved.
             It can be written 'filename_{epoch}_{loss}' and those
             values will be filled in before saving.
-        monitor : string in {'val_loss', 'loss'}
-            whether to monitor train or val loss
+        monitor : string in {'val_loss', 'loss', 'val_*_metric', '*_metric'}
+            whether to monitor train or val loss. Can also give your metric ex: 'val_acc_metric'.
         save_best_only : boolean
             whether to only save if monitored value has improved
         save_weight_only : boolean 
@@ -275,6 +297,9 @@ class ModelCheckpoint(Callback):
             the max number of models to save. Older model checkpoints
             will be overwritten if necessary. Set equal to -1 to have
             no limit
+        mode : string in {'auto', 'min', 'max'}
+            Defines what is considered as a better `monitor`. `auto` means
+            that the direction is inferred (is `acc` in the name then use `max`).
         verbose : integer in {0, 1}
             verbosity
         """
@@ -288,12 +313,12 @@ class ModelCheckpoint(Callback):
         self.save_weights_only = save_weights_only
         self.max_save = max_save
         self.verbose = verbose
+        self.mode = mode
 
         if self.max_save > 0:
             self.old_files = []
 
-        # mode = 'min' only supported
-        self.best_loss = float('inf')
+        self.monitor_op, self.best_loss, _ = _mode_dependent_param(self.mode, self.monitor)
         super(ModelCheckpoint, self).__init__()
 
     def save_checkpoint(self, epoch, file, is_best=False):
@@ -322,7 +347,7 @@ class ModelCheckpoint(Callback):
             if current_loss is None:
                 pass
             else:
-                if current_loss < self.best_loss:
+                if self.monitor_op(current_loss,self.best_loss):
                     if self.verbose > 0:
                         print('\nEpoch %i: improved from %0.4f to %0.4f saving model to %s' % 
                               (epoch+1, self.best_loss, current_loss, file))
@@ -360,7 +385,8 @@ class EarlyStopping(Callback):
     def __init__(self, 
                  monitor='val_loss',
                  min_delta=0,
-                 patience=5):
+                 patience=5,
+                 mode="auto"):
         """
         EarlyStopping callback to exit the training loop if training or
         validation loss does not improve by a certain amount for a certain
@@ -368,33 +394,37 @@ class EarlyStopping(Callback):
 
         Arguments
         ---------
-        monitor : string in {'val_loss', 'loss'}
-            whether to monitor train or val loss
+        monitor : string in {'val_loss', 'loss', 'val_*_metric', '*_metric'}
+            whether to monitor train or val loss. Can also give your metric ex: 'val_acc_metric'.
         min_delta : float
             minimum change in monitored value to qualify as improvement.
             This number should be positive.
         patience : integer
             number of epochs to wait for improvment before terminating.
             the counter be reset after each improvment
+        mode : string in {'auto', 'min', 'max'}
+            Defines what is considered as a better `monitor`. `auto` means
+            that the direction is inferred (is `acc` in the name then use `max`).
         """
         self.monitor = monitor
-        self.min_delta = min_delta
         self.patience = patience
         self.wait = 0
-        self.best_loss = 1e-15
         self.stopped_epoch = 0
+        self.mode = mode
+
+        self.monitor_op, self.best_loss_init, self.min_delta = _mode_dependent_param(self.mode, self.monitor, min_delta=min_delta)
         super(EarlyStopping, self).__init__()
 
     def on_train_begin(self, logs=None):
         self.wait = 0
-        self.best_loss = 1e15
+        self.best_loss = self.best_loss_init
 
     def on_epoch_end(self, epoch, logs=None):
         current_loss = logs.get(self.monitor)
         if current_loss is None:
             pass
         else:
-            if (current_loss - self.best_loss) < -self.min_delta:
+            if self.monitor_op(current_loss - self.min_delta, self.best_loss):
                 self.best_loss = current_loss
                 self.wait = 1
             else:
@@ -474,14 +504,15 @@ class ReduceLROnPlateau(Callback):
                  epsilon=0, 
                  cooldown=0, 
                  min_lr=0,
-                 verbose=0):
+                 verbose=0,
+                 mode="auto"):
         """
         Reduce the learning rate if the train or validation loss plateaus
 
         Arguments
         ---------
-        monitor : string in {'loss', 'val_loss'}
-            which metric to monitor
+        monitor : string in {'val_loss', 'loss', 'val_*_metric', '*_metric'}
+            whether to monitor train or val loss. Can also give your metric ex: 'val_acc_metric'.
         factor : floar
             factor to decrease learning rate by
         patience : integer
@@ -494,28 +525,33 @@ class ReduceLROnPlateau(Callback):
             minimum value to ever let the learning rate decrease to
         verbose : integer
             whether to print reduction to console
+        mode : string in {'auto', 'min', 'max'}
+            Defines what is considered as a better `monitor`. `auto` means
+            that the direction is inferred (is `acc` in the name then use `max`).
         """
         self.monitor = monitor
         if factor >= 1.0:
             raise ValueError('ReduceLROnPlateau does not support a factor >= 1.0.')
         self.factor = factor
         self.min_lr = min_lr
-        self.epsilon = epsilon
         self.patience = patience
+        self.epsilon = epsilon
         self.verbose = verbose
         self.cooldown = cooldown
         self.cooldown_counter = 0
         self.wait = 0
-        self.best_loss = 1e15
+        self.monitor_op = None
+        self.mode = mode
         self._reset()
+
         super(ReduceLROnPlateau, self).__init__()
 
     def _reset(self):
         """
         Reset the wait and cooldown counters
         """
-        self.monitor_op = lambda a, b: (a - b) < -self.epsilon
-        self.best_loss = 1e15
+        monitor_op, self.best_loss, epsilon = _mode_dependent_param(self.mode, self.monitor, min_delta=self.epsilon)
+        self.monitor_op = lambda a, b: monitor_op(a, b + epsilon)
         self.cooldown_counter = 0
         self.wait = 0
 
@@ -537,6 +573,7 @@ class ReduceLROnPlateau(Callback):
             if self.monitor_op(current_loss, self.best_loss):
                 self.best_loss = current_loss
                 self.wait = 0
+                print(self.best_loss)
             # loss didnt improve, and not in cooldown phase
             elif not (self.cooldown_counter > 0):
                 if self.wait >= self.patience:
