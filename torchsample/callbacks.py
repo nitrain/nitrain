@@ -147,12 +147,12 @@ class TQDM(Callback):
             pass
 
     def on_epoch_end(self, epoch, logs=None):
-        log_data = {key: '%.04f' % value for key, value in self.trainer.history.batch_metrics.items()}
+        log_data = {}
         for k, v in logs.items():
             if k.endswith('metric'):
                 log_data[k.split('_metric')[0]] = '%.02f' % v
             else:
-                 log_data[k] = v
+                 log_data[k] = '%.04f' % v
         self.progbar.set_postfix(log_data)
         self.progbar.update()
         self.progbar.close()
@@ -203,7 +203,7 @@ class History(Callback):
     def on_epoch_end(self, epoch, logs=None):
         #for k in self.batch_metrics:
         #    k_log = k.split('_metric')[0]
-        # self.epoch_metrics.update(self.batch_metrics)
+        self.epoch_metrics.update(self.batch_metrics)
         # TODO
         pass
 
@@ -587,6 +587,11 @@ class CSVLogger(Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         logs = logs or {}
+        log_data = {}
+        for k in logs:
+           k_log = k.split('_metric')[0]
+           log_data[k_log] = logs[k]
+        logs = log_data
         RK = {'num_batches', 'num_epoch'}
 
         def handle_value(k):
