@@ -712,7 +712,7 @@ class MultiInput_SingleTarget_Helper(object):
         targets = targets.cuda(cuda_device)
         return inputs, targets
     def shuffle_arrays(self, inputs, targets):
-        rand_indices = th.randperm(len(inputs))
+        rand_indices = th.randperm(len(inputs[0]))
         inputs = [input_[rand_indices] for input_ in inputs]
         targets = targets[rand_indices]
         return inputs, targets
@@ -743,7 +743,7 @@ class MultiInput_MultiTarget_Helper(object):
         targets = [target_.cuda(cuda_device) for target_ in targets]
         return inputs, targets
     def shuffle_arrays(self, inputs, targets):
-        rand_indices = th.randperm(len(inputs))
+        rand_indices = th.randperm(len(inputs[0]))
         inputs = [input_[rand_indices] for input_ in inputs]
         targets = [input_[rand_indices] for input_ in inputs]
         return inputs, targets
@@ -801,7 +801,7 @@ class MultiInput_NoTarget_Helper(object):
         inputs = [input_.cuda(cuda_device) for input_ in inputs]
         return inputs, None
     def shuffle_arrays(self, inputs, targets=None):
-        rand_indices = th.randperm(len(inputs))
+        rand_indices = th.randperm(len(inputs[0]))
         inputs = [input_[rand_indices] for input_ in inputs]
         return inputs, None
     def grab_batch(self, batch_idx, batch_size, inputs, targets=None, volatile=False):
