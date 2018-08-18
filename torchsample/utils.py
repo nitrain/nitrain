@@ -164,10 +164,10 @@ def th_bilinear_interp2d(input, coords):
     y1 = y0 + 1
 
     stride = th.LongTensor(input.stride())
-    x0_ix = x0.mul(stride[1]).long()
-    x1_ix = x1.mul(stride[1]).long()
-    y0_ix = y0.mul(stride[2]).long()
-    y1_ix = y1.mul(stride[2]).long()
+    x0_ix = x0.mul(stride[1].float()).long()
+    x1_ix = x1.mul(stride[1].float()).long()
+    y0_ix = y0.mul(stride[2].float()).long()
+    y1_ix = y1.mul(stride[2].float()).long()
 
     input_flat = input.view(input.size(0),-1)
 
