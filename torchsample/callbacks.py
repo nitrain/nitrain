@@ -25,10 +25,12 @@ import torch as th
 def _get_current_time():
     return datetime.datetime.now().strftime("%B %d, %Y - %I:%M%p")
 
+
 class CallbackContainer(object):
     """
     Container holding a list of callbacks.
     """
+
     def __init__(self, callbacks=None, queue_length=10):
         callbacks = callbacks or []
         self.callbacks = [c for c in callbacks]
@@ -141,18 +143,20 @@ class TQDM(Callback):
         try:
             self.progbar = tqdm(total=self.train_logs['num_batches'],
                                 unit=' batches')
-            self.progbar.set_description('Epoch %i/%i' % 
-                            (epoch+1, self.train_logs['num_epoch']))
+            self.progbar.set_description('Epoch %i/%i' %
+                                         (epoch + 1, self.train_logs['num_epoch']))
         except:
             pass
 
     def on_epoch_end(self, epoch, logs=None):
-        log_data = {key: '%.04f' % value for key, value in self.trainer.history.batch_metrics.items()}
+        log_data = {}
+
         for k, v in logs.items():
             if k.endswith('metric'):
                 log_data[k.split('_metric')[0]] = '%.02f' % v
             else:
-                 log_data[k] = v
+                log_data[k] = '%.04f' % v
+        # print(log_data)
         self.progbar.set_postfix(log_data)
         self.progbar.update()
         self.progbar.close()
@@ -175,6 +179,7 @@ class History(Callback):
     This callback is automatically applied to
     every SuperModule.
     """
+
     def __init__(self, model):
         super(History, self).__init__()
         self.samples_seen = 0.
@@ -196,20 +201,22 @@ class History(Callback):
         self.batch_metrics = {
             'loss': 0.
         }
+
         if self.has_regularizers:
             self.batch_metrics['reg_loss'] = 0.
         self.samples_seen = 0.
 
     def on_epoch_end(self, epoch, logs=None):
-        #for k in self.batch_metrics:
-        #    k_log = k.split('_metric')[0]
-        # self.epoch_metrics.update(self.batch_metrics)
+        self.epoch_metrics.update(self.batch_metrics)
         # TODO
         pass
 
     def on_batch_end(self, batch, logs=None):
+
         for k in self.batch_metrics:
-            self.batch_metrics[k] = (self.samples_seen*self.batch_metrics[k] + logs[k]*self.batch_size) / (self.samples_seen+self.batch_size)
+            self.batch_metrics[k] = (self.samples_seen * self.batch_metrics[k] + logs[k] * self.batch_size) / (
+                    self.samples_seen + self.batch_size)
+
         self.samples_seen += self.batch_size
 
     def __getitem__(self, name):
@@ -241,10 +248,10 @@ class ModelCheckpoint(Callback):
     """
 
     def __init__(self,
-                 directory, 
-                 filename='ckpt.pth.tar', 
-                 monitor='val_loss', 
-                 save_best_only=False, 
+                 directory,
+                 filename='ckpt.pth.tar',
+                 monitor='val_loss',
+                 save_best_only=False,
                  save_weights_only=True,
                  max_save=-1,
                  verbose=0):
@@ -290,26 +297,26 @@ class ModelCheckpoint(Callback):
         super(ModelCheckpoint, self).__init__()
 
     def save_checkpoint(self, epoch, file, is_best=False):
-        th.save({ 
+        th.save({
             'epoch': epoch + 1,
-             #'arch': args.arch,
+            # 'arch': args.arch,
             'state_dict': self.trainer.model.state_dict(),
-            #'best_prec1': best_prec1,
-            'optimizer' : self.trainer._optimizer.state_dict(),
-            #'loss':{},
-                #            #'regularizers':{},
-                #            #'constraints':{},
-                #            #'initializers':{},
-                #            #'metrics':{},
-                #            #'val_loss':{}
-            }, file)
+            # 'best_prec1': best_prec1,
+            'optimizer': self.trainer._optimizer.state_dict(),
+            # 'loss':{},
+            #            #'regularizers':{},
+            #            #'constraints':{},
+            #            #'initializers':{},
+            #            #'metrics':{},
+            #            #'val_loss':{}
+        }, file)
         if is_best:
             shutil.copyfile(file, 'model_best.pth.tar')
 
     def on_epoch_end(self, epoch, logs=None):
 
-        file = self.file.format(epoch='%03i'%(epoch+1), 
-                                loss='%0.4f'%logs[self.monitor])
+        file = self.file.format(epoch='%03i' % (epoch + 1),
+                                loss='%0.4f' % logs[self.monitor])
         if self.save_best_only:
             current_loss = logs.get(self.monitor)
             if current_loss is None:
@@ -317,11 +324,11 @@ class ModelCheckpoint(Callback):
             else:
                 if current_loss < self.best_loss:
                     if self.verbose > 0:
-                        print('\nEpoch %i: improved from %0.4f to %0.4f saving model to %s' % 
-                              (epoch+1, self.best_loss, current_loss, file))
+                        print('\nEpoch %i: improved from %0.4f to %0.4f saving model to %s' %
+                              (epoch + 1, self.best_loss, current_loss, file))
                     self.best_loss = current_loss
-                    #if self.save_weights_only:
-                    #else:
+                    # if self.save_weights_only:
+                    # else:
                     self.save_checkpoint(epoch, file)
                     if self.max_save > 0:
                         if len(self.old_files) == self.max_save:
@@ -333,7 +340,7 @@ class ModelCheckpoint(Callback):
                         self.old_files.append(file)
         else:
             if self.verbose > 0:
-                print('\nEpoch %i: saving model to %s' % (epoch+1, file))
+                print('\nEpoch %i: saving model to %s' % (epoch + 1, file))
             self.save_checkpoint(epoch, file)
             if self.max_save > 0:
                 if len(self.old_files) == self.max_save:
@@ -350,7 +357,7 @@ class EarlyStopping(Callback):
     Early Stopping to terminate training early under certain conditions
     """
 
-    def __init__(self, 
+    def __init__(self,
                  monitor='val_loss',
                  min_delta=0,
                  patience=5):
@@ -379,27 +386,37 @@ class EarlyStopping(Callback):
         super(EarlyStopping, self).__init__()
 
     def on_train_begin(self, logs=None):
+
         self.wait = 0
         self.best_loss = 1e15
 
     def on_epoch_end(self, epoch, logs=None):
+
         current_loss = logs.get(self.monitor)
+
         if current_loss is None:
             pass
         else:
+            # print("\nCurrent loss improvement {}".format(current_loss - self.best_loss))
             if (current_loss - self.best_loss) < -self.min_delta:
                 self.best_loss = current_loss
                 self.wait = 1
+            # print("\nCurrent Wait {}".format(self.wait))
+
             else:
                 if self.wait >= self.patience:
                     self.stopped_epoch = epoch + 1
+                    print("\nTerminated Training for Early Stopping at Epoch {}".format(
+                        (self.stopped_epoch)))
                     self.trainer._stop_training = True
+
                 self.wait += 1
+                # print("\nCurrent Wait {}".format(self.wait))
 
     def on_train_end(self, logs):
         if self.stopped_epoch > 0:
-            print('\nTerminated Training for Early Stopping at Epoch %04i' % 
-                (self.stopped_epoch))
+            print('\nTerminated Training for Early Stopping at Epoch %04i' %
+                  (self.stopped_epoch))
 
 
 class LRScheduler(Callback):
@@ -423,6 +440,7 @@ class LRScheduler(Callback):
             the epoch
         """
         if isinstance(schedule, dict):
+            print("burayra girdim")
             schedule = self.schedule_from_dict
             self.schedule_dict = schedule
             if any([k < 1.0 for k in schedule.keys()]):
@@ -430,6 +448,7 @@ class LRScheduler(Callback):
             else:
                 self.fractional_bounds = True
         self.schedule = schedule
+        self.best_val_loss = 1e-15
         super(LRScheduler, self).__init__()
 
     def schedule_from_dict(self, epoch, logs=None):
@@ -440,14 +459,23 @@ class LRScheduler(Callback):
                     return learn_rate
             # epoch_bound is in units of "cumulative percent of epochs"
             else:
-                if epoch <= epoch_bound*logs['num_epoch']:
+                if epoch <= epoch_bound * logs['num_epoch']:
                     return learn_rate
         warnings.warn('Check the keys in the schedule dict.. Returning last value')
         return learn_rate
 
-    def on_epoch_begin(self, epoch, logs=None):
+    def on_train_begin(self, logs=None):
+        self.best_val_loss = 1e15
+
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
         current_lrs = [p['lr'] for p in self.trainer._optimizer.param_groups]
-        lr_list = self.schedule(epoch, current_lrs, **logs)
+        current_val_loss = logs.get("val_loss")
+
+        if (current_val_loss - self.best_val_loss) < 0:
+            self.best_val_loss = current_val_loss
+
+        lr_list = self.schedule(epoch, current_lrs, self.best_val_loss, current_val_loss)
         if not isinstance(lr_list, list):
             lr_list = [lr_list]
 
@@ -461,11 +489,11 @@ class ReduceLROnPlateau(Callback):
     """
 
     def __init__(self,
-                 monitor='val_loss', 
-                 factor=0.1, 
+                 monitor='val_loss',
+                 factor=0.1,
                  patience=10,
-                 epsilon=0, 
-                 cooldown=0, 
+                 epsilon=0,
+                 cooldown=0,
                  min_lr=0,
                  verbose=0):
         """
@@ -523,7 +551,7 @@ class ReduceLROnPlateau(Callback):
             pass
         else:
             # if in cooldown phase
-            if self.cooldown_counter > 0: 
+            if self.cooldown_counter > 0:
                 self.cooldown_counter -= 1
                 self.wait = 0
             # if loss improved, grab new loss and reset wait counter
@@ -539,8 +567,8 @@ class ReduceLROnPlateau(Callback):
                             new_lr = old_lr * self.factor
                             new_lr = max(new_lr, self.min_lr)
                             if self.verbose > 0:
-                                print('\nEpoch %05d: reducing lr from %0.3f to %0.3f' % 
-                                    (epoch, old_lr, new_lr))
+                                print('\nEpoch %05d: reducing lr from %0.3f to %0.3f' %
+                                      (epoch, old_lr, new_lr))
                             p['lr'] = new_lr
                             self.cooldown_counter = self.cooldown
                             self.wait = 0
@@ -552,9 +580,9 @@ class CSVLogger(Callback):
     Logs epoch-level metrics to a CSV file
     """
 
-    def __init__(self, 
-                 file, 
-                 separator=',', 
+    def __init__(self,
+                 file,
+                 separator=',',
                  append=False):
         """
         Logs epoch-level metrics to a CSV file
@@ -587,6 +615,11 @@ class CSVLogger(Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         logs = logs or {}
+        log_data = {}
+        for k in logs:
+            k_log = k.split('_metric')[0]
+            log_data[k_log] = logs[k]
+        logs = log_data
         RK = {'num_batches', 'num_epoch'}
 
         def handle_value(k):
@@ -603,8 +636,8 @@ class CSVLogger(Callback):
                 delimiter = self.sep
 
             self.writer = csv.DictWriter(self.csv_file,
-                    fieldnames=['epoch'] + [k for k in self.keys if k not in RK], 
-                    dialect=CustomDialect)
+                                         fieldnames=['epoch'] + [k for k in self.keys if k not in RK],
+                                         dialect=CustomDialect)
             if self.append_header:
                 self.writer.writeheader()
 
@@ -623,8 +656,8 @@ class ExperimentLogger(Callback):
     def __init__(self,
                  directory,
                  filename='Experiment_Logger.csv',
-                 save_prefix='Model_', 
-                 separator=',', 
+                 save_prefix='Model_',
+                 separator=',',
                  append=True):
 
         self.directory = directory
@@ -654,10 +687,10 @@ class ExperimentLogger(Callback):
                     # if header exists, DONT append header again
                 with open(self.file) as f:
                     self.append_header = not bool(len(f.readline()))
-                
+
         model_idx = num_lines
-        REJECT_KEYS={'has_validation_data'}
-        MODEL_NAME = self.save_prefix + str(model_idx) # figure out how to get model name
+        REJECT_KEYS = {'has_validation_data'}
+        MODEL_NAME = self.save_prefix + str(model_idx)  # figure out how to get model name
         self.row_dict = OrderedDict({'model': MODEL_NAME})
         self.keys = sorted(logs.keys())
         for k in self.keys:
@@ -669,8 +702,8 @@ class ExperimentLogger(Callback):
 
         with open(self.file, open_type) as csv_file:
             writer = csv.DictWriter(csv_file,
-                fieldnames=['model'] + [k for k in self.keys if k not in REJECT_KEYS], 
-                dialect=CustomDialect)
+                                    fieldnames=['model'] + [k for k in self.keys if k not in REJECT_KEYS],
+                                    dialect=CustomDialect)
             if self.append_header:
                 writer.writeheader()
 
@@ -678,20 +711,21 @@ class ExperimentLogger(Callback):
             csv_file.flush()
 
     def on_train_end(self, logs=None):
-        REJECT_KEYS={'has_validation_data'}
+        REJECT_KEYS = {'has_validation_data'}
         row_dict = self.row_dict
 
         class CustomDialect(csv.excel):
             delimiter = self.sep
+
         self.keys = self.keys
         temp_file = NamedTemporaryFile(delete=False, mode='w')
         with open(self.file, 'r') as csv_file, temp_file:
             reader = csv.DictReader(csv_file,
-                fieldnames=['model'] + [k for k in self.keys if k not in REJECT_KEYS], 
-                dialect=CustomDialect)
+                                    fieldnames=['model'] + [k for k in self.keys if k not in REJECT_KEYS],
+                                    dialect=CustomDialect)
             writer = csv.DictWriter(temp_file,
-                fieldnames=['model'] + [k for k in self.keys if k not in REJECT_KEYS], 
-                dialect=CustomDialect)
+                                    fieldnames=['model'] + [k for k in self.keys if k not in REJECT_KEYS],
+                                    dialect=CustomDialect)
             for row_idx, row in enumerate(reader):
                 if row_idx == 0:
                     # re-write header with on_train_end's metrics
@@ -700,13 +734,14 @@ class ExperimentLogger(Callback):
                     writer.writerow(row_dict)
                 else:
                     writer.writerow(row)
-        shutil.move(temp_file.name, self.file)   
+        shutil.move(temp_file.name, self.file)
 
 
 class LambdaCallback(Callback):
     """
     Callback for creating simple, custom callbacks on-the-fly.
     """
+
     def __init__(self,
                  on_epoch_begin=None,
                  on_epoch_end=None,
@@ -742,3 +777,141 @@ class LambdaCallback(Callback):
         else:
             self.on_train_end = lambda logs: None
 
+
+class CyclicLR(Callback):
+    """
+    Take is taken from: https://github.com/bckenstler/CLR/blob/master/clr_callback.py
+    This callback implements a cyclical learning rate policy (CLR).
+    The method cycles the learning rate between two boundaries with
+    some constant frequency, as detailed in this paper (https://arxiv.org/abs/1506.01186).
+    The amplitude of the cycle can be scaled on a per-iteration or
+    per-cycle basis.
+    This class has three built-in policies, as put forth in the paper.
+    "triangular":
+        A basic triangular cycle w/ no amplitude scaling.
+    "triangular2":
+        A basic triangular cycle that scales initial amplitude by half each cycle.
+    "exp_range":
+        A cycle that scales initial amplitude by gamma**(cycle iterations) at each
+        cycle iteration.
+    For more detail, please see paper.
+
+    # Arguments
+        base_lr: initial learning rate which is the
+            lower boundary in the cycle.
+        max_lr: upper boundary in the cycle. Functionally,
+            it defines the cycle amplitude (max_lr - base_lr).
+            The lr at any cycle is the sum of base_lr
+            and some scaling of the amplitude; therefore
+            max_lr may not actually be reached depending on
+            scaling function.
+        step_size: number of training iterations per
+            half cycle. Authors suggest setting step_size
+            2-8 x training iterations in epoch.
+        mode: one of {triangular, triangular2, exp_range}.
+            Default 'triangular'.
+            Values correspond to policies detailed above.
+            If scale_fn is not None, this argument is ignored.
+        gamma: constant in 'exp_range' scaling function:
+            gamma**(cycle iterations)
+        scale_fn: Custom scaling policy defined by a single
+            argument lambda function, where
+            0 <= scale_fn(x) <= 1 for all x >= 0.
+            mode paramater is ignored
+        scale_mode: {'cycle', 'iterations'}.
+            Defines whether scale_fn is evaluated on
+            cycle number or cycle iterations (training
+            iterations since start of cycle). Default is 'cycle'.
+    """
+
+    def __init__(self, schedule, base_lr=0.0001, max_lr=0.01, step_size=2000., mode='triangular',
+                 gamma=1., scale_fn=None, scale_mode='cycle'):
+        super(CyclicLR, self).__init__()
+        self.schedule = schedule
+        self.base_lr = base_lr
+        self.max_lr = max_lr
+        self.step_size = step_size
+        self.mode = mode
+        self.gamma = gamma
+        if scale_fn == None:
+            if self.mode == 'triangular':
+                self.scale_fn = lambda x: 1.
+                self.scale_mode = 'cycle'
+            elif self.mode == 'triangular2':
+                self.scale_fn = lambda x: 1 / (2. ** (x - 1))
+                self.scale_mode = 'cycle'
+            elif self.mode == 'exp_range':
+                self.scale_fn = lambda x: gamma ** (x)
+                self.scale_mode = 'iterations'
+        else:
+            self.scale_fn = scale_fn
+            self.scale_mode = scale_mode
+        self.clr_iterations = 0.
+        self.trn_iterations = 0.
+        self.history = {}
+
+        self._reset()
+
+    def _reset(self, new_base_lr=None, new_max_lr=None,
+               new_step_size=None):
+        """Resets cycle iterations.
+        Optional boundary/step size adjustment.
+        """
+        if new_base_lr != None:
+            self.base_lr = new_base_lr
+        if new_max_lr != None:
+            self.max_lr = new_max_lr
+        if new_step_size != None:
+            self.step_size = new_step_size
+        self.clr_iterations = 0.
+
+    def clr(self):
+        cycle = np.floor(1 + self.clr_iterations / (2 * self.step_size))
+        x = np.abs(self.clr_iterations / self.step_size - 2 * cycle + 1)
+        if self.scale_mode == 'cycle':
+            return self.base_lr + (self.max_lr - self.base_lr) * np.maximum(0, (1 - x)) * self.scale_fn(cycle)
+        else:
+            return self.base_lr + (self.max_lr - self.base_lr) * np.maximum(0, (1 - x)) * self.scale_fn(
+                self.clr_iterations)
+
+    def on_train_begin(self, logs=None):
+        logs = logs or {}
+        if self.clr_iterations == 0:
+            initial_lr = self.base_lr
+            if not isinstance(initial_lr, list):
+                initial_lr = [initial_lr]
+            for param_group, lr_change in zip(self.trainer._optimizer.param_groups, initial_lr):
+                param_group['lr'] = lr_change
+        else:
+            new_lr = self.clr()
+            if not isinstance(new_lr, list):
+                new_lr = [new_lr]
+            for param_group, lr_change in zip(self.trainer._optimizer.param_groups, new_lr):
+                param_group['lr'] = lr_change
+
+    def on_batch_end(self, epoch, logs=None):
+
+        logs = logs or {}
+        self.trn_iterations += 1
+        self.clr_iterations += 1
+        current_lr = [p['lr'] for p in self.trainer._optimizer.param_groups]
+
+        self.history.setdefault('lr', []).append(current_lr[0])
+        self.history.setdefault('iterations', []).append(self.trn_iterations)
+
+        for k, v in logs.items():
+            self.history.setdefault(k, []).append(v)
+
+        new_lr = self.clr()
+        if not isinstance(new_lr, list):
+            new_lr = [new_lr]
+        for param_group, lr_change in zip(self.trainer._optimizer.param_groups, new_lr):
+            param_group['lr'] = lr_change
+
+    def on_epoch_end(self, epoch, logs=None):
+        # logs = logs or {}
+        # self.schedule(epoch, [p['lr'] for p in self.trainer._optimizer.param_groups][0])
+        pass
+
+    def on_train_end(self, logs=None):
+        print(self.history)
