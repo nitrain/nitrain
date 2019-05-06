@@ -1,4 +1,4 @@
-import os
+import os.path as osp
 import random
 import math
 import numpy as np
@@ -130,13 +130,13 @@ class ToFile(object):
             path to main directory in which images will be saved
         """
         if root.startswith('~'):
-            root = os.path.expanduser(root)
+            root = osp.expanduser(root)
         self.root = root
         self.counter = 0
 
     def __call__(self, *inputs):
         for idx, _input in inputs:
-            fpath = os.path.join(self.root, 'img_%i_%i.npy' % (self.counter, idx))
+            fpath = osp.join(self.root, 'img_%i_%i.npy' % (self.counter, idx))
             np.save(fpath, _input.numpy())
         self.counter += 1
         return inputs
