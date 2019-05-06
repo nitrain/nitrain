@@ -3,8 +3,11 @@ Tests for torchsample/transforms/tensor_transforms.py
 """
 
 import torch as th
-
-from torchsample.transforms import (ToTensor, ToVariable, ToCuda, ToFile, ChannelsLast, HWC, ChannelsFirst, CHW,
+import os.path as osp
+import sys
+cur_dir = osp.dirname(osp.abspath(__file__))
+sys.path.insert(1, osp.join(cur_dir, '..'))
+from torchsample.transforms import (ToTensor, ToCuda, ToFile, ChannelsLast, HWC, ChannelsFirst, CHW,
                                     TypeCast, AddChannel, Transpose, RangeNormalize, StdNormalize, RandomCrop,
                                     SpecialCrop, Pad, RandomFlip, RandomOrder)
 
@@ -68,14 +71,6 @@ def ToTensor_setup():
     tforms = {}
 
     tforms['totensor'] = ToTensor()
-
-    return tforms
-
-
-def ToVariable_setup():
-    tforms = {}
-
-    tforms['tovariable'] = ToVariable()
 
     return tforms
 
@@ -275,7 +270,6 @@ def test_image_transforms_runtime(verbose=1):
     ### MAKE TRANSFORMS ###
     tforms = {}
     tforms.update(ToTensor_setup())
-    # tforms.update(ToVariable_setup())
     tforms.update(ToCuda_setup())
     #tforms.update(ToFile_setup())
     tforms.update(ChannelsLast_setup())
@@ -301,19 +295,21 @@ def test_image_transforms_runtime(verbose=1):
     successes = []
     failures = []
     for im_key, im_val in images.items():
-        print('im_key: ', im_key)
+        # print('im_key: ', im_key)
         for tf_key, tf_val in tforms.items():
-            print('tf_key: ', tf_key)
-            # try:
-            if isinstance(im_val, (tuple, list)):
-                print(type(im_val), len(im_val))
-                tf_val(*im_val)
-            else:
-                print(im_val.shape)
-                tf_val(im_val)
-            successes.append((im_key, tf_key))
-            # except:
-            #     failures.append((im_key, tf_key))
+            # print('tf_key: ', tf_key, 'tf_val: ', tf_val)
+            try:
+                if isinstance(im_val, (tuple, list)):
+                    if any(k in tf_key for k in ['randomflip', 'specialcrop', 'pad']):
+                        continue
+                    # print(type(im_val), len(im_val))
+                    tf_val(*im_val)
+                else:
+                    # print('single image: ', im_val.shape)
+                    tf_val(im_val)
+                successes.append((im_key, tf_key))
+            except:
+                failures.append((im_key, tf_key))
     if verbose > 0:
         for k, v in failures:
             print('%s - %s' % (k, v))

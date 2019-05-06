@@ -7,7 +7,6 @@ from collections import Sequence
 import torch
 import mmcv
 import torch as th
-from torch.autograd import Variable
 import torch.nn.functional as F
 
 from ..utils import th_random_choice
@@ -56,6 +55,7 @@ class RandomChoiceCompose(object):
         outputs = tform(*inputs)
         return outputs
 
+
 def to_tensor(data):
     """Convert objects of various python types to :obj:`torch.Tensor`.
 
@@ -77,23 +77,11 @@ def to_tensor(data):
 
 
 class ToTensor(object):
+
     def __call__(self, *inputs):
         outputs = []
         for idx, _input in enumerate(inputs):
             outputs.append(to_tensor(_input))
-        return outputs if idx > 1 else outputs[0]
-
-
-class ToVariable(object):
-    """
-    Converts a torch.Tensor to autograd.Variable
-    """
-
-    def __call__(self, *inputs):
-        outputs = []
-        for idx, _input in enumerate(inputs):
-            _input = Variable(_input)
-            outputs.append(_input)
         return outputs if idx > 1 else outputs[0]
 
 
@@ -481,14 +469,15 @@ class RandomCrop(object):
 
         Arguments
         --------
-        size : tuple or list
+        size : tuple or list, (H, W)
             dimensions of the crop
         """
         self.size = size
 
     def __call__(self, *inputs):
+        # format: CHW
         h_idx = random.randint(0, inputs[0].size(1) - self.size[0])
-        w_idx = random.randint(0, inputs[1].size(2) - self.size[1])
+        w_idx = random.randint(0, inputs[0].size(2) - self.size[1])
         outputs = []
         for idx, _input in enumerate(inputs):
             _input = _input[:, h_idx:(h_idx + self.size[0]), w_idx:(w_idx + self.size[1])]
@@ -570,12 +559,32 @@ class Pad(object):
         """
         self.size = size
 
+    def __call__(self, x, y=None, format='CHW', pad_type='center'):
+        '''
+        x: CHW
+        y: CHW
+        '''
+        x_pad_shape = self.get_pad_shape(x, format=format)
+        if y is not None:
+            y_pad_shape = self.get_pad_shape(y, format=format)
+        if pad_type == 'center':
+            x = self.pad_center(x, x_pad_shape)
+            if y is not None:
+                y = self.pad_center(y, y_pad_shape)
+        elif pad_type == 'bottom_right':
+            x = self.pad_bottom_right(x, x_pad_shape)
+            if y is not None:
+                y = self.pad_bottom_right(y, y_pad_shape)
+        else:
+            raise ValueError('wrong pad_type: {}'.format(pad_type))
+        return x if y is None else x, y
+
     def get_pad_shape(self, x, format='CHW'):
         if len(self.size) < len(x.shape):
             if format == 'CHW':
-                pad_shape = (x.shape[0], ) + tuple(self.size)
+                pad_shape = (x.shape[0],) + tuple(self.size)
             else:
-                pad_shape = tuple(self.size) + (x.shape[-1], )
+                pad_shape = tuple(self.size) + (x.shape[-1],)
         else:
             pad_shape = self.size
         return pad_shape
@@ -602,7 +611,7 @@ class Pad(object):
         if not isinstance(pad_val, (int, float)):
             assert len(pad_val) == img.shape[-1]
         if len(shape) < len(img.shape):
-            shape = shape + (img.shape[-1], )
+            shape = shape + (img.shape[-1],)
         assert len(shape) == len(img.shape)
         for i in range(len(shape) - 1):
             assert shape[i] >= img.shape[i]
@@ -611,30 +620,11 @@ class Pad(object):
             pad[...] = pad_val
             pad[:img.shape[0], :img.shape[1], ...] = img
         elif isinstance(img, torch.Tensor):
-            pad = img.new(*shape)   # .zero_()
+            pad = img.new(*shape)  # .zero_()
             pad[...] = pad_val
             pad[:img.shape[0], :img.shape[1], :img.shape[2]].copy_(img)
         return pad
 
-    def __call__(self, x, y=None, format='CHW', pad_type='center'):
-        '''
-        x: CHW
-        y: CHW
-        '''
-        x_pad_shape = self.get_pad_shape(x, format=format)
-        if y is not None:
-            y_pad_shape = self.get_pad_shape(y, format=format)
-        if pad_type == 'center':
-            x = self.pad_center(x, x_pad_shape)
-            if y is not None:
-                y = self.pad_center(y, y_pad_shape)
-        elif pad_type == 'bottom_right':
-            x = self.pad_bottom_right(x, x_pad_shape)
-            if y is not None:
-                y = self.pad_bottom_right(y, y_pad_shape)
-        else:
-            raise ValueError('wrong pad_type: {}'.format(pad_type))
-        return x if y is None else x, y
 
 class RandomFlip(object):
 
@@ -658,13 +648,13 @@ class RandomFlip(object):
         self.vertical = v
         self.p = p
 
-    def __call__(self, x, y=None, mode='CHW'):
+    def __call__(self, x, y=None, format='CHW'):
         '''
         x: CHW
         y: CHW
         '''
-        h_dim = 2 if mode == 'CHW' else 1
-        v_dim = 1 if mode == 'CHW' else 0
+        h_dim = 2 if format == 'CHW' else 1
+        v_dim = 1 if format == 'CHW' else 0
         # horizontal flip with p = self.p
         if self.horizontal:
             if random.random() < self.p:
@@ -678,7 +668,6 @@ class RandomFlip(object):
                 if y is not None:
                     y = y.flip(v_dim)
         if y is None:
-            # must copy because torch doesnt current support neg strides
             return x
         else:
             return x, y
@@ -689,10 +678,15 @@ class RandomOrder(object):
     Randomly permute the channels of an image
     """
 
-    def __call__(self, *inputs):
-        order = th.randperm(inputs[0].dim())
+    def __call__(self, *inputs, format='CHW'):
+        if format == 'CHW':
+            channel_dim = 0
+        else:
+            channel_dim = -1
+        order = torch.randperm(inputs[0].shape[channel_dim])
+
         outputs = []
         for idx, _input in enumerate(inputs):
-            _input = _input.index_select(0, order)
+            _input = _input.index_select(channel_dim, order)
             outputs.append(_input)
         return outputs if idx > 1 else outputs[0]
