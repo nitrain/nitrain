@@ -7,9 +7,9 @@ import os.path as osp
 import sys
 cur_dir = osp.dirname(osp.abspath(__file__))
 sys.path.insert(1, osp.join(cur_dir, '..'))
-from torchsample.transforms import (ToTensor, ToCuda, ToFile, ChannelsLast, HWC, ChannelsFirst, CHW,
-                                    TypeCast, AddChannel, Transpose, RangeNormalize, StdNormalize, RandomCrop,
-                                    SpecialCrop, Pad, RandomFlip, RandomOrder)
+from torchsample.transforms import (ToTensor, ToCuda, ToFile, ChannelsLast, HWC, ChannelsFirst, CHW, TypeCast,
+                                    AddChannel, Transpose, RangeNormalize, StdNormalize, RandomCrop, SpecialCrop, Pad,
+                                    RandomFlip, RandomOrder)
 
 # ----------------------------------------------------
 
