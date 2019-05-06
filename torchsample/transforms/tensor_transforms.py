@@ -1,18 +1,23 @@
-
 import os
 import random
 import math
 import numpy as np
 
+from collections import Sequence
+import torch
+import mmcv
 import torch as th
 from torch.autograd import Variable
+import torch.nn.functional as F
 
 from ..utils import th_random_choice
+
 
 class Compose(object):
     """
     Composes several transforms together.
     """
+
     def __init__(self, transforms):
         """
         Composes (chains) several transforms together into
@@ -27,7 +32,7 @@ class Compose(object):
 
     def __call__(self, *inputs):
         for transform in self.transforms:
-            if not isinstance(inputs, (list,tuple)):
+            if not isinstance(inputs, (list, tuple)):
                 inputs = [inputs]
             inputs = transform(*inputs)
         return inputs
@@ -42,6 +47,7 @@ class RandomChoiceCompose(object):
                                              RangeNormalize(-1,1)])
         >>> x_norm = transform(x) # only one of the two normalizations is applied
     """
+
     def __init__(self, transforms):
         self.transforms = transforms
 
@@ -50,16 +56,31 @@ class RandomChoiceCompose(object):
         outputs = tform(*inputs)
         return outputs
 
+def to_tensor(data):
+    """Convert objects of various python types to :obj:`torch.Tensor`.
+
+    Supported types are: :class:`numpy.ndarray`, :class:`torch.Tensor`,
+    :class:`Sequence`, :class:`int` and :class:`float`.
+    """
+    if isinstance(data, torch.Tensor):
+        return data
+    elif isinstance(data, np.ndarray):
+        return torch.from_numpy(data)
+    elif isinstance(data, Sequence) and not mmcv.is_str(data):
+        return torch.tensor(data)
+    elif isinstance(data, int):
+        return torch.LongTensor([data])
+    elif isinstance(data, float):
+        return torch.FloatTensor([data])
+    else:
+        raise TypeError("type {} cannot be converted to tensor.".format(type(data)))
+
 
 class ToTensor(object):
-    """
-    Converts a numpy array to torch.Tensor
-    """
     def __call__(self, *inputs):
         outputs = []
         for idx, _input in enumerate(inputs):
-            _input = th.from_numpy(_input)
-            outputs.append(_input)
+            outputs.append(to_tensor(_input))
         return outputs if idx > 1 else outputs[0]
 
 
@@ -67,6 +88,7 @@ class ToVariable(object):
     """
     Converts a torch.Tensor to autograd.Variable
     """
+
     def __call__(self, *inputs):
         outputs = []
         for idx, _input in enumerate(inputs):
@@ -79,6 +101,7 @@ class ToCuda(object):
     """
     Moves an autograd.Variable to the GPU
     """
+
     def __init__(self, device=0):
         """
         Moves an autograd.Variable to the GPU
@@ -105,6 +128,7 @@ class ToFile(object):
 
     NOTE: Only supports saving to Numpy currently
     """
+
     def __init__(self, root):
         """
         Saves an image to file. Useful as a pass-through ransform
@@ -124,7 +148,7 @@ class ToFile(object):
 
     def __call__(self, *inputs):
         for idx, _input in inputs:
-            fpath = os.path.join(self.root, 'img_%i_%i.npy'%(self.counter, idx))
+            fpath = os.path.join(self.root, 'img_%i_%i.npy' % (self.counter, idx))
             np.save(fpath, _input.numpy())
         self.counter += 1
         return inputs
@@ -133,8 +157,9 @@ class ToFile(object):
 class ChannelsLast(object):
     """
     Transposes a tensor so that the channel dim is last
-    `HWC` and `DHWC` are aliases for this transform.    
+    `HWC` and `DHWC` are aliases for this transform.
     """
+
     def __init__(self, safe_check=False):
         """
         Transposes a tensor so that the channel dim is last
@@ -154,7 +179,7 @@ class ChannelsLast(object):
             # check if channels are already last
             if inputs[0].size(-1) < inputs[0].size(0):
                 return inputs
-        plist = list(range(1,ndim))+[0]
+        plist = list(range(1, ndim)) + [0]
 
         outputs = []
         for idx, _input in enumerate(inputs):
@@ -162,14 +187,17 @@ class ChannelsLast(object):
             outputs.append(_input)
         return outputs if idx > 1 else outputs[0]
 
+
 HWC = ChannelsLast
 DHWC = ChannelsLast
+
 
 class ChannelsFirst(object):
     """
     Transposes a tensor so that the channel dim is first.
     `CHW` and `CDHW` are aliases for this transform.
     """
+
     def __init__(self, safe_check=False):
         """
         Transposes a tensor so that the channel dim is first.
@@ -189,7 +217,7 @@ class ChannelsFirst(object):
             # check if channels are already first
             if inputs[0].size(0) < inputs[0].size(-1):
                 return inputs
-        plist = [ndim-1] + list(range(0,ndim-1))
+        plist = [ndim-1] + list(range(0, ndim - 1))
 
         outputs = []
         for idx, _input in enumerate(inputs):
@@ -197,13 +225,16 @@ class ChannelsFirst(object):
             outputs.append(_input)
         return outputs if idx > 1 else outputs[0]
 
+
 CHW = ChannelsFirst
 CDHW = ChannelsFirst
+
 
 class TypeCast(object):
     """
     Cast a torch.Tensor to a different type
     """
+
     def __init__(self, dtype='float'):
         """
         Cast a torch.Tensor to a different type
@@ -214,7 +245,7 @@ class TypeCast(object):
             data type to which input(s) will be cast.
             If list, it should be the same length as inputs.
         """
-        if isinstance(dtype, (list,tuple)):
+        if isinstance(dtype, (list, tuple)):
             dtypes = []
             for dt in dtype:
                 if isinstance(dt, str):
@@ -249,11 +280,11 @@ class TypeCast(object):
             self.dtype = dtype
 
     def __call__(self, *inputs):
-        if not isinstance(self.dtype, (tuple,list)):
-            dtypes = [self.dtype]*len(inputs)
+        if not isinstance(self.dtype, (tuple, list)):
+            dtypes = [self.dtype] * len(inputs)
         else:
             dtypes = self.dtype
-        
+
         outputs = []
         for idx, _input in enumerate(inputs):
             _input = _input.type(dtypes[idx])
@@ -263,10 +294,11 @@ class TypeCast(object):
 
 class AddChannel(object):
     """
-    Adds a dummy channel to an image. 
+    Adds a dummy channel to an image.
     This will make an image of size (28, 28) to now be
     of size (1, 28, 28), for example.
     """
+
     def __init__(self, axis=0):
         """
         Adds a dummy channel to an image, also known as
@@ -286,8 +318,10 @@ class AddChannel(object):
             outputs.append(_input)
         return outputs if idx > 1 else outputs[0]
 
+
 ExpandAxis = AddChannel
 Unsqueeze = AddChannel
+
 
 class Transpose(object):
 
@@ -323,9 +357,9 @@ class RangeNormalize(object):
         a = (max'-min')/(max-min)
         b = max' - a * max
         new_value = a * value + b
-    where min' & max' are given values, 
+    where min' & max' are given values,
     and min & max are observed min/max for each channel
-    
+
     Arguments
     ---------
     min_range : float or integer
@@ -333,7 +367,7 @@ class RangeNormalize(object):
     max_range : float or integer
         Max value to which tensors will be normalized
     fixed_min : float or integer
-        Give this value if every sample has the same min (max) and 
+        Give this value if every sample has the same min (max) and
         you know for sure what it is. For instance, if you
         have an image then you know the min value will be 0 and the
         max value will be 255. Otherwise, the min/max value will be
@@ -352,9 +386,8 @@ class RangeNormalize(object):
         >>> rn = RangeNormalize(0,1)
         >>> x_norm = rn(x)
     """
-    def __init__(self, 
-                 min_val, 
-                 max_val):
+
+    def __init__(self, min_val, max_val):
         """
         Normalize a tensor between a min and max value
 
@@ -373,8 +406,8 @@ class RangeNormalize(object):
         for idx, _input in enumerate(inputs):
             _min_val = _input.min()
             _max_val = _input.max()
-            a = (self.max_val - self.min_val) / (_max_val - _min_val)
-            b = self.max_val- a * _max_val
+            a = (self.max_val - self.min_val) / (_max_val-_min_val)
+            b = self.max_val - a*_max_val
             _input = _input.mul(a).add(b)
             outputs.append(_input)
         return outputs if idx > 1 else outputs[0]
@@ -384,6 +417,7 @@ class StdNormalize(object):
     """
     Normalize torch tensor to have zero mean and unit std deviation
     """
+
     def __call__(self, *inputs):
         outputs = []
         for idx, _input in enumerate(inputs):
@@ -396,7 +430,7 @@ class Slice2D(object):
 
     def __init__(self, axis=0, reject_zeros=False):
         """
-        Take a random 2D slice from a 3D image along 
+        Take a random 2D slice from a 3D image along
         a given axis. This image should not have a 4th channel dim.
 
         Arguments
@@ -412,27 +446,27 @@ class Slice2D(object):
 
     def __call__(self, x, y=None):
         while True:
-            keep_slice  = random.randint(0,x.size(self.axis)-1)
+            keep_slice = random.randint(0, x.size(self.axis) - 1)
             if self.axis == 0:
-                slice_x = x[keep_slice,:,:]
+                slice_x = x[keep_slice, :, :]
                 if y is not None:
-                    slice_y = y[keep_slice,:,:]
+                    slice_y = y[keep_slice, :, :]
             elif self.axis == 1:
-                slice_x = x[:,keep_slice,:]
+                slice_x = x[:, keep_slice, :]
                 if y is not None:
-                    slice_y = y[:,keep_slice,:]
+                    slice_y = y[:, keep_slice, :]
             elif self.axis == 2:
-                slice_x = x[:,:,keep_slice]
+                slice_x = x[:, :, keep_slice]
                 if y is not None:
-                    slice_y = y[:,:,keep_slice]
+                    slice_y = y[:, :, keep_slice]
 
             if not self.reject_zeros:
                 break
             else:
                 if y is not None and th.sum(slice_y) > 0:
-                        break
+                    break
                 elif th.sum(slice_x) > 0:
-                        break
+                    break
         if y is not None:
             return slice_x, slice_y
         else:
@@ -453,11 +487,11 @@ class RandomCrop(object):
         self.size = size
 
     def __call__(self, *inputs):
-        h_idx = random.randint(0,inputs[0].size(1)-self.size[0])
-        w_idx = random.randint(0,inputs[1].size(2)-self.size[1])
+        h_idx = random.randint(0, inputs[0].size(1) - self.size[0])
+        w_idx = random.randint(0, inputs[1].size(2) - self.size[1])
         outputs = []
         for idx, _input in enumerate(inputs):
-            _input = _input[:, h_idx:(h_idx+self.size[0]),w_idx:(w_idx+self.size[1])]
+            _input = _input[:, h_idx:(h_idx + self.size[0]), w_idx:(w_idx + self.size[1])]
             outputs.append(_input)
         return outputs if idx > 1 else outputs[0]
 
@@ -484,40 +518,40 @@ class SpecialCrop(object):
             raise ValueError('crop_type must be in {0, 1, 2, 3, 4}')
         self.size = size
         self.crop_type = crop_type
-    
+
     def __call__(self, x, y=None):
         if self.crop_type == 0:
             # center crop
-            x_diff  = (x.size(1)-self.size[0])/2.
-            y_diff  = (x.size(2)-self.size[1])/2.
-            ct_x    = [int(math.ceil(x_diff)),x.size(1)-int(math.floor(x_diff))]
-            ct_y    = [int(math.ceil(y_diff)),x.size(2)-int(math.floor(y_diff))]
-            indices = [ct_x,ct_y]        
+            x_diff = (x.size(1) - self.size[0]) / 2.
+            y_diff = (x.size(2) - self.size[1]) / 2.
+            ct_x = [int(math.ceil(x_diff)), x.size(1) - int(math.floor(x_diff))]
+            ct_y = [int(math.ceil(y_diff)), x.size(2) - int(math.floor(y_diff))]
+            indices = [ct_x, ct_y]
         elif self.crop_type == 1:
             # top left crop
             tl_x = [0, self.size[0]]
             tl_y = [0, self.size[1]]
-            indices = [tl_x,tl_y]
+            indices = [tl_x, tl_y]
         elif self.crop_type == 2:
             # top right crop
             tr_x = [0, self.size[0]]
-            tr_y = [x.size(2)-self.size[1], x.size(2)]
-            indices = [tr_x,tr_y]
+            tr_y = [x.size(2) - self.size[1], x.size(2)]
+            indices = [tr_x, tr_y]
         elif self.crop_type == 3:
             # bottom right crop
-            br_x = [x.size(1)-self.size[0],x.size(1)]
-            br_y = [x.size(2)-self.size[1],x.size(2)]
-            indices = [br_x,br_y]
+            br_x = [x.size(1) - self.size[0], x.size(1)]
+            br_y = [x.size(2) - self.size[1], x.size(2)]
+            indices = [br_x, br_y]
         elif self.crop_type == 4:
             # bottom left crop
-            bl_x = [x.size(1)-self.size[0], x.size(1)]
+            bl_x = [x.size(1) - self.size[0], x.size(1)]
             bl_y = [0, self.size[1]]
-            indices = [bl_x,bl_y]
-        
-        x = x[:,indices[0][0]:indices[0][1],indices[1][0]:indices[1][1]]
+            indices = [bl_x, bl_y]
+
+        x = x[:, indices[0][0]:indices[0][1], indices[1][0]:indices[1][1]]
 
         if y is not None:
-            y = y[:,indices[0][0]:indices[0][1],indices[1][0]:indices[1][1]]
+            y = y[:, indices[0][0]:indices[0][1], indices[1][0]:indices[1][1]]
             return x, y
         else:
             return x
@@ -527,8 +561,8 @@ class Pad(object):
 
     def __init__(self, size):
         """
-        Pads an image to the given size
-
+        Pads an image on both sides to the given size
+        TODO: add bottom right pad
         Arguments
         ---------
         size : tuple or list
@@ -536,19 +570,71 @@ class Pad(object):
         """
         self.size = size
 
-    def __call__(self, x, y=None):
-        x = x.numpy()
-        shape_diffs = [int(np.ceil((i_s - d_s))) for d_s,i_s in zip(x.shape,self.size)]
-        shape_diffs = np.maximum(shape_diffs,0)
-        pad_sizes = [(int(np.ceil(s/2.)),int(np.floor(s/2.))) for s in shape_diffs]
-        x = np.pad(x, pad_sizes, mode='constant')
-        if y is not None:
-            y = y.numpy()
-            y = np.pad(y, pad_sizes, mode='constant')
-            return th.from_numpy(x), th.from_numpy(y)
+    def get_pad_shape(self, x, format='CHW'):
+        if len(self.size) < len(x.shape):
+            if format == 'CHW':
+                pad_shape = (x.shape[0], ) + tuple(self.size)
+            else:
+                pad_shape = tuple(self.size) + (x.shape[-1], )
         else:
-            return th.from_numpy(x)
+            pad_shape = self.size
+        return pad_shape
 
+    @staticmethod
+    def pad_center(x, pad_shape):
+        shape_diffs = [int(np.ceil((i_s - d_s))) for d_s, i_s in zip(x.shape, pad_shape)]
+        shape_diffs = np.maximum(shape_diffs, 0)
+        # NOTE: F.pad axes are in reverse order
+        pad_sizes = []
+        for s in shape_diffs[::-1]:
+            pad_sizes += [int(np.ceil(s / 2.)), int(np.floor(s / 2.))]
+        x = F.pad(x, pad_sizes, mode='constant')
+        return x
+
+    @staticmethod
+    def pad_bottom_right(img, shape, pad_val=0):
+        """Pad an image to a certain shape.
+        Args:
+            img: np.ndarray or torch.Tensor
+            shape (tuple): Expected padding shape.
+            pad_val (number or sequence): Values to be filled in padding areas.
+        """
+        if not isinstance(pad_val, (int, float)):
+            assert len(pad_val) == img.shape[-1]
+        if len(shape) < len(img.shape):
+            shape = shape + (img.shape[-1], )
+        assert len(shape) == len(img.shape)
+        for i in range(len(shape) - 1):
+            assert shape[i] >= img.shape[i]
+        if isinstance(img, np.ndarray):
+            pad = np.empty(shape, dtype=img.dtype)
+            pad[...] = pad_val
+            pad[:img.shape[0], :img.shape[1], ...] = img
+        elif isinstance(img, torch.Tensor):
+            pad = img.new(*shape)   # .zero_()
+            pad[...] = pad_val
+            pad[:img.shape[0], :img.shape[1], :img.shape[2]].copy_(img)
+        return pad
+
+    def __call__(self, x, y=None, format='CHW', pad_type='center'):
+        '''
+        x: CHW
+        y: CHW
+        '''
+        x_pad_shape = self.get_pad_shape(x, format=format)
+        if y is not None:
+            y_pad_shape = self.get_pad_shape(y, format=format)
+        if pad_type == 'center':
+            x = self.pad_center(x, x_pad_shape)
+            if y is not None:
+                y = self.pad_center(y, y_pad_shape)
+        elif pad_type == 'bottom_right':
+            x = self.pad_bottom_right(x, x_pad_shape)
+            if y is not None:
+                y = self.pad_bottom_right(y, y_pad_shape)
+        else:
+            raise ValueError('wrong pad_type: {}'.format(pad_type))
+        return x if y is None else x, y
 
 class RandomFlip(object):
 
@@ -572,41 +658,37 @@ class RandomFlip(object):
         self.vertical = v
         self.p = p
 
-    def __call__(self, x, y=None):
-        x = x.numpy()
-        if y is not None:
-            y = y.numpy()
+    def __call__(self, x, y=None, mode='CHW'):
+        '''
+        x: CHW
+        y: CHW
+        '''
+        h_dim = 2 if mode == 'CHW' else 1
+        v_dim = 1 if mode == 'CHW' else 0
         # horizontal flip with p = self.p
         if self.horizontal:
             if random.random() < self.p:
-                x = x.swapaxes(2, 0)
-                x = x[::-1, ...]
-                x = x.swapaxes(0, 2)
+                x = x.flip(h_dim)
                 if y is not None:
-                    y = y.swapaxes(2, 0)
-                    y = y[::-1, ...]
-                    y = y.swapaxes(0, 2)
+                    y = y.flip(h_dim)
         # vertical flip with p = self.p
         if self.vertical:
             if random.random() < self.p:
-                x = x.swapaxes(1, 0)
-                x = x[::-1, ...]
-                x = x.swapaxes(0, 1)
+                x = x.flip(v_dim)
                 if y is not None:
-                    y = y.swapaxes(1, 0)
-                    y = y[::-1, ...]
-                    y = y.swapaxes(0, 1)
+                    y = y.flip(v_dim)
         if y is None:
             # must copy because torch doesnt current support neg strides
-            return th.from_numpy(x.copy())
+            return x
         else:
-            return th.from_numpy(x.copy()),th.from_numpy(y.copy())
+            return x, y
 
 
 class RandomOrder(object):
     """
     Randomly permute the channels of an image
     """
+
     def __call__(self, *inputs):
         order = th.randperm(inputs[0].dim())
         outputs = []
@@ -614,4 +696,3 @@ class RandomOrder(object):
             _input = _input.index_select(0, order)
             outputs.append(_input)
         return outputs if idx > 1 else outputs[0]
-

@@ -1,4 +1,3 @@
-
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
@@ -41,8 +40,10 @@ train_loader = DataLoader(train_dataset, batch_size=32)
 val_dataset = TensorDataset(x_test, y_test)
 val_loader = DataLoader(val_dataset, batch_size=32)
 
+
 # Define your model EXACTLY as if you were using nn.Module
 class Network(nn.Module):
+
     def __init__(self):
         super(Network, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3)
@@ -63,23 +64,19 @@ class Network(nn.Module):
 model = Network()
 trainer = ModuleTrainer(model)
 
-callbacks = [EarlyStopping(patience=10),
-             ReduceLROnPlateau(factor=0.5, patience=5)]
-regularizers = [L1Regularizer(scale=1e-3, module_filter='conv*'),
-                L2Regularizer(scale=1e-5, module_filter='fc*')]
+callbacks = [EarlyStopping(patience=10), ReduceLROnPlateau(factor=0.5, patience=5)]
+regularizers = [L1Regularizer(scale=1e-3, module_filter='conv*'), L2Regularizer(scale=1e-5, module_filter='fc*')]
 constraints = [UnitNorm(frequency=3, unit='batch', module_filter='fc*')]
 initializers = [XavierUniform(bias=False, module_filter='fc*')]
 metrics = [CategoricalAccuracy(top_k=3)]
 
-trainer.compile(loss='nll_loss',
-                optimizer='adadelta',
-                regularizers=regularizers,
-                constraints=constraints,
-                initializers=initializers,
-                metrics=metrics, 
-                callbacks=callbacks)
+trainer.compile(
+    loss='nll_loss',
+    optimizer='adadelta',
+    regularizers=regularizers,
+    constraints=constraints,
+    initializers=initializers,
+    metrics=metrics,
+    callbacks=callbacks)
 
 trainer.fit_loader(train_loader, val_loader, num_epoch=20, verbose=1)
-
-
-

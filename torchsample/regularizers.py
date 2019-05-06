@@ -1,8 +1,8 @@
-
 import torch as th
 from fnmatch import fnmatch
 
 from .callbacks import Callback
+
 
 class RegularizerContainer(object):
 
@@ -16,10 +16,10 @@ class RegularizerContainer(object):
                 if fnmatch(module_name, regularizer.module_filter) and hasattr(module, 'weight'):
                     hook = module.register_forward_hook(regularizer)
                     self._forward_hooks.append(hook)
-        
+
         if len(self._forward_hooks) == 0:
             raise Exception('Tried to register regularizers but no modules '
-                'were found that matched any module_filter argument.')
+                            'were found that matched any module_filter argument.')
 
     def unregister_forward_hooks(self):
         for hook in self._forward_hooks:
@@ -82,7 +82,7 @@ class L2Regularizer(Regularizer):
         self.value = 0.
 
     def __call__(self, module, input=None, output=None):
-        value = th.sum(th.pow(module.weight,2)) * self.scale
+        value = th.sum(th.pow(module.weight, 2)) * self.scale
         self.value += value
 
 
@@ -107,15 +107,15 @@ class L1L2Regularizer(Regularizer):
 # ------------------------------------------------------------------
 # ------------------------------------------------------------------
 
+
 class UnitNormRegularizer(Regularizer):
     """
     UnitNorm constraint on Weights
 
     Constraints the weights to have column-wise unit norm
     """
-    def __init__(self,
-                 scale=1e-3,
-                 module_filter='*'):
+
+    def __init__(self, scale=1e-3, module_filter='*'):
 
         self.scale = scale
         self.module_filter = module_filter
@@ -137,9 +137,8 @@ class MaxNormRegularizer(Regularizer):
 
     Constraints the weights to have column-wise unit norm
     """
-    def __init__(self,
-                 scale=1e-3,
-                 module_filter='*'):
+
+    def __init__(self, scale=1e-3, module_filter='*'):
 
         self.scale = scale
         self.module_filter = module_filter
@@ -150,7 +149,7 @@ class MaxNormRegularizer(Regularizer):
 
     def __call__(self, module, input=None, output=None):
         w = module.weight
-        norm_diff = th.norm(w,2,self.axis).sub(self.value)
+        norm_diff = th.norm(w, 2, self.axis).sub(self.value)
         value = self.scale * th.sum(norm_diff.gt(0).float().mul(norm_diff))
         self.value += value
 
@@ -161,9 +160,8 @@ class NonNegRegularizer(Regularizer):
 
     Constraints the weights to have column-wise unit norm
     """
-    def __init__(self,
-                 scale=1e-3,
-                 module_filter='*'):
+
+    def __init__(self, scale=1e-3, module_filter='*'):
 
         self.scale = scale
         self.module_filter = module_filter
@@ -176,4 +174,3 @@ class NonNegRegularizer(Regularizer):
         w = module.weight
         value = -1 * self.scale * th.sum(w.gt(0).float().mul(w))
         self.value += value
-

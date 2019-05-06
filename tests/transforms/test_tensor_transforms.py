@@ -1,74 +1,67 @@
 """
-Tests for torchsample/transforms/image_transforms.py
+Tests for torchsample/transforms/tensor_transforms.py
 """
-
 
 import torch as th
 
-from torchsample.transforms import (ToTensor,
-                                    ToVariable,
-                                    ToCuda,
-                                    ToFile,
-                                    ChannelsLast, HWC,
-                                    ChannelsFirst, CHW,
-                                    TypeCast,
-                                    AddChannel,
-                                    Transpose,
-                                    RangeNormalize,
-                                    StdNormalize,
-                                    RandomCrop,
-                                    SpecialCrop,
-                                    Pad,
-                                    RandomFlip,
-                                    RandomOrder)
+from torchsample.transforms import (ToTensor, ToVariable, ToCuda, ToFile, ChannelsLast, HWC, ChannelsFirst, CHW,
+                                    TypeCast, AddChannel, Transpose, RangeNormalize, StdNormalize, RandomCrop,
+                                    SpecialCrop, Pad, RandomFlip, RandomOrder)
 
 # ----------------------------------------------------
+
 
 ## DATA SET ##
 def gray2d_setup():
     images = {}
 
-    x = th.zeros(1,30,30)
-    x[:,10:21,10:21] = 1
+    x = th.zeros(1, 30, 30)
+    x[:, 10:21, 10:21] = 1
     images['gray_01'] = x
 
-    x = th.zeros(1,30,40)
-    x[:,10:21,10:21] = 1
+    x = th.zeros(1, 30, 40)
+    x[:, 10:21, 10:21] = 1
     images['gray_02'] = x
     return images
+
 
 def multi_gray2d_setup():
     old_imgs = gray2d_setup()
     images = {}
-    for k,v in old_imgs.items():
-        images[k+'_2imgs'] = [v,v]
-        images[k+'_3imgs'] = [v,v,v]
-        images[k+'_4imgs'] = [v,v,v,v]
+    for k, v in old_imgs.items():
+        images[k + '_2imgs'] = [v, v]
+        images[k + '_3imgs'] = [v, v, v]
+        images[k + '_4imgs'] = [v, v, v, v]
     return images
+
 
 def color2d_setup():
     images = {}
 
-    x = th.zeros(3,30,30)
-    x[:,10:21,10:21] = 1
+    x = th.zeros(3, 30, 30)
+    x[:, 10:21, 10:21] = 1
     images['color_01'] = x
 
-    x = th.zeros(3,30,40)
-    x[:,10:21,10:21] = 1
+    x = th.zeros(3, 30, 40)
+    x[:, 10:21, 10:21] = 1
     images['color_02'] = x
 
     return images
 
+
 def multi_color2d_setup():
     old_imgs = color2d_setup()
     images = {}
-    for k,v in old_imgs.items():
-        images[k+'_2imgs'] = [v,v]
-        images[k+'_3imgs'] = [v,v,v]
-        images[k+'_4imgs'] = [v,v,v,v]
+    for k, v in old_imgs.items():
+        images[k + '_2imgs'] = [v, v]
+        images[k + '_3imgs'] = [v, v, v]
+        images[k + '_4imgs'] = [v, v, v, v]
     return images
+
+
 # ----------------------------------------------------
 # ----------------------------------------------------
+
 
 ## TFORMS SETUP ###
 def ToTensor_setup():
@@ -78,6 +71,7 @@ def ToTensor_setup():
 
     return tforms
 
+
 def ToVariable_setup():
     tforms = {}
 
@@ -85,12 +79,14 @@ def ToVariable_setup():
 
     return tforms
 
+
 def ToCuda_setup():
     tforms = {}
 
     tforms['tocuda'] = ToCuda()
 
     return tforms
+
 
 def ToFile_setup():
     tforms = {}
@@ -103,6 +99,7 @@ def ToFile_setup():
 
     return tforms
 
+
 def ChannelsLast_setup():
     tforms = {}
 
@@ -111,6 +108,7 @@ def ChannelsLast_setup():
 
     return tforms
 
+
 def ChannelsFirst_setup():
     tforms = {}
 
@@ -118,6 +116,7 @@ def ChannelsFirst_setup():
     tforms['chw'] = CHW()
 
     return tforms
+
 
 def TypeCast_setup():
     tforms = {}
@@ -131,6 +130,7 @@ def TypeCast_setup():
 
     return tforms
 
+
 def AddChannel_setup():
     tforms = {}
 
@@ -139,6 +139,7 @@ def AddChannel_setup():
     tforms['addchannel_axis2'] = AddChannel(axis=2)
 
     return tforms
+
 
 def Transpose_setup():
     tforms = {}
@@ -152,6 +153,7 @@ def Transpose_setup():
 
     return tforms
 
+
 def RangeNormalize_setup():
     tforms = {}
 
@@ -162,6 +164,7 @@ def RangeNormalize_setup():
 
     return tforms
 
+
 def StdNormalize_setup():
     tforms = {}
 
@@ -169,70 +172,74 @@ def StdNormalize_setup():
 
     return tforms
 
+
 def RandomCrop_setup():
     tforms = {}
 
-    tforms['randomcrop_1010'] = RandomCrop((10,10))
-    tforms['randomcrop_510'] = RandomCrop((5,10))
-    tforms['randomcrop_105'] = RandomCrop((10,5))
-    tforms['randomcrop_99'] = RandomCrop((9,9))
-    tforms['randomcrop_79'] = RandomCrop((7,9))
-    tforms['randomcrop_97'] = RandomCrop((9,7))
+    tforms['randomcrop_1010'] = RandomCrop((10, 10))
+    tforms['randomcrop_510'] = RandomCrop((5, 10))
+    tforms['randomcrop_105'] = RandomCrop((10, 5))
+    tforms['randomcrop_99'] = RandomCrop((9, 9))
+    tforms['randomcrop_79'] = RandomCrop((7, 9))
+    tforms['randomcrop_97'] = RandomCrop((9, 7))
 
     return tforms
+
 
 def SpecialCrop_setup():
     tforms = {}
 
-    tforms['specialcrop_0_1010'] = SpecialCrop((10,10),0)
-    tforms['specialcrop_0_510'] = SpecialCrop((5,10),0)
-    tforms['specialcrop_0_105'] = SpecialCrop((10,5),0)
-    tforms['specialcrop_0_99'] = SpecialCrop((9,9),0)
-    tforms['specialcrop_0_79'] = SpecialCrop((7,9),0)
-    tforms['specialcrop_0_97'] = SpecialCrop((9,7),0)
+    tforms['specialcrop_0_1010'] = SpecialCrop((10, 10), 0)
+    tforms['specialcrop_0_510'] = SpecialCrop((5, 10), 0)
+    tforms['specialcrop_0_105'] = SpecialCrop((10, 5), 0)
+    tforms['specialcrop_0_99'] = SpecialCrop((9, 9), 0)
+    tforms['specialcrop_0_79'] = SpecialCrop((7, 9), 0)
+    tforms['specialcrop_0_97'] = SpecialCrop((9, 7), 0)
 
-    tforms['specialcrop_1_1010'] = SpecialCrop((10,10),1)
-    tforms['specialcrop_1_510'] = SpecialCrop((5,10),1)
-    tforms['specialcrop_1_105'] = SpecialCrop((10,5),1)
-    tforms['specialcrop_1_99'] = SpecialCrop((9,9),1)
-    tforms['specialcrop_1_79'] = SpecialCrop((7,9),1)
-    tforms['specialcrop_1_97'] = SpecialCrop((9,7),1)
+    tforms['specialcrop_1_1010'] = SpecialCrop((10, 10), 1)
+    tforms['specialcrop_1_510'] = SpecialCrop((5, 10), 1)
+    tforms['specialcrop_1_105'] = SpecialCrop((10, 5), 1)
+    tforms['specialcrop_1_99'] = SpecialCrop((9, 9), 1)
+    tforms['specialcrop_1_79'] = SpecialCrop((7, 9), 1)
+    tforms['specialcrop_1_97'] = SpecialCrop((9, 7), 1)
 
-    tforms['specialcrop_2_1010'] = SpecialCrop((10,10),2)
-    tforms['specialcrop_2_510'] = SpecialCrop((5,10),2)
-    tforms['specialcrop_2_105'] = SpecialCrop((10,5),2)
-    tforms['specialcrop_2_99'] = SpecialCrop((9,9),2)
-    tforms['specialcrop_2_79'] = SpecialCrop((7,9),2)
-    tforms['specialcrop_2_97'] = SpecialCrop((9,7),2)
+    tforms['specialcrop_2_1010'] = SpecialCrop((10, 10), 2)
+    tforms['specialcrop_2_510'] = SpecialCrop((5, 10), 2)
+    tforms['specialcrop_2_105'] = SpecialCrop((10, 5), 2)
+    tforms['specialcrop_2_99'] = SpecialCrop((9, 9), 2)
+    tforms['specialcrop_2_79'] = SpecialCrop((7, 9), 2)
+    tforms['specialcrop_2_97'] = SpecialCrop((9, 7), 2)
 
-    tforms['specialcrop_3_1010'] = SpecialCrop((10,10),3)
-    tforms['specialcrop_3_510'] = SpecialCrop((5,10),3)
-    tforms['specialcrop_3_105'] = SpecialCrop((10,5),3)
-    tforms['specialcrop_3_99'] = SpecialCrop((9,9),3)
-    tforms['specialcrop_3_79'] = SpecialCrop((7,9),3)
-    tforms['specialcrop_3_97'] = SpecialCrop((9,7),3)
+    tforms['specialcrop_3_1010'] = SpecialCrop((10, 10), 3)
+    tforms['specialcrop_3_510'] = SpecialCrop((5, 10), 3)
+    tforms['specialcrop_3_105'] = SpecialCrop((10, 5), 3)
+    tforms['specialcrop_3_99'] = SpecialCrop((9, 9), 3)
+    tforms['specialcrop_3_79'] = SpecialCrop((7, 9), 3)
+    tforms['specialcrop_3_97'] = SpecialCrop((9, 7), 3)
 
-    tforms['specialcrop_4_1010'] = SpecialCrop((10,10),4)
-    tforms['specialcrop_4_510'] = SpecialCrop((5,10),4)
-    tforms['specialcrop_4_105'] = SpecialCrop((10,5),4)
-    tforms['specialcrop_4_99'] = SpecialCrop((9,9),4)
-    tforms['specialcrop_4_79'] = SpecialCrop((7,9),4)
-    tforms['specialcrop_4_97'] = SpecialCrop((9,7),4)
+    tforms['specialcrop_4_1010'] = SpecialCrop((10, 10), 4)
+    tforms['specialcrop_4_510'] = SpecialCrop((5, 10), 4)
+    tforms['specialcrop_4_105'] = SpecialCrop((10, 5), 4)
+    tforms['specialcrop_4_99'] = SpecialCrop((9, 9), 4)
+    tforms['specialcrop_4_79'] = SpecialCrop((7, 9), 4)
+    tforms['specialcrop_4_97'] = SpecialCrop((9, 7), 4)
     return tforms
+
 
 def Pad_setup():
     tforms = {}
 
-    tforms['pad_4040'] = Pad((40,40))
-    tforms['pad_3040'] = Pad((30,40))
-    tforms['pad_4030'] = Pad((40,30))
-    tforms['pad_3939'] = Pad((39,39))
-    tforms['pad_3941'] = Pad((39,41))
-    tforms['pad_4139'] = Pad((41,39))
-    tforms['pad_4138'] = Pad((41,38))
-    tforms['pad_3841'] = Pad((38,41))
+    tforms['pad_4040'] = Pad((40, 40))
+    tforms['pad_3040'] = Pad((30, 40))
+    tforms['pad_4030'] = Pad((40, 30))
+    tforms['pad_3939'] = Pad((39, 39))
+    tforms['pad_3941'] = Pad((39, 41))
+    tforms['pad_4139'] = Pad((41, 39))
+    tforms['pad_4138'] = Pad((41, 38))
+    tforms['pad_3841'] = Pad((38, 41))
 
     return tforms
+
 
 def RandomFlip_setup():
     tforms = {}
@@ -251,6 +258,7 @@ def RandomFlip_setup():
     tforms['randomflip_hv_04'] = RandomFlip(h=True, v=True, p=0.3)
     return tforms
 
+
 def RandomOrder_setup():
     tforms = {}
 
@@ -258,14 +266,16 @@ def RandomOrder_setup():
 
     return tforms
 
+
 # ----------------------------------------------------
 # ----------------------------------------------------
+
 
 def test_image_transforms_runtime(verbose=1):
     ### MAKE TRANSFORMS ###
     tforms = {}
     tforms.update(ToTensor_setup())
-    tforms.update(ToVariable_setup())
+    # tforms.update(ToVariable_setup())
     tforms.update(ToCuda_setup())
     #tforms.update(ToFile_setup())
     tforms.update(ChannelsLast_setup())
@@ -281,7 +291,6 @@ def test_image_transforms_runtime(verbose=1):
     tforms.update(RandomFlip_setup())
     tforms.update(RandomOrder_setup())
 
-
     ### MAKE DATA
     images = {}
     images.update(gray2d_setup())
@@ -289,26 +298,29 @@ def test_image_transforms_runtime(verbose=1):
     images.update(color2d_setup())
     images.update(multi_color2d_setup())
 
-    successes =[]
+    successes = []
     failures = []
     for im_key, im_val in images.items():
+        print('im_key: ', im_key)
         for tf_key, tf_val in tforms.items():
-            try:
-                if isinstance(im_val, (tuple,list)):
-                    tf_val(*im_val)
-                else:
-                    tf_val(im_val)
-                successes.append((im_key, tf_key))
-            except:
-                failures.append((im_key, tf_key))
-
+            print('tf_key: ', tf_key)
+            # try:
+            if isinstance(im_val, (tuple, list)):
+                print(type(im_val), len(im_val))
+                tf_val(*im_val)
+            else:
+                print(im_val.shape)
+                tf_val(im_val)
+            successes.append((im_key, tf_key))
+            # except:
+            #     failures.append((im_key, tf_key))
     if verbose > 0:
         for k, v in failures:
             print('%s - %s' % (k, v))
 
     print('# SUCCESSES: ', len(successes))
-    print('# FAILURES: ' , len(failures))
+    print('# FAILURES: ', len(failures))
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     test_image_transforms_runtime()

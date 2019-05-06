@@ -1,10 +1,13 @@
-
 import numpy as np
 import torch as th
 
-def get_test_data(num_train=1000, num_test=500, 
-                  input_shape=(10,), output_shape=(2,),
-                  classification=True, num_classes=2):
+
+def get_test_data(num_train=1000,
+                  num_test=500,
+                  input_shape=(10,),
+                  output_shape=(2,),
+                  classification=True,
+                  num_classes=2):
     """Generates test data to train a model on.
 
     classification=True overrides output_shape

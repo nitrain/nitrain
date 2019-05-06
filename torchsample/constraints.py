@@ -1,4 +1,3 @@
-
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -74,10 +73,8 @@ class UnitNorm(Constraint):
 
     Constraints the weights to have column-wise unit norm
     """
-    def __init__(self, 
-                 frequency=1, 
-                 unit='batch',
-                 module_filter='*'):
+
+    def __init__(self, frequency=1, unit='batch', module_filter='*'):
 
         self.frequency = frequency
         self.unit = unit
@@ -85,7 +82,7 @@ class UnitNorm(Constraint):
 
     def __call__(self, module):
         w = module.weight.data
-        module.weight.data = w.div(th.norm(w,2,0))
+        module.weight.data = w.div(th.norm(w, 2, 0))
 
 
 class MaxNorm(Constraint):
@@ -99,12 +96,7 @@ class MaxNorm(Constraint):
     constaint will not be altered.
     """
 
-    def __init__(self, 
-                 value, 
-                 axis=0, 
-                 frequency=1, 
-                 unit='batch',
-                 module_filter='*'):
+    def __init__(self, value, axis=0, frequency=1, unit='batch', module_filter='*'):
         self.value = float(value)
         self.axis = axis
 
@@ -121,10 +113,8 @@ class NonNeg(Constraint):
     """
     Constrains the weights to be non-negative.
     """
-    def __init__(self, 
-                 frequency=1, 
-                 unit='batch',
-                 module_filter='*'):
+
+    def __init__(self, frequency=1, unit='batch', module_filter='*'):
         self.frequency = frequency
         self.unit = unit
         self.module_filter = module_filter
@@ -132,9 +122,3 @@ class NonNeg(Constraint):
     def __call__(self, module):
         w = module.weight.data
         module.weight.data = w.gt(0).float().mul(w)
-
-
-
-
-
-

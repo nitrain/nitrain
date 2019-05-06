@@ -49,10 +49,11 @@ class Grayscale(object):
     def __call__(self, *inputs):
         outputs = []
         for idx, _input in enumerate(inputs):
-            _input_dst = _input[0]*0.299 + _input[1]*0.587 + _input[2]*0.114
-            _input_gs = _input_dst.repeat(self.channels,1,1)
+            _input_dst = _input[0] * 0.299 + _input[1] * 0.587 + _input[2] * 0.114
+            _input_gs = _input_dst.repeat(self.channels, 1, 1)
             outputs.append(_input_gs)
         return outputs if idx > 1 else outputs[0]
+
 
 class RandomGrayscale(object):
 
@@ -74,8 +75,10 @@ class RandomGrayscale(object):
             outputs = inputs
         return outputs
 
+
 # ----------------------------------------------------
 # ----------------------------------------------------
+
 
 class Gamma(object):
 
@@ -102,6 +105,7 @@ class Gamma(object):
             _input = th.pow(_input, self.value)
             outputs.append(_input)
         return outputs if idx > 1 else outputs[0]
+
 
 class RandomGamma(object):
 
@@ -132,6 +136,7 @@ class RandomGamma(object):
         value = random.uniform(self.values[0], self.values[1])
         outputs = Gamma(value)(*inputs)
         return outputs
+
 
 class RandomChoiceGamma(object):
 
@@ -165,10 +170,13 @@ class RandomChoiceGamma(object):
         outputs = Gamma(value)(*inputs)
         return outputs
 
+
 # ----------------------------------------------------
 # ----------------------------------------------------
 
+
 class Brightness(object):
+
     def __init__(self, value):
         """
         Alter the Brightness of an image
@@ -182,7 +190,7 @@ class Brightness(object):
             >0 = brighter
             =1 = completely white
         """
-        self.value = max(min(value,1.0),-1.0)
+        self.value = max(min(value, 1.0), -1.0)
 
     def __call__(self, *inputs):
         outputs = []
@@ -190,6 +198,7 @@ class Brightness(object):
             _input = th.clamp(_input.float().add(self.value).type(_input.type()), 0, 1)
             outputs.append(_input)
         return outputs if idx > 1 else outputs[0]
+
 
 class RandomBrightness(object):
 
@@ -211,6 +220,7 @@ class RandomBrightness(object):
         value = random.uniform(self.values[0], self.values[1])
         outputs = Brightness(value)(*inputs)
         return outputs
+
 
 class RandomChoiceBrightness(object):
 
@@ -235,8 +245,10 @@ class RandomChoiceBrightness(object):
         outputs = Brightness(value)(*inputs)
         return outputs
 
+
 # ----------------------------------------------------
 # ----------------------------------------------------
+
 
 class Saturation(object):
 
@@ -253,7 +265,7 @@ class Saturation(object):
             >0 : colors are more pure
             =1 : most saturated
         """
-        self.value = max(min(value,1.0),-1.0)
+        self.value = max(min(value, 1.0), -1.0)
 
     def __call__(self, *inputs):
         outputs = []
@@ -263,6 +275,7 @@ class Saturation(object):
             _in = th.clamp(_blend(_input, _in_gs, alpha), 0, 1)
             outputs.append(_in)
         return outputs if idx > 1 else outputs[0]
+
 
 class RandomSaturation(object):
 
@@ -284,6 +297,7 @@ class RandomSaturation(object):
         value = random.uniform(self.values[0], self.values[1])
         outputs = Saturation(value)(*inputs)
         return outputs
+
 
 class RandomChoiceSaturation(object):
 
@@ -309,13 +323,16 @@ class RandomChoiceSaturation(object):
         outputs = Saturation(value)(*inputs)
         return outputs
 
+
 # ----------------------------------------------------
 # ----------------------------------------------------
+
 
 class Contrast(object):
     """
 
     """
+
     def __init__(self, value):
         """
         Adjust Contrast of image.
@@ -341,9 +358,10 @@ class Contrast(object):
         for idx, _input in enumerate(inputs):
             channel_means = _input.mean(1).mean(2)
             channel_means = channel_means.expand_as(_input)
-            _input = th.clamp((_input - channel_means) * self.value + channel_means,0,1)
+            _input = th.clamp((_input-channel_means) * self.value + channel_means, 0, 1)
             outputs.append(_input)
         return outputs if idx > 1 else outputs[0]
+
 
 class RandomContrast(object):
 
@@ -365,6 +383,7 @@ class RandomContrast(object):
         value = random.uniform(self.values[0], self.values[1])
         outputs = Contrast(value)(*inputs)
         return outputs
+
 
 class RandomChoiceContrast(object):
 
@@ -390,8 +409,10 @@ class RandomChoiceContrast(object):
         outputs = Contrast(value)(*inputs)
         return outputs
 
+
 # ----------------------------------------------------
 # ----------------------------------------------------
+
 
 def rgb_to_hsv(x):
     """

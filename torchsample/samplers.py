@@ -1,6 +1,6 @@
-
 import torch as th
 import math
+
 
 class Sampler(object):
     """Base class for all Samplers.
@@ -19,11 +19,13 @@ class Sampler(object):
     def __len__(self):
         raise NotImplementedError
 
+
 class StratifiedSampler(Sampler):
     """Stratified Sampling
 
     Provides equal representation of target classes in each batch
     """
+
     def __init__(self, class_vector, batch_size):
         """
         Arguments
@@ -42,9 +44,9 @@ class StratifiedSampler(Sampler):
         except:
             print('Need scikit-learn for this functionality')
         import numpy as np
-        
+
         s = StratifiedShuffleSplit(n_splits=self.n_splits, test_size=0.5)
-        X = th.randn(self.class_vector.size(0),2).numpy()
+        X = th.randn(self.class_vector.size(0), 2).numpy()
         y = self.class_vector.numpy()
         s.get_n_splits(X, y)
 
@@ -57,6 +59,7 @@ class StratifiedSampler(Sampler):
     def __len__(self):
         return len(self.class_vector)
 
+
 class MultiSampler(Sampler):
     """Samples elements more than once in a single pass through the data.
 
@@ -64,6 +67,7 @@ class MultiSampler(Sampler):
     of samples itself, which can be useful when training on 2D slices taken
     from 3D images, for instance.
     """
+
     def __init__(self, nb_samples, desired_samples, shuffle=False):
         """Initialize MultiSampler
 
@@ -95,7 +99,7 @@ class MultiSampler(Sampler):
         n_repeats = self.desired_samples / self.data_samples
         cat_list = []
         for i in range(math.floor(n_repeats)):
-            cat_list.append(th.arange(0,self.data_samples))
+            cat_list.append(th.arange(0, self.data_samples))
         # add the left over samples
         left_over = self.desired_samples % self.data_samples
         if left_over > 0:
@@ -142,5 +146,3 @@ class RandomSampler(Sampler):
 
     def __len__(self):
         return self.num_samples
-
-

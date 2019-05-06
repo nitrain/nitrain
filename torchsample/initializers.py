@@ -57,8 +57,7 @@ class GeneralInitializer(Initializer):
 
 class Normal(Initializer):
 
-    def __init__(self, mean=0.0, std=0.02, bias=False, 
-                 bias_only=False, module_filter='*'):
+    def __init__(self, mean=0.0, std=0.02, bias=False, bias_only=False, module_filter='*'):
         self.mean = mean
         self.std = std
 
@@ -150,7 +149,7 @@ class XavierNormal(Initializer):
 
     def __init__(self, gain=1, bias=False, bias_only=False, module_filter='*'):
         self.gain = gain
-        
+
         self.bias = bias
         self.bias_only = bias_only
         self.module_filter = module_filter
@@ -173,7 +172,7 @@ class KaimingUniform(Initializer):
     def __init__(self, a=0, mode='fan_in', bias=False, bias_only=False, module_filter='*'):
         self.a = a
         self.mode = mode
-        
+
         self.bias = bias
         self.bias_only = bias_only
         self.module_filter = module_filter
@@ -196,7 +195,7 @@ class KaimingNormal(Initializer):
     def __init__(self, a=0, mode='fan_in', bias=False, bias_only=False, module_filter='*'):
         self.a = a
         self.mode = mode
-        
+
         self.bias = bias
         self.bias_only = bias_only
         self.module_filter = module_filter
@@ -218,7 +217,7 @@ class Orthogonal(Initializer):
 
     def __init__(self, gain=1, bias=False, bias_only=False, module_filter='*'):
         self.gain = gain
-        
+
         self.bias = bias
         self.bias_only = bias_only
         self.module_filter = module_filter
@@ -241,7 +240,7 @@ class Sparse(Initializer):
     def __init__(self, sparsity, std=0.01, bias=False, bias_only=False, module_filter='*'):
         self.sparsity = sparsity
         self.std = std
-        
+
         self.bias = bias
         self.bias_only = bias_only
         self.module_filter = module_filter
@@ -257,6 +256,3 @@ class Sparse(Initializer):
                 torch.nn.init.sparse(module.weight.data, sparsity=self.sparsity, std=self.std)
                 if self.bias:
                     torch.nn.init.sparse(module.bias.data, sparsity=self.sparsity, std=self.std)
-
-
-

@@ -12,10 +12,10 @@ from ..utils import th_affine2d, th_random_choice
 
 class RandomAffine(object):
 
-    def __init__(self, 
-                 rotation_range=None, 
+    def __init__(self,
+                 rotation_range=None,
                  translation_range=None,
-                 shear_range=None, 
+                 shear_range=None,
                  zoom_range=None,
                  interp='bilinear',
                  lazy=False):
@@ -66,7 +66,7 @@ class RandomAffine(object):
 
         if shear_range is not None:
             shear_tform = RandomShear(shear_range, lazy=True)
-            self.transforms.append(shear_tform) 
+            self.transforms.append(shear_tform)
 
         if zoom_range is not None:
             zoom_tform = RandomZoom(zoom_range, lazy=True)
@@ -82,22 +82,19 @@ class RandomAffine(object):
         # collect all of the lazily returned tform matrices
         tform_matrix = self.transforms[0](inputs[0])
         for tform in self.transforms[1:]:
-            tform_matrix = tform_matrix.mm(tform(inputs[0])) 
+            tform_matrix = tform_matrix.mm(tform(inputs[0]))
         self.tform_matrix = tform_matrix
 
         if self.lazy:
             return tform_matrix
         else:
-            outputs = Affine(tform_matrix,
-                             interp=self.interp)(*inputs)
+            outputs = Affine(tform_matrix, interp=self.interp)(*inputs)
             return outputs
 
 
 class Affine(object):
 
-    def __init__(self, 
-                 tform_matrix,
-                 interp='bilinear'):
+    def __init__(self, tform_matrix, interp='bilinear'):
         """
         Perform an affine transforms with various sub-transforms, using
         only one interpolation and without having to instantiate each
@@ -118,25 +115,21 @@ class Affine(object):
         self.interp = interp
 
     def __call__(self, *inputs):
-        if not isinstance(self.interp, (tuple,list)):
-            interp = [self.interp]*len(inputs)
+        if not isinstance(self.interp, (tuple, list)):
+            interp = [self.interp] * len(inputs)
         else:
             interp = self.interp
 
         outputs = []
         for idx, _input in enumerate(inputs):
-            input_tf = th_affine2d(_input,
-                                   self.tform_matrix,
-                                   mode=interp[idx])
+            input_tf = th_affine2d(_input, self.tform_matrix, mode=interp[idx])
             outputs.append(input_tf)
         return outputs if idx > 1 else outputs[0]
 
 
 class AffineCompose(object):
 
-    def __init__(self, 
-                 transforms,
-                 interp='bilinear'):
+    def __init__(self, transforms, interp='bilinear'):
         """
         Apply a collection of explicit affine transforms to an input image,
         and to a target image if necessary
@@ -167,28 +160,23 @@ class AffineCompose(object):
         # collect all of the lazily returned tform matrices
         tform_matrix = self.transforms[0](inputs[0])
         for tform in self.transforms[1:]:
-            tform_matrix = tform_matrix.mm(tform(inputs[0])) 
+            tform_matrix = tform_matrix.mm(tform(inputs[0]))
 
-        if not isinstance(self.interp, (tuple,list)):
-            interp = [self.interp]*len(inputs)
+        if not isinstance(self.interp, (tuple, list)):
+            interp = [self.interp] * len(inputs)
         else:
             interp = self.interp
 
         outputs = []
         for idx, _input in enumerate(inputs):
-            input_tf = th_affine2d(_input,
-                                   tform_matrix,
-                                   mode=interp[idx])
+            input_tf = th_affine2d(_input, tform_matrix, mode=interp[idx])
             outputs.append(input_tf)
         return outputs if idx > 1 else outputs[0]
 
 
 class RandomRotate(object):
 
-    def __init__(self, 
-                 rotation_range,
-                 interp='bilinear',
-                 lazy=False):
+    def __init__(self, rotation_range, interp='bilinear', lazy=False):
         """
         Randomly rotate an image between (-degrees, degrees). If the image
         has multiple channels, the same rotation will be applied to each channel.
@@ -217,18 +205,13 @@ class RandomRotate(object):
         if self.lazy:
             return Rotate(degree, lazy=True)(inputs[0])
         else:
-            outputs = Rotate(degree,
-                             interp=self.interp)(*inputs)
+            outputs = Rotate(degree, interp=self.interp)(*inputs)
             return outputs
 
 
 class RandomChoiceRotate(object):
 
-    def __init__(self, 
-                 values,
-                 p=None,
-                 interp='bilinear',
-                 lazy=False):
+    def __init__(self, values, p=None, interp='bilinear', lazy=False):
         """
         Randomly rotate an image from a list of values. If the image
         has multiple channels, the same rotation will be applied to each channel.
@@ -256,7 +239,7 @@ class RandomChoiceRotate(object):
         if p is None:
             p = th.ones(len(values)) / len(values)
         else:
-            if abs(1.0-sum(p)) > 1e-3:
+            if abs(1.0 - sum(p)) > 1e-3:
                 raise ValueError('Probs must sum to 1')
         self.p = p
         self.interp = interp
@@ -268,17 +251,13 @@ class RandomChoiceRotate(object):
         if self.lazy:
             return Rotate(degree, lazy=True)(inputs[0])
         else:
-            outputs = Rotate(degree,
-                             interp=self.interp)(*inputs)
+            outputs = Rotate(degree, interp=self.interp)(*inputs)
             return outputs
 
 
 class Rotate(object):
 
-    def __init__(self, 
-                 value,
-                 interp='bilinear',
-                 lazy=False):
+    def __init__(self, value, interp='bilinear', lazy=False):
         """
         Randomly rotate an image between (-degrees, degrees). If the image
         has multiple channels, the same rotation will be applied to each channel.
@@ -302,34 +281,27 @@ class Rotate(object):
         self.lazy = lazy
 
     def __call__(self, *inputs):
-        if not isinstance(self.interp, (tuple,list)):
-            interp = [self.interp]*len(inputs)
+        if not isinstance(self.interp, (tuple, list)):
+            interp = [self.interp] * len(inputs)
         else:
             interp = self.interp
 
         theta = math.pi / 180 * self.value
-        rotation_matrix = th.FloatTensor([[math.cos(theta), -math.sin(theta), 0],
-                                          [math.sin(theta), math.cos(theta), 0],
-                                          [0, 0, 1]])
+        rotation_matrix = th.FloatTensor([[math.cos(theta), -math.sin(theta), 0], [math.sin(theta),
+                                                                                   math.cos(theta), 0], [0, 0, 1]])
         if self.lazy:
             return rotation_matrix
         else:
             outputs = []
             for idx, _input in enumerate(inputs):
-                input_tf = th_affine2d(_input,
-                                       rotation_matrix,
-                                       mode=interp[idx],
-                                       center=True)
+                input_tf = th_affine2d(_input, rotation_matrix, mode=interp[idx], center=True)
                 outputs.append(input_tf)
             return outputs if idx > 1 else outputs[0]
 
 
 class RandomTranslate(object):
 
-    def __init__(self, 
-                 translation_range,
-                 interp='bilinear',
-                 lazy=False):
+    def __init__(self, translation_range, interp='bilinear', lazy=False):
         """
         Randomly translate an image some fraction of total height and/or
         some fraction of total width. If the image has multiple channels,
@@ -370,21 +342,15 @@ class RandomTranslate(object):
         random_width = random.uniform(-self.width_range, self.width_range)
 
         if self.lazy:
-            return Translate([random_height, random_width], 
-                             lazy=True)(inputs[0])
+            return Translate([random_height, random_width], lazy=True)(inputs[0])
         else:
-            outputs = Translate([random_height, random_width],
-                                 interp=self.interp)(*inputs)
+            outputs = Translate([random_height, random_width], interp=self.interp)(*inputs)
             return outputs
 
 
 class RandomChoiceTranslate(object):
 
-    def __init__(self,
-                 values,
-                 p=None,
-                 interp='bilinear',
-                 lazy=False):
+    def __init__(self, values, p=None, interp='bilinear', lazy=False):
         """
         Randomly translate an image some fraction of total height and/or
         some fraction of total width from a list of potential values. 
@@ -414,7 +380,7 @@ class RandomChoiceTranslate(object):
         if p is None:
             p = th.ones(len(values)) / len(values)
         else:
-            if abs(1.0-sum(p)) > 1e-3:
+            if abs(1.0 - sum(p)) > 1e-3:
                 raise ValueError('Probs must sum to 1')
         self.p = p
         self.interp = interp
@@ -425,20 +391,15 @@ class RandomChoiceTranslate(object):
         random_width = th_random_choice(self.values, p=self.p)
 
         if self.lazy:
-            return Translate([random_height, random_width],
-                             lazy=True)(inputs[0])
+            return Translate([random_height, random_width], lazy=True)(inputs[0])
         else:
-            outputs = Translate([random_height, random_width],
-                                interp=self.interp)(*inputs)
+            outputs = Translate([random_height, random_width], interp=self.interp)(*inputs)
             return outputs
 
 
 class Translate(object):
 
-    def __init__(self, 
-                 value, 
-                 interp='bilinear',
-                 lazy=False):
+    def __init__(self, value, interp='bilinear', lazy=False):
         """
         Arguments
         ---------
@@ -453,7 +414,7 @@ class Translate(object):
             inputs then you can say `interp=['bilinear','nearest']
 
         """
-        if not isinstance(value, (tuple,list)):
+        if not isinstance(value, (tuple, list)):
             value = (value, value)
 
         if value[0] > 1 or value[0] < -1:
@@ -467,36 +428,28 @@ class Translate(object):
         self.lazy = lazy
 
     def __call__(self, *inputs):
-        if not isinstance(self.interp, (tuple,list)):
-            interp = [self.interp]*len(inputs)
+        if not isinstance(self.interp, (tuple, list)):
+            interp = [self.interp] * len(inputs)
         else:
             interp = self.interp
 
         tx = self.height_range * inputs[0].size(1)
         ty = self.width_range * inputs[0].size(2)
 
-        translation_matrix = th.FloatTensor([[1, 0, tx],
-                                             [0, 1, ty],
-                                             [0, 0, 1]])
+        translation_matrix = th.FloatTensor([[1, 0, tx], [0, 1, ty], [0, 0, 1]])
         if self.lazy:
             return translation_matrix
         else:
             outputs = []
             for idx, _input in enumerate(inputs):
-                input_tf = th_affine2d(_input,
-                                       translation_matrix,
-                                       mode=interp[idx],
-                                       center=True)
+                input_tf = th_affine2d(_input, translation_matrix, mode=interp[idx], center=True)
                 outputs.append(input_tf)
             return outputs if idx > 1 else outputs[0]
 
 
 class RandomShear(object):
 
-    def __init__(self, 
-                 shear_range,
-                 interp='bilinear',
-                 lazy=False):
+    def __init__(self, shear_range, interp='bilinear', lazy=False):
         """
         Randomly shear an image with radians (-shear_range, shear_range)
 
@@ -521,21 +474,15 @@ class RandomShear(object):
     def __call__(self, *inputs):
         shear = random.uniform(-self.shear_range, self.shear_range)
         if self.lazy:
-            return Shear(shear, 
-                         lazy=True)(inputs[0])
+            return Shear(shear, lazy=True)(inputs[0])
         else:
-            outputs = Shear(shear,
-                            interp=self.interp)(*inputs)
+            outputs = Shear(shear, interp=self.interp)(*inputs)
             return outputs
 
 
 class RandomChoiceShear(object):
 
-    def __init__(self,
-                 values,
-                 p=None,
-                 interp='bilinear',
-                 lazy=False):
+    def __init__(self, values, p=None, interp='bilinear', lazy=False):
         """
         Randomly shear an image with a value sampled from a list of values.
 
@@ -562,7 +509,7 @@ class RandomChoiceShear(object):
         if p is None:
             p = th.ones(len(values)) / len(values)
         else:
-            if abs(1.0-sum(p)) > 1e-3:
+            if abs(1.0 - sum(p)) > 1e-3:
                 raise ValueError('Probs must sum to 1')
         self.p = p
         self.interp = interp
@@ -572,53 +519,40 @@ class RandomChoiceShear(object):
         shear = th_random_choice(self.values, p=self.p)
 
         if self.lazy:
-            return Shear(shear, 
-                         lazy=True)(inputs[0])
+            return Shear(shear, lazy=True)(inputs[0])
         else:
-            outputs = Shear(shear,
-                            interp=self.interp)(*inputs)
-            return outputs 
+            outputs = Shear(shear, interp=self.interp)(*inputs)
+            return outputs
 
 
 class Shear(object):
 
-    def __init__(self,
-                 value,
-                 interp='bilinear',
-                 lazy=False):
+    def __init__(self, value, interp='bilinear', lazy=False):
         self.value = value
         self.interp = interp
         self.lazy = lazy
 
     def __call__(self, *inputs):
-        if not isinstance(self.interp, (tuple,list)):
-            interp = [self.interp]*len(inputs)
+        if not isinstance(self.interp, (tuple, list)):
+            interp = [self.interp] * len(inputs)
         else:
             interp = self.interp
 
         theta = (math.pi * self.value) / 180
-        shear_matrix = th.FloatTensor([[1, -math.sin(theta), 0],
-                                        [0, math.cos(theta), 0],
-                                        [0, 0, 1]])
+        shear_matrix = th.FloatTensor([[1, -math.sin(theta), 0], [0, math.cos(theta), 0], [0, 0, 1]])
         if self.lazy:
             return shear_matrix
         else:
             outputs = []
             for idx, _input in enumerate(inputs):
-                input_tf = th_affine2d(_input,
-                                       shear_matrix,
-                                       mode=interp[idx],
-                                       center=True)
+                input_tf = th_affine2d(_input, shear_matrix, mode=interp[idx], center=True)
                 outputs.append(input_tf)
             return outputs if idx > 1 else outputs[0]
 
 
 class RandomZoom(object):
 
-    def __init__(self, 
-                 zoom_range,
-                 interp='bilinear',
-                 lazy=False):
+    def __init__(self, zoom_range, interp='bilinear', lazy=False):
         """
         Randomly zoom in and/or out on an image 
 
@@ -654,18 +588,13 @@ class RandomZoom(object):
         if self.lazy:
             return Zoom([zx, zy], lazy=True)(inputs[0])
         else:
-            outputs = Zoom([zx, zy], 
-                           interp=self.interp)(*inputs)
+            outputs = Zoom([zx, zy], interp=self.interp)(*inputs)
             return outputs
 
 
 class RandomChoiceZoom(object):
 
-    def __init__(self, 
-                 values,
-                 p=None,
-                 interp='bilinear',
-                 lazy=False):
+    def __init__(self, values, p=None, interp='bilinear', lazy=False):
         """
         Randomly zoom in and/or out on an image with a value sampled from
         a list of values
@@ -693,7 +622,7 @@ class RandomChoiceZoom(object):
         if p is None:
             p = th.ones(len(values)) / len(values)
         else:
-            if abs(1.0-sum(p)) > 1e-3:
+            if abs(1.0 - sum(p)) > 1e-3:
                 raise ValueError('Probs must sum to 1')
         self.p = p
         self.interp = interp
@@ -706,17 +635,13 @@ class RandomChoiceZoom(object):
         if self.lazy:
             return Zoom([zx, zy], lazy=True)(inputs[0])
         else:
-            outputs = Zoom([zx, zy], 
-                           interp=self.interp)(*inputs)
+            outputs = Zoom([zx, zy], interp=self.interp)(*inputs)
             return outputs
 
 
 class Zoom(object):
 
-    def __init__(self,
-                 value,
-                 interp='bilinear',
-                 lazy=False):
+    def __init__(self, value, interp='bilinear', lazy=False):
         """
         Arguments
         ---------
@@ -735,33 +660,26 @@ class Zoom(object):
             If true, just return transformed
         """
 
-        if not isinstance(value, (tuple,list)):
+        if not isinstance(value, (tuple, list)):
             value = (value, value)
         self.value = value
         self.interp = interp
         self.lazy = lazy
 
     def __call__(self, *inputs):
-        if not isinstance(self.interp, (tuple,list)):
-            interp = [self.interp]*len(inputs)
+        if not isinstance(self.interp, (tuple, list)):
+            interp = [self.interp] * len(inputs)
         else:
             interp = self.interp
 
         zx, zy = self.value
-        zoom_matrix = th.FloatTensor([[zx, 0, 0],
-                                      [0, zy, 0],
-                                      [0, 0,  1]])        
+        zoom_matrix = th.FloatTensor([[zx, 0, 0], [0, zy, 0], [0, 0, 1]])
 
         if self.lazy:
             return zoom_matrix
         else:
             outputs = []
             for idx, _input in enumerate(inputs):
-                input_tf = th_affine2d(_input,
-                                       zoom_matrix,
-                                       mode=interp[idx],
-                                       center=True)
+                input_tf = th_affine2d(_input, zoom_matrix, mode=interp[idx], center=True)
                 outputs.append(input_tf)
             return outputs if idx > 1 else outputs[0]
-
-

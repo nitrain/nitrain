@@ -1,4 +1,3 @@
-
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -8,8 +7,8 @@ from .utils import th_matrixcorr
 
 from .callbacks import Callback
 
-class MetricContainer(object):
 
+class MetricContainer(object):
 
     def __init__(self, metrics, prefix=''):
         self.metrics = metrics
@@ -26,10 +25,9 @@ class MetricContainer(object):
     def __call__(self, output_batch, target_batch):
         logs = {}
         for metric in self.metrics:
-            logs[self.prefix+metric._name] = self.helper.calculate_loss(output_batch,
-                                                                        target_batch,
-                                                                        metric) 
+            logs[self.prefix + metric._name] = self.helper.calculate_loss(output_batch, target_batch, metric)
         return logs
+
 
 class Metric(object):
 
@@ -44,8 +42,10 @@ class MetricCallback(Callback):
 
     def __init__(self, container):
         self.container = container
+
     def on_epoch_begin(self, epoch_idx, logs):
         self.container.reset()
+
 
 class CategoricalAccuracy(Metric):
 
@@ -61,8 +61,8 @@ class CategoricalAccuracy(Metric):
         self.total_count = 0
 
     def __call__(self, y_pred, y_true):
-        top_k = y_pred.topk(self.top_k,1)[1]
-        true_k = y_true.view(len(y_true),1).expand_as(top_k)
+        top_k = y_pred.topk(self.top_k, 1)[1]
+        true_k = y_true.view(len(y_true), 1).expand_as(top_k)
         self.correct_count += top_k.eq(true_k).float().sum().data[0]
         self.total_count += len(y_pred)
         accuracy = 100. * float(self.correct_count) / float(self.total_count)
@@ -128,12 +128,9 @@ class ProjectionAntiCorrelation(Metric):
         y_pred should be two projections
         """
         covar_mat = th.abs(th_matrixcorr(y_pred[0].data, y_pred[1].data))
-        upper_sum = th.sum(th.triu(covar_mat,1))
-        lower_sum = th.sum(th.tril(covar_mat,-1))
+        upper_sum = th.sum(th.triu(covar_mat, 1))
+        lower_sum = th.sum(th.tril(covar_mat, -1))
         self.anticorr_sum += upper_sum
         self.anticorr_sum += lower_sum
-        self.total_count += covar_mat.size(0)*(covar_mat.size(1) - 1)
+        self.total_count += covar_mat.size(0) * (covar_mat.size(1) - 1)
         return self.anticorr_sum / self.total_count
-
-
-

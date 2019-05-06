@@ -1,4 +1,3 @@
-
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
@@ -33,8 +32,10 @@ y_test = y_test[:1000]
 train_data = TensorDataset(x_train, y_train)
 train_loader = DataLoader(train_data, batch_size=128)
 
+
 # Define your model EXACTLY as if you were using nn.Module
 class Network(nn.Module):
+
     def __init__(self):
         super(Network, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3)
@@ -55,12 +56,9 @@ class Network(nn.Module):
 model = Network()
 trainer = ModuleTrainer(model)
 
-trainer.compile(loss='nll_loss',
-                optimizer='adadelta')
+trainer.compile(loss='nll_loss', optimizer='adadelta')
 
-trainer.fit_loader(train_loader,
-                   num_epoch=3,
-                   verbose=1)
+trainer.fit_loader(train_loader, num_epoch=3, verbose=1)
 
 ypred = trainer.predict(x_train)
 print(ypred.size())
@@ -70,4 +68,3 @@ print(eval_loss)
 
 print(trainer.history)
 #print(trainer.history['loss'])
-
