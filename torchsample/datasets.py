@@ -18,9 +18,10 @@ from . import transforms
 class BaseDataset(object):
     """An abstract class representing a Dataset.
 
-    All other datasets should subclass it. All subclasses should override
-    ``__len__``, that provides the size of the dataset, and ``__getitem__``,
-    supporting integer indexing in range from 0 to len(self) exclusive.
+    All other datasets should subclass it. All subclasses should
+    override ``__len__``, that provides the size of the dataset, and
+    ``__getitem__``, supporting integer indexing in range from 0 to
+    len(self) exclusive.
     """
 
     def __len__(self):
@@ -66,11 +67,10 @@ class BaseDataset(object):
                 self.co_transform[i] = transforms.Compose([self.co_transform[i], transform])
 
     def load(self, num_samples=None, load_range=None):
-        """
-        Load all data or a subset of the data into actual memory.
-        For instance, if the inputs are paths to image files, then this
-        function will actually load those images.
-    
+        """Load all data or a subset of the data into actual memory. For
+        instance, if the inputs are paths to image files, then this function
+        will actually load those images.
+
         Arguments
         ---------
         num_samples : integer (optional)
@@ -160,14 +160,14 @@ class BaseDataset(object):
             return inputs
 
     def fit_transforms(self):
-        """
-        Make a single pass through the entire dataset in order to fit 
-        any parameters of the transforms which require the entire dataset.
-        e.g. StandardScaler() requires mean and std for the entire dataset.
+        """Make a single pass through the entire dataset in order to fit any
+        parameters of the transforms which require the entire dataset. e.g.
+        StandardScaler() requires mean and std for the entire dataset.
 
-        If you dont call this fit function, then transforms which require properties
-        of the entire dataset will just work at the batch level.
-        e.g. StandardScaler() will normalize each batch by the specific batch mean/std
+        If you dont call this fit function, then transforms which
+        require properties of the entire dataset will just work at the
+        batch level. e.g. StandardScaler() will normalize each batch by
+        the specific batch mean/std
         """
         it_fit = hasattr(self.input_transform, 'update_fit')
         tt_fit = hasattr(self.target_transform, 'update_fit')
@@ -200,8 +200,7 @@ def _process_array_argument(x):
 class TensorDataset(BaseDataset):
 
     def __init__(self, inputs, targets=None, input_transform=None, target_transform=None, co_transform=None):
-        """
-        Dataset class for loading in-memory data.
+        """Dataset class for loading in-memory data.
 
         Arguments
         ---------
@@ -217,7 +216,6 @@ class TensorDataset(BaseDataset):
 
         co_transform : class with __call__ function implemented
             transform to apply to both input and target sample simultaneously
-
         """
         self.inputs = _process_array_argument(inputs)
         self.num_inputs = len(self.inputs)
@@ -238,9 +236,7 @@ class TensorDataset(BaseDataset):
             self.co_transform = _process_co_transform_argument(co_transform, self.num_inputs, self.num_targets)
 
     def __getitem__(self, index):
-        """
-        Index the dataset and return the input + target
-        """
+        """Index the dataset and return the input + target."""
         input_sample = [self.input_transform[i](self.inputs[i][index]) for i in range(self.num_inputs)]
 
         if self.has_target:
@@ -352,8 +348,7 @@ class CSVDataset(BaseDataset):
                  input_transform=None,
                  target_transform=None,
                  co_transform=None):
-        """
-        Initialize a Dataset from a CSV file/dataframe. This does NOT
+        """Initialize a Dataset from a CSV file/dataframe. This does NOT
         actually load the data into memory if the CSV contains filepaths.
 
         Arguments
@@ -361,16 +356,16 @@ class CSVDataset(BaseDataset):
         csv : string or pandas.DataFrame
             if string, should be a path to a .csv file which
             can be loaded as a pandas dataframe
-        
+
         input_cols : int/list of ints, or string/list of strings
             which columns to use as input arrays.
             If int(s), should be column indicies
-            If str(s), should be column names 
-        
+            If str(s), should be column names
+
         target_cols : int/list of ints, or string/list of strings
             which columns to use as input arrays.
             If int(s), should be column indicies
-            If str(s), should be column names 
+            If str(s), should be column names
 
         input_transform : class which implements a __call__ method
             tranform(s) to apply to inputs during runtime loading
@@ -410,9 +405,7 @@ class CSVDataset(BaseDataset):
             self.co_transform = _process_co_transform_argument(co_transform, self.num_inputs, self.num_targets)
 
     def __getitem__(self, index):
-        """
-        Index the dataset and return the input + target
-        """
+        """Index the dataset and return the input + target."""
         input_sample = [
             self.input_transform[i](self.input_loader(self.inputs[index, i])) for i in range(self.num_inputs)
         ]
@@ -429,19 +422,18 @@ class CSVDataset(BaseDataset):
             return self.input_return_processor(input_sample)
 
     def split_by_column(self, col):
-        """
-        Split this dataset object into multiple dataset objects based on 
-        the unique factors of the given column. The number of returned
-        datasets will be equal to the number of unique values in the given
-        column. The transforms and original dataframe will all be transferred
-        to the new datasets 
+        """Split this dataset object into multiple dataset objects based on the
+        unique factors of the given column. The number of returned datasets
+        will be equal to the number of unique values in the given column. The
+        transforms and original dataframe will all be transferred to the new
+        datasets.
 
         Useful for splitting a dataset into train/val/test datasets.
 
         Arguments
         ---------
         col : integer or string
-            which column to split the data on. 
+            which column to split the data on.
             if int, should be column index
             if str, should be column name
 
@@ -512,8 +504,7 @@ class FolderDataset(BaseDataset):
                  target_transform=None,
                  co_transform=None,
                  input_loader='npy'):
-        """
-        Dataset class for loading out-of-memory data.
+        """Dataset class for loading out-of-memory data.
 
         Arguments
         ---------
@@ -530,12 +521,12 @@ class FolderDataset(BaseDataset):
 
         input_regex : string (default is any valid image file)
             regular expression to find input images
-            e.g. if all your inputs have the word 'input', 
+            e.g. if all your inputs have the word 'input',
             you'd enter something like input_regex='*input*'
-        
+
         target_regex : string (default is Nothing)
             regular expression to find target images if class_mode == 'image'
-            e.g. if all your targets have the word 'segment', 
+            e.g. if all your targets have the word 'segment',
             you'd enter somthing like target_regex='*segment*'
 
         transform : transform class
@@ -548,7 +539,6 @@ class FolderDataset(BaseDataset):
             defines how to load samples from file
             if a function is provided, it should take in a file path
             as input and return the loaded sample.
-
         """
         self.input_loader = default_file_reader
         self.target_loader = default_file_reader if class_mode == 'image' else lambda x: x
@@ -622,9 +612,7 @@ def _finds_inputs_and_targets(
         input_regex=None,
         target_regex=None,
 ):
-    """
-    Map a dataset from a root folder
-    """
+    """Map a dataset from a root folder."""
     if class_mode == 'image':
         if not input_regex and not target_regex:
             raise ValueError('must give input_regex and target_regex if' + ' class_mode==image')

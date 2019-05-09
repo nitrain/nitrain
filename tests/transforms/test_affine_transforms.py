@@ -140,9 +140,7 @@ class TestAffineTransforms(object):
     # ----------------------------------------------------
     # ----------------------------------------------------
     def _test_affine_transforms_runtime(self, tforms):
-        """
-        Test that there are no runtime errors
-        """
+        """Test that there are no runtime errors."""
         successes = []
         failures = []
         for im_key, im_val in self.images.items():

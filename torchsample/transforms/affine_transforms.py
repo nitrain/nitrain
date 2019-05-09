@@ -1,7 +1,5 @@
-"""
-Affine transforms implemented on torch tensors, and
-requiring only one interpolation
-"""
+"""Affine transforms implemented on torch tensors, and requiring only one
+interpolation."""
 
 import math
 import random
@@ -19,22 +17,21 @@ class RandomAffine(object):
                  zoom_range=None,
                  interp='bilinear',
                  lazy=False):
-        """
-        Perform an affine transforms with various sub-transforms, using
-        only one interpolation and without having to instantiate each
-        sub-transform individually.
+        """Perform an affine transforms with various sub-transforms, using only
+        one interpolation and without having to instantiate each sub-transform
+        individually.
 
         Arguments
         ---------
         rotation_range : one integer or float
-            image will be rotated randomly between (-degrees, degrees) 
+            image will be rotated randomly between (-degrees, degrees)
 
         translation_range : a float or a tuple/list with 2 floats between [0, 1)
             first value:
-                image will be horizontally shifted between 
+                image will be horizontally shifted between
                 (-height_range * height_dimension, height_range * height_dimension)
             second value:
-                Image will be vertically shifted between 
+                Image will be vertically shifted between
                 (-width_range * width_dimension, width_range * width_dimension)
 
         shear_range : float
@@ -42,10 +39,10 @@ class RandomAffine(object):
 
         zoom_range : list/tuple with two floats between [0, infinity).
             first float should be less than the second
-            lower and upper bounds on percent zoom. 
-            Anything less than 1.0 will zoom in on the image, 
+            lower and upper bounds on percent zoom.
+            Anything less than 1.0 will zoom in on the image,
             anything greater than 1.0 will zoom out on the image.
-            e.g. (0.7, 1.0) will only zoom in, 
+            e.g. (0.7, 1.0) will only zoom in,
                  (1.0, 1.4) will only zoom out,
                  (0.7, 1.4) will randomly zoom in or out
 
@@ -53,7 +50,6 @@ class RandomAffine(object):
             type of interpolation to use. You can provide a different
             type of interpolation for each input, e.g. if you have two
             inputs then you can say `interp=['bilinear','nearest']
-
         """
         self.transforms = []
         if rotation_range is not None:
@@ -95,10 +91,9 @@ class RandomAffine(object):
 class Affine(object):
 
     def __init__(self, tform_matrix, interp='bilinear'):
-        """
-        Perform an affine transforms with various sub-transforms, using
-        only one interpolation and without having to instantiate each
-        sub-transform individually.
+        """Perform an affine transforms with various sub-transforms, using only
+        one interpolation and without having to instantiate each sub-transform
+        individually.
 
         Arguments
         ---------
@@ -109,7 +104,6 @@ class Affine(object):
             type of interpolation to use. You can provide a different
             type of interpolation for each input, e.g. if you have two
             inputs then you can say `interp=['bilinear','nearest']
-
         """
         self.tform_matrix = tform_matrix
         self.interp = interp
@@ -130,9 +124,8 @@ class Affine(object):
 class AffineCompose(object):
 
     def __init__(self, transforms, interp='bilinear'):
-        """
-        Apply a collection of explicit affine transforms to an input image,
-        and to a target image if necessary
+        """Apply a collection of explicit affine transforms to an input image,
+        and to a target image if necessary.
 
         Arguments
         ---------
@@ -148,7 +141,6 @@ class AffineCompose(object):
             type of interpolation to use. You can provide a different
             type of interpolation for each input, e.g. if you have two
             inputs then you can say `interp=['bilinear','nearest']
-
         """
         self.transforms = transforms
         self.interp = interp
@@ -177,9 +169,9 @@ class AffineCompose(object):
 class RandomRotate(object):
 
     def __init__(self, rotation_range, interp='bilinear', lazy=False):
-        """
-        Randomly rotate an image between (-degrees, degrees). If the image
-        has multiple channels, the same rotation will be applied to each channel.
+        """Randomly rotate an image between (-degrees, degrees). If the image
+        has multiple channels, the same rotation will be applied to each
+        channel.
 
         Arguments
         ---------
@@ -212,9 +204,8 @@ class RandomRotate(object):
 class RandomChoiceRotate(object):
 
     def __init__(self, values, p=None, interp='bilinear', lazy=False):
-        """
-        Randomly rotate an image from a list of values. If the image
-        has multiple channels, the same rotation will be applied to each channel.
+        """Randomly rotate an image from a list of values. If the image has
+        multiple channels, the same rotation will be applied to each channel.
 
         Arguments
         ---------
@@ -258,9 +249,9 @@ class RandomChoiceRotate(object):
 class Rotate(object):
 
     def __init__(self, value, interp='bilinear', lazy=False):
-        """
-        Randomly rotate an image between (-degrees, degrees). If the image
-        has multiple channels, the same rotation will be applied to each channel.
+        """Randomly rotate an image between (-degrees, degrees). If the image
+        has multiple channels, the same rotation will be applied to each
+        channel.
 
         Arguments
         ---------
@@ -302,21 +293,20 @@ class Rotate(object):
 class RandomTranslate(object):
 
     def __init__(self, translation_range, interp='bilinear', lazy=False):
-        """
-        Randomly translate an image some fraction of total height and/or
-        some fraction of total width. If the image has multiple channels,
-        the same translation will be applied to each channel.
+        """Randomly translate an image some fraction of total height and/or
+        some fraction of total width. If the image has multiple channels, the
+        same translation will be applied to each channel.
 
         Arguments
         ---------
-        translation_range : two floats between [0, 1) 
+        translation_range : two floats between [0, 1)
             first value:
                 fractional bounds of total height to shift image
-                image will be horizontally shifted between 
+                image will be horizontally shifted between
                 (-height_range * height_dimension, height_range * height_dimension)
             second value:
-                fractional bounds of total width to shift image 
-                Image will be vertically shifted between 
+                fractional bounds of total width to shift image
+                Image will be vertically shifted between
                 (-width_range * width_dimension, width_range * width_dimension)
 
         interp : string in {'bilinear', 'nearest'} or list of strings
@@ -351,11 +341,10 @@ class RandomTranslate(object):
 class RandomChoiceTranslate(object):
 
     def __init__(self, values, p=None, interp='bilinear', lazy=False):
-        """
-        Randomly translate an image some fraction of total height and/or
-        some fraction of total width from a list of potential values. 
-        If the image has multiple channels,
-        the same translation will be applied to each channel.
+        """Randomly translate an image some fraction of total height and/or
+        some fraction of total width from a list of potential values. If the
+        image has multiple channels, the same translation will be applied to
+        each channel.
 
         Arguments
         ---------
@@ -450,14 +439,13 @@ class Translate(object):
 class RandomShear(object):
 
     def __init__(self, shear_range, interp='bilinear', lazy=False):
-        """
-        Randomly shear an image with radians (-shear_range, shear_range)
+        """Randomly shear an image with radians (-shear_range, shear_range)
 
         Arguments
         ---------
         shear_range : float
             radian bounds on the shear transform
-        
+
         interp : string in {'bilinear', 'nearest'} or list of strings
             type of interpolation to use. You can provide a different
             type of interpolation for each input, e.g. if you have two
@@ -483,8 +471,7 @@ class RandomShear(object):
 class RandomChoiceShear(object):
 
     def __init__(self, values, p=None, interp='bilinear', lazy=False):
-        """
-        Randomly shear an image with a value sampled from a list of values.
+        """Randomly shear an image with a value sampled from a list of values.
 
         Arguments
         ---------
@@ -553,16 +540,15 @@ class Shear(object):
 class RandomZoom(object):
 
     def __init__(self, zoom_range, interp='bilinear', lazy=False):
-        """
-        Randomly zoom in and/or out on an image 
+        """Randomly zoom in and/or out on an image.
 
         Arguments
         ---------
         zoom_range : tuple or list with 2 values, both between (0, infinity)
-            lower and upper bounds on percent zoom. 
-            Anything less than 1.0 will zoom in on the image, 
+            lower and upper bounds on percent zoom.
+            Anything less than 1.0 will zoom in on the image,
             anything greater than 1.0 will zoom out on the image.
-            e.g. (0.7, 1.0) will only zoom in, 
+            e.g. (0.7, 1.0) will only zoom in,
                  (1.0, 1.4) will only zoom out,
                  (0.7, 1.4) will randomly zoom in or out
 
@@ -595,9 +581,8 @@ class RandomZoom(object):
 class RandomChoiceZoom(object):
 
     def __init__(self, values, p=None, interp='bilinear', lazy=False):
-        """
-        Randomly zoom in and/or out on an image with a value sampled from
-        a list of values
+        """Randomly zoom in and/or out on an image with a value sampled from a
+        list of values.
 
         Arguments
         ---------

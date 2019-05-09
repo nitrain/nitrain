@@ -15,11 +15,9 @@ class ConstraintContainer(object):
         self.epoch_constraints = [c for c in self.constraints if c.unit.upper() == 'EPOCH']
 
     def register_constraints(self, model):
-        """
-        Grab pointers to the weights which will be modified by constraints so
-        that we dont have to search through the entire network using `apply`
-        each time
-        """
+        """Grab pointers to the weights which will be modified by constraints
+        so that we dont have to search through the entire network using `apply`
+        each time."""
         # get batch constraint pointers
         self._batch_c_ptrs = {}
         for c_idx, constraint in enumerate(self.batch_constraints):
@@ -68,8 +66,7 @@ class Constraint(object):
 
 
 class UnitNorm(Constraint):
-    """
-    UnitNorm constraint.
+    """UnitNorm constraint.
 
     Constraints the weights to have column-wise unit norm
     """
@@ -86,8 +83,7 @@ class UnitNorm(Constraint):
 
 
 class MaxNorm(Constraint):
-    """
-    MaxNorm weight constraint.
+    """MaxNorm weight constraint.
 
     Constrains the weights incident to each hidden unit
     to have a norm less than or equal to a desired value.
@@ -110,9 +106,7 @@ class MaxNorm(Constraint):
 
 
 class NonNeg(Constraint):
-    """
-    Constrains the weights to be non-negative.
-    """
+    """Constrains the weights to be non-negative."""
 
     def __init__(self, frequency=1, unit='batch', module_filter='*'):
         self.frequency = frequency

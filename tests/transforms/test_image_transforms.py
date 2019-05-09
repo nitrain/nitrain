@@ -1,7 +1,5 @@
-"""
-Tests for torchsample/transforms/image_transforms.py
-python -m pytest tests/transforms/test_image_transforms.py -svvv --tb=line
-"""
+"""Tests for torchsample/transforms/image_transforms.py python -m pytest
+tests/transforms/test_image_transforms.py -svvv --tb=line."""
 
 import torch as th
 
@@ -204,9 +202,7 @@ class TestImageTransforms(object):
         self._test_image_transforms_runtime(tforms)
 
     def _test_image_transforms_runtime(self, tforms):
-        """
-        Test that there are no runtime errors
-        """
+        """Test that there are no runtime errors."""
         successes = []
         failures = []
 

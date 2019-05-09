@@ -6,9 +6,7 @@ from ..utils import th_iterproduct, th_flatten
 
 
 def F_affine2d(x, matrix, center=True):
-    """
-    2D Affine image transform on torch.autograd.Variable
-    """
+    """2D Affine image transform on torch.autograd.Variable."""
     if matrix.dim() == 2:
         matrix = matrix.view(-1, 2, 3)
 
@@ -40,9 +38,7 @@ def F_affine2d(x, matrix, center=True):
 
 
 def F_bilinear_interp2d(input, coords):
-    """
-    bilinear interpolation of 2d torch.autograd.Variable
-    """
+    """bilinear interpolation of 2d torch.autograd.Variable."""
     x = torch.clamp(coords[:, :, 0], 0, input.size(1) - 2)
     x0 = x.floor()
     x1 = x0 + 1
@@ -187,9 +183,7 @@ def F_affine3d(x, matrix, center=True):
 
 
 def F_trilinear_interp3d(input, coords):
-    """
-    trilinear interpolation of 3D image
-    """
+    """trilinear interpolation of 3D image."""
     # take clamp then floor/ceil of x coords
     x = torch.clamp(coords[:, 0], 0, input.size(1) - 2)
     x0 = x.floor()

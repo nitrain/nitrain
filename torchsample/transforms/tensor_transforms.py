@@ -8,19 +8,15 @@ import torch
 import mmcv
 import torch as th
 import torch.nn.functional as F
-import mmcv
 from ..utils import th_random_choice
 
 
 class Compose(object):
-    """
-    Composes several transforms together.
-    """
+    """Composes several transforms together."""
 
     def __init__(self, transforms):
-        """
-        Composes (chains) several transforms together into
-        a single transform
+        """Composes (chains) several transforms together into a single
+        transform.
 
         Arguments
         ---------
@@ -38,8 +34,7 @@ class Compose(object):
 
 
 class RandomChoiceCompose(object):
-    """
-    Randomly choose to apply one transform from a collection of transforms
+    """Randomly choose to apply one transform from a collection of transforms.
 
     e.g. to randomly apply EITHER 0-1 or -1-1 normalization to an input:
         >>> transform = RandomChoiceCompose([RangeNormalize(0,1),
@@ -86,13 +81,10 @@ class ToTensor(object):
 
 
 class ToCuda(object):
-    """
-    Moves an autograd.Variable to the GPU
-    """
+    """Moves an autograd.Variable to the GPU."""
 
     def __init__(self, device=0):
-        """
-        Moves an autograd.Variable to the GPU
+        """Moves an autograd.Variable to the GPU.
 
         Arguments
         ---------
@@ -110,17 +102,15 @@ class ToCuda(object):
 
 
 class ToFile(object):
-    """
-    Saves an image to file. Useful as a pass-through ransform
-    when wanting to observe how augmentation affects the data
+    """Saves an image to file. Useful as a pass-through ransform when wanting
+    to observe how augmentation affects the data.
 
     NOTE: Only supports saving to Numpy currently
     """
 
     def __init__(self, root, ext='.npy', fmt='CHW'):
-        """
-        Saves an image to file. Useful as a pass-through ransform
-        when wanting to observe how augmentation affects the data
+        """Saves an image to file. Useful as a pass-through ransform when
+        wanting to observe how augmentation affects the data.
 
         NOTE: Only supports saving to Numpy currently
 
@@ -156,15 +146,12 @@ class ToFile(object):
 
 
 class ChannelsLast(object):
-    """
-    Transposes a tensor so that the channel dim is last
-    `HWC` and `DHWC` are aliases for this transform.
-    """
+    """Transposes a tensor so that the channel dim is last `HWC` and `DHWC` are
+    aliases for this transform."""
 
     def __init__(self, safe_check=False):
-        """
-        Transposes a tensor so that the channel dim is last
-        `HWC` and `DHWC` are aliases for this transform.
+        """Transposes a tensor so that the channel dim is last `HWC` and `DHWC`
+        are aliases for this transform.
 
         Arguments
         ---------
@@ -194,15 +181,14 @@ DHWC = ChannelsLast
 
 
 class ChannelsFirst(object):
-    """
-    Transposes a tensor so that the channel dim is first.
+    """Transposes a tensor so that the channel dim is first.
+
     `CHW` and `CDHW` are aliases for this transform.
     """
 
     def __init__(self, safe_check=False):
-        """
-        Transposes a tensor so that the channel dim is first.
-        `CHW` and `CDHW` are aliases for this transform.
+        """Transposes a tensor so that the channel dim is first. `CHW` and
+        `CDHW` are aliases for this transform.
 
         Arguments
         ---------
@@ -232,13 +218,10 @@ CDHW = ChannelsFirst
 
 
 class TypeCast(object):
-    """
-    Cast a torch.Tensor to a different type
-    """
+    """Cast a torch.Tensor to a different type."""
 
     def __init__(self, dtype='float'):
-        """
-        Cast a torch.Tensor to a different type
+        """Cast a torch.Tensor to a different type.
 
         Arguments
         ---------
@@ -294,16 +277,15 @@ class TypeCast(object):
 
 
 class AddChannel(object):
-    """
-    Adds a dummy channel to an image.
-    This will make an image of size (28, 28) to now be
-    of size (1, 28, 28), for example.
+    """Adds a dummy channel to an image.
+
+    This will make an image of size (28, 28) to now be of size (1, 28,
+    28), for example.
     """
 
     def __init__(self, axis=0):
-        """
-        Adds a dummy channel to an image, also known as
-        expanding an axis or unsqueezing a dim
+        """Adds a dummy channel to an image, also known as expanding an axis or
+        unsqueezing a dim.
 
         Arguments
         ---------
@@ -327,8 +309,7 @@ Unsqueeze = AddChannel
 class Transpose(object):
 
     def __init__(self, dim1, dim2):
-        """
-        Swaps two dimensions of a tensor
+        """Swaps two dimensions of a tensor.
 
         Arguments
         ---------
@@ -349,10 +330,8 @@ class Transpose(object):
 
 
 class RangeNormalize(object):
-    """
-    Given min_val: (R, G, B) and max_val: (R,G,B),
-    will normalize each channel of the th.*Tensor to
-    the provided min and max values.
+    """Given min_val: (R, G, B) and max_val: (R,G,B), will normalize each
+    channel of the th.*Tensor to the provided min and max values.
 
     Works by calculating :
         a = (max'-min')/(max-min)
@@ -389,8 +368,7 @@ class RangeNormalize(object):
     """
 
     def __init__(self, min_val, max_val):
-        """
-        Normalize a tensor between a min and max value
+        """Normalize a tensor between a min and max value.
 
         Arguments
         ---------
@@ -415,9 +393,7 @@ class RangeNormalize(object):
 
 
 class StdNormalize(object):
-    """
-    Normalize torch tensor to have zero mean and unit std deviation
-    """
+    """Normalize torch tensor to have zero mean and unit std deviation."""
 
     def __call__(self, *inputs):
         outputs = []
@@ -430,9 +406,8 @@ class StdNormalize(object):
 class Slice2D(object):
 
     def __init__(self, axis=0, reject_zeros=False):
-        """
-        Take a random 2D slice from a 3D image along
-        a given axis. This image should not have a 4th channel dim.
+        """Take a random 2D slice from a 3D image along a given axis. This
+        image should not have a 4th channel dim.
 
         Arguments
         ---------
@@ -477,8 +452,7 @@ class Slice2D(object):
 class RandomCrop(object):
 
     def __init__(self, size):
-        """
-        Randomly crop a torch tensor
+        """Randomly crop a torch tensor.
 
         Arguments
         --------
@@ -616,6 +590,7 @@ class Pad(object):
     @staticmethod
     def pad_bottom_right(img, shape, pad_val=0):
         """Pad an image to a certain shape.
+
         Args:
             img: np.ndarray or torch.Tensor
             shape (tuple): Expected padding shape.
@@ -642,9 +617,8 @@ class Pad(object):
 class RandomFlip(object):
 
     def __init__(self, h=True, v=False, p=0.5):
-        """
-        Randomly flip an image horizontally and/or vertically with
-        some probability.
+        """Randomly flip an image horizontally and/or vertically with some
+        probability.
 
         Arguments
         ---------
@@ -687,9 +661,7 @@ class RandomFlip(object):
 
 
 class RandomOrder(object):
-    """
-    Randomly permute the channels of an image
-    """
+    """Randomly permute the channels of an image."""
 
     def __call__(self, *inputs, format='CHW'):
         if format == 'CHW':

@@ -5,9 +5,9 @@ import math
 class Sampler(object):
     """Base class for all Samplers.
 
-    Every Sampler subclass has to provide an __iter__ method, providing a way
-    to iterate over indices of dataset elements, and a __len__ method that
-    returns the length of the returned iterators.
+    Every Sampler subclass has to provide an __iter__ method, providing
+    a way to iterate over indices of dataset elements, and a __len__
+    method that returns the length of the returned iterators.
     """
 
     def __init__(self, data_source):
@@ -21,7 +21,7 @@ class Sampler(object):
 
 
 class StratifiedSampler(Sampler):
-    """Stratified Sampling
+    """Stratified Sampling.
 
     Provides equal representation of target classes in each batch
     """
@@ -63,18 +63,18 @@ class StratifiedSampler(Sampler):
 class MultiSampler(Sampler):
     """Samples elements more than once in a single pass through the data.
 
-    This allows the number of samples per epoch to be larger than the number
-    of samples itself, which can be useful when training on 2D slices taken
-    from 3D images, for instance.
+    This allows the number of samples per epoch to be larger than the
+    number of samples itself, which can be useful when training on 2D
+    slices taken from 3D images, for instance.
     """
 
     def __init__(self, nb_samples, desired_samples, shuffle=False):
-        """Initialize MultiSampler
+        """Initialize MultiSampler.
 
         Arguments
         ---------
         data_source : the dataset to sample from
-        
+
         desired_samples : number of samples per batch you want
             whatever the difference is between an even division will
             be randomly selected from the samples.
@@ -84,7 +84,7 @@ class MultiSampler(Sampler):
 
         shuffle : boolean
             whether to shuffle the indices or not
-        
+
         Example:
             >>> m = MultiSampler(2, 6)
             >>> x = m.gen_sample_array()

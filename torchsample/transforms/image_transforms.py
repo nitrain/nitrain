@@ -1,6 +1,5 @@
-"""
-Transforms very specific to images such as
-color, lighting, contrast, brightness, etc transforms
+"""Transforms very specific to images such as color, lighting, contrast,
+brightness, etc transforms.
 
 NOTE: Most of these transforms assume your image intensity
 is between 0 and 1, and are torch tensors (NOT numpy or PIL)
@@ -14,8 +13,7 @@ from ..utils import th_random_choice
 
 
 def _blend(img1, img2, alpha):
-    """
-    Weighted sum of two images
+    """Weighted sum of two images.
 
     Arguments
     ---------
@@ -31,8 +29,7 @@ def _blend(img1, img2, alpha):
 class Grayscale(object):
 
     def __init__(self, keep_channels=False, format='CHW'):
-        """
-        Convert RGB image to grayscale
+        """Convert RGB image to grayscale.
 
         Arguments
         ---------
@@ -184,8 +181,7 @@ class RandomChoiceGamma(object):
 class Brightness(object):
 
     def __init__(self, value):
-        """
-        Alter the Brightness of an image
+        """Alter the Brightness of an image.
 
         Arguments
         ---------
@@ -209,8 +205,7 @@ class Brightness(object):
 class RandomBrightness(object):
 
     def __init__(self, min_val, max_val):
-        """
-        Alter the Brightness of an image with a value randomly selected
+        """Alter the Brightness of an image with a value randomly selected
         between `min_val` and `max_val`
 
         Arguments
@@ -231,9 +226,8 @@ class RandomBrightness(object):
 class RandomChoiceBrightness(object):
 
     def __init__(self, values, p=None):
-        """
-        Alter the Brightness of an image with a value randomly selected
-        from the list of given values with given probabilities
+        """Alter the Brightness of an image with a value randomly selected from
+        the list of given values with given probabilities.
 
         Arguments
         ---------
@@ -259,8 +253,7 @@ class RandomChoiceBrightness(object):
 class Saturation(object):
 
     def __init__(self, value):
-        """
-        Alter the Saturation of image
+        """Alter the Saturation of image.
 
         Arguments
         ---------
@@ -286,8 +279,7 @@ class Saturation(object):
 class RandomSaturation(object):
 
     def __init__(self, min_val, max_val):
-        """
-        Alter the Saturation of an image with a value randomly selected
+        """Alter the Saturation of an image with a value randomly selected
         between `min_val` and `max_val`
 
         Arguments
@@ -308,9 +300,8 @@ class RandomSaturation(object):
 class RandomChoiceSaturation(object):
 
     def __init__(self, values, p=None):
-        """
-        Alter the Saturation of an image with a value randomly selected
-        from the list of given values with given probabilities
+        """Alter the Saturation of an image with a value randomly selected from
+        the list of given values with given probabilities.
 
         Arguments
         ---------
@@ -319,7 +310,6 @@ class RandomChoiceSaturation(object):
         p : list of floats - same length as `values`
             if None, values will be sampled uniformly.
             Must sum to 1.
-
         """
         self.values = values
         self.p = p
@@ -335,13 +325,10 @@ class RandomChoiceSaturation(object):
 
 
 class Contrast(object):
-    """
-
-    """
+    """"""
 
     def __init__(self, value, fmt='CHW'):
-        """
-        Adjust Contrast of image.
+        """Adjust Contrast of image.
 
         Contrast is adjusted independently for each channel of each image.
 
@@ -365,10 +352,10 @@ class Contrast(object):
         outputs = []
         for idx, _input in enumerate(inputs):
             if self.fmt == 'CHW':
-                channel_means = _input.mean(dim=(1,2), keepdim=True)
+                channel_means = _input.mean(dim=(1, 2), keepdim=True)
             else:
-                channel_means = _input.mean(dim=(0,1), keepdim=True)
-            _input = th.clamp((_input - channel_means) * self.value + channel_means, 0, 1)
+                channel_means = _input.mean(dim=(0, 1), keepdim=True)
+            _input = th.clamp((_input-channel_means) * self.value + channel_means, 0, 1)
             outputs.append(_input)
         return outputs if idx > 1 else outputs[0]
 
@@ -376,8 +363,7 @@ class Contrast(object):
 class RandomContrast(object):
 
     def __init__(self, min_val, max_val):
-        """
-        Alter the Contrast of an image with a value randomly selected
+        """Alter the Contrast of an image with a value randomly selected
         between `min_val` and `max_val`
 
         Arguments
@@ -398,9 +384,8 @@ class RandomContrast(object):
 class RandomChoiceContrast(object):
 
     def __init__(self, values, p=None):
-        """
-        Alter the Contrast of an image with a value randomly selected
-        from the list of given values with given probabilities
+        """Alter the Contrast of an image with a value randomly selected from
+        the list of given values with given probabilities.
 
         Arguments
         ---------
@@ -409,7 +394,6 @@ class RandomChoiceContrast(object):
         p : list of floats - same length as `values`
             if None, values will be sampled uniformly.
             Must sum to 1.
-
         """
         self.values = values
         self.p = p
@@ -425,9 +409,7 @@ class RandomChoiceContrast(object):
 
 
 def rgb_to_hsv(x):
-    """
-    Convert from RGB to HSV
-    """
+    """Convert from RGB to HSV."""
     hsv = th.zeros(*x.size())
     c_min = x.min(0)
     c_max = x.max(0)

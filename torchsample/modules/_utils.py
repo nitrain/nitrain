@@ -30,7 +30,7 @@ def _is_tuple_or_list(x):
 
 
 def _parse_num_inputs_and_targets_from_loader(loader):
-    """ NOT IMPLEMENTED """
+    """NOT IMPLEMENTED."""
     #batch = next(iter(loader))
     num_inputs = loader.dataset.num_inputs
     num_targets = loader.dataset.num_targets

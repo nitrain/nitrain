@@ -109,8 +109,7 @@ class L1L2Regularizer(Regularizer):
 
 
 class UnitNormRegularizer(Regularizer):
-    """
-    UnitNorm constraint on Weights
+    """UnitNorm constraint on Weights.
 
     Constraints the weights to have column-wise unit norm
     """
@@ -132,8 +131,7 @@ class UnitNormRegularizer(Regularizer):
 
 
 class MaxNormRegularizer(Regularizer):
-    """
-    MaxNorm regularizer on Weights
+    """MaxNorm regularizer on Weights.
 
     Constraints the weights to have column-wise unit norm
     """
@@ -155,8 +153,7 @@ class MaxNormRegularizer(Regularizer):
 
 
 class NonNegRegularizer(Regularizer):
-    """
-    Non-Negativity regularizer on Weights
+    """Non-Negativity regularizer on Weights.
 
     Constraints the weights to have column-wise unit norm
     """

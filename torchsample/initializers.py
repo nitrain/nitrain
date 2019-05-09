@@ -1,6 +1,4 @@
-"""
-Classes to initialize module weights
-"""
+"""Classes to initialize module weights."""
 
 from fnmatch import fnmatch
 

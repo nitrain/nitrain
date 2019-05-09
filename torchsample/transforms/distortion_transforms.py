@@ -1,6 +1,4 @@
-"""
-Transforms to distort local or global information of an image
-"""
+"""Transforms to distort local or global information of an image."""
 
 import torch as th
 import numpy as np
@@ -8,9 +6,7 @@ import random
 
 
 class Scramble(object):
-    """
-    Create blocks of an image and scramble them
-    """
+    """Create blocks of an image and scramble them."""
 
     def __init__(self, blocksize):
         self.blocksize = blocksize
@@ -33,7 +29,7 @@ class Scramble(object):
                     row = int(ind[count] / x_blocks)
                     column = ind[count] % x_blocks
                     new[:, i*self.blocksize:(i+1)*self.blocksize, j*self.blocksize:(j+1)*self.blocksize] = \
-                    _input[:, row*self.blocksize:(row+1)*self.blocksize, column*self.blocksize:(column+1)*self.blocksize]
+                    _input[:, row*self.blocksize:(row+1)*self.blocksize, column*self.blocksize:(column+1)*self.blocksize]  # noqa
                     count += 1
             outputs.append(new)
         return outputs if idx > 1 else outputs[0]
@@ -103,26 +99,19 @@ def _butterworth_filter(rows, cols, thresh, order):
 
 
 class Blur(object):
-    """
-    Blur an image with a Butterworth filter with a frequency
-    cutoff matching local block size
-    """
+    """Blur an image with a Butterworth filter with a frequency cutoff matching
+    local block size."""
 
     def __init__(self, threshold, order=5):
-        """
-        scramble blocksize of 128 => filter threshold of 64
-        scramble blocksize of 64 => filter threshold of 32
-        scramble blocksize of 32 => filter threshold of 16
-        scramble blocksize of 16 => filter threshold of 8
-        scramble blocksize of 8 => filter threshold of 4
-        """
+        """scramble blocksize of 128 => filter threshold of 64 scramble
+        blocksize of 64 => filter threshold of 32 scramble blocksize of 32 =>
+        filter threshold of 16 scramble blocksize of 16 => filter threshold of
+        8 scramble blocksize of 8 => filter threshold of 4."""
         self.threshold = threshold
         self.order = order
 
     def __call__(self, *inputs):
-        """
-        inputs should have values between 0 and 255
-        """
+        """inputs should have values between 0 and 255."""
         outputs = []
         for idx, _input in enumerate(inputs):
             rows = _input.size(1)

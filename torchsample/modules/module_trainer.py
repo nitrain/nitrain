@@ -1,6 +1,4 @@
-"""
-ModuleTrainer for high level training on Pytorch models
-"""
+"""ModuleTrainer for high level training on Pytorch models."""
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -30,8 +28,7 @@ from tqdm import tqdm
 class ModuleTrainer(object):
 
     def __init__(self, model):
-        """
-        ModelTrainer for high-level training of Pytorch models
+        """ModelTrainer for high-level training of Pytorch models.
 
         Major Parts
         -----------
@@ -194,9 +191,7 @@ class ModuleTrainer(object):
             shuffle=False,
             cuda_device=-1,
             verbose=1):
-        """
-        Fit a model on in-memory tensors using ModuleTrainer
-        """
+        """Fit a model on in-memory tensors using ModuleTrainer."""
         self.model.train(True)
         # ----------------------------------------------------------------------
         num_inputs, num_targets = _parse_num_inputs_and_targets(inputs, targets)
@@ -295,9 +290,7 @@ class ModuleTrainer(object):
         self.model.train(mode=False)
 
     def fit_loader(self, loader, val_loader=None, initial_epoch=0, num_epoch=100, cuda_device=-1, verbose=1):
-        """
-        Fit a model on in-memory tensors using ModuleTrainer
-        """
+        """Fit a model on in-memory tensors using ModuleTrainer."""
         self.model.train(mode=True)
         # ----------------------------------------------------------------------
         num_inputs = loader.dataset.num_inputs

@@ -1,6 +1,4 @@
-"""
-Utility functions for th.Tensors
-"""
+"""Utility functions for th.Tensors."""
 
 import pickle
 import random
@@ -10,29 +8,27 @@ import torch as th
 
 
 def th_allclose(x, y):
-    """
-    Determine whether two torch tensors have same values
-    Mimics np.allclose
-    """
+    """Determine whether two torch tensors have same values Mimics
+    np.allclose."""
     return th.sum(th.abs(x - y)) < 1e-5
 
 
 def th_flatten(x):
-    """Flatten tensor"""
+    """Flatten tensor."""
     return x.contiguous().view(-1)
 
 
 def th_c_flatten(x):
-    """
-    Flatten tensor, leaving channel intact.
+    """Flatten tensor, leaving channel intact.
+
     Assumes CHW format.
     """
     return x.contiguous().view(x.size(0), -1)
 
 
 def th_bc_flatten(x):
-    """
-    Flatten tensor, leaving batch and channel dims intact.
+    """Flatten tensor, leaving batch and channel dims intact.
+
     Assumes BCHW format
     """
     return x.contiguous().view(x.size(0), x.size(1), -1)
@@ -70,8 +66,7 @@ def th_gather_nd(x, coords):
 
 
 def th_affine2d(x, matrix, mode='bilinear', center=True):
-    """
-    2D Affine image transform on th.Tensor
+    """2D Affine image transform on th.Tensor.
 
     Arguments
     ---------
@@ -139,9 +134,7 @@ def th_affine2d(x, matrix, mode='bilinear', center=True):
 
 
 def th_nearest_interp2d(input, coords):
-    """
-    2d nearest neighbor interpolation th.Tensor
-    """
+    """2d nearest neighbor interpolation th.Tensor."""
     # take clamp of coords so they're in the image bounds
     x = th.clamp(coords[:, :, 0], 0, input.size(1) - 1).round()
     y = th.clamp(coords[:, :, 1], 0, input.size(2) - 1).round()
@@ -158,9 +151,7 @@ def th_nearest_interp2d(input, coords):
 
 
 def th_bilinear_interp2d(input, coords):
-    """
-    bilinear interpolation in 2d
-    """
+    """bilinear interpolation in 2d."""
     x = th.clamp(coords[:, :, 0], 0, input.size(1) - 2)
     x0 = x.floor()
     x1 = x0 + 1
@@ -192,9 +183,7 @@ def th_bilinear_interp2d(input, coords):
 
 
 def th_affine3d(x, matrix, mode='trilinear', center=True):
-    """
-    3D Affine image transform on th.Tensor
-    """
+    """3D Affine image transform on th.Tensor."""
     A = matrix[:3, :3]
     b = matrix[:3, 3]
 
@@ -228,9 +217,7 @@ def th_affine3d(x, matrix, mode='trilinear', center=True):
 
 
 def th_nearest_interp3d(input, coords):
-    """
-    2d nearest neighbor interpolation th.Tensor
-    """
+    """2d nearest neighbor interpolation th.Tensor."""
     # take clamp of coords so they're in the image bounds
     coords[:, 0] = th.clamp(coords[:, 0], 0, input.size(1) - 1).round()
     coords[:, 1] = th.clamp(coords[:, 1], 0, input.size(2) - 1).round()
@@ -247,9 +234,7 @@ def th_nearest_interp3d(input, coords):
 
 
 def th_trilinear_interp3d(input, coords):
-    """
-    trilinear interpolation of 3D th.Tensor image
-    """
+    """trilinear interpolation of 3D th.Tensor image."""
     # take clamp then floor/ceil of x coords
     x = th.clamp(coords[:, 0], 0, input.size(1) - 2)
     x0 = x.floor()
@@ -298,9 +283,7 @@ def th_trilinear_interp3d(input, coords):
 
 
 def th_pearsonr(x, y):
-    """
-    mimics scipy.stats.pearsonr
-    """
+    """mimics scipy.stats.pearsonr."""
     mean_x = th.mean(x)
     mean_y = th.mean(y)
     xm = x.sub(mean_x)
@@ -312,9 +295,7 @@ def th_pearsonr(x, y):
 
 
 def th_corrcoef(x):
-    """
-    mimics np.corrcoef
-    """
+    """mimics np.corrcoef."""
     # calculate covariance matrix of rows
     mean_x = th.mean(x, 1)
     xm = x.sub(mean_x.expand_as(x))
@@ -334,14 +315,11 @@ def th_corrcoef(x):
 
 
 def th_matrixcorr(x, y):
-    """
-    return a correlation matrix between
-    columns of x and columns of y.
+    """return a correlation matrix between columns of x and columns of y.
 
-    So, if X.size() == (1000,4) and Y.size() == (1000,5),
-    then the result will be of size (4,5) with the
-    (i,j) value equal to the pearsonr correlation coeff
-    between column i in X and column j in Y
+    So, if X.size() == (1000,4) and Y.size() == (1000,5), then the
+    result will be of size (4,5) with the (i,j) value equal to the
+    pearsonr correlation coeff between column i in X and column j in Y
     """
     mean_x = th.mean(x, 0)
     mean_y = th.mean(y, 0)
@@ -400,18 +378,14 @@ def th_random_choice(a, n_samples=1, replace=True, p=None):
 
 
 def save_transform(file, transform):
-    """
-    Save a transform object
-    """
+    """Save a transform object."""
     with open(file, 'wb') as output_file:
         pickler = pickle.Pickler(output_file, -1)
         pickler.dump(transform)
 
 
 def load_transform(file):
-    """
-    Load a transform object
-    """
+    """Load a transform object."""
     with open(file, 'rb') as input_file:
         transform = pickle.load(input_file)
     return transform

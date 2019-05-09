@@ -102,9 +102,7 @@ class ProjectionCorrelation(Metric):
         self.total_count = 0.
 
     def __call__(self, y_pred, y_true=None):
-        """
-        y_pred should be two projections
-        """
+        """y_pred should be two projections."""
         covar_mat = th.abs(th_matrixcorr(y_pred[0].data, y_pred[1].data))
         self.corr_sum += th.trace(covar_mat)
         self.total_count += covar_mat.size(0)
@@ -124,9 +122,7 @@ class ProjectionAntiCorrelation(Metric):
         self.total_count = 0.
 
     def __call__(self, y_pred, y_true=None):
-        """
-        y_pred should be two projections
-        """
+        """y_pred should be two projections."""
         covar_mat = th.abs(th_matrixcorr(y_pred[0].data, y_pred[1].data))
         upper_sum = th.sum(th.triu(covar_mat, 1))
         lower_sum = th.sum(th.tril(covar_mat, -1))

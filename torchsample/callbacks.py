@@ -1,6 +1,4 @@
-"""
-SuperModule Callbacks
-"""
+"""SuperModule Callbacks."""
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -27,9 +25,7 @@ def _get_current_time():
 
 
 class CallbackContainer(object):
-    """
-    Container holding a list of callbacks.
-    """
+    """Container holding a list of callbacks."""
 
     def __init__(self, callbacks=None, queue_length=10):
         callbacks = callbacks or []
@@ -84,9 +80,7 @@ class CallbackContainer(object):
 
 
 class Callback(object):
-    """
-    Abstract base class used to build new callbacks.
-    """
+    """Abstract base class used to build new callbacks."""
 
     def __init__(self):
         pass
@@ -119,11 +113,10 @@ class Callback(object):
 class TQDM(Callback):
 
     def __init__(self):
-        """
-        TQDM Progress Bar callback
+        """TQDM Progress Bar callback.
 
-        This callback is automatically applied to 
-        every SuperModule if verbose > 0
+        This callback is automatically applied to every SuperModule if
+        verbose > 0
         """
         self.progbar = None
         super(TQDM, self).__init__()
@@ -169,11 +162,9 @@ class TQDM(Callback):
 
 
 class History(Callback):
-    """
-    Callback that records events into a `History` object.
+    """Callback that records events into a `History` object.
 
-    This callback is automatically applied to
-    every SuperModule.
+    This callback is automatically applied to every SuperModule.
     """
 
     def __init__(self, model):
@@ -221,8 +212,7 @@ class History(Callback):
 
 
 class ModelCheckpoint(Callback):
-    """
-    Model Checkpoint to save model weights during training
+    """Model Checkpoint to save model weights during training.
 
     save_checkpoint({
                 'epoch': epoch + 1,
@@ -235,7 +225,6 @@ class ModelCheckpoint(Callback):
         th.save(state, filename)
         if is_best:
             shutil.copyfile(filename, 'model_best.pth.tar')
-
     """
 
     def __init__(self,
@@ -246,8 +235,7 @@ class ModelCheckpoint(Callback):
                  save_weights_only=True,
                  max_save=-1,
                  verbose=0):
-        """
-        Model Checkpoint to save model weights during training
+        """Model Checkpoint to save model weights during training.
 
         Arguments
         ---------
@@ -259,7 +247,7 @@ class ModelCheckpoint(Callback):
             whether to monitor train or val loss
         save_best_only : boolean
             whether to only save if monitored value has improved
-        save_weight_only : boolean 
+        save_weight_only : boolean
             whether to save entire model or just weights
             NOTE: only `True` is supported at the moment
         max_save : integer > 0 or -1
@@ -345,15 +333,12 @@ class ModelCheckpoint(Callback):
 
 
 class EarlyStopping(Callback):
-    """
-    Early Stopping to terminate training early under certain conditions
-    """
+    """Early Stopping to terminate training early under certain conditions."""
 
     def __init__(self, monitor='val_loss', min_delta=0, patience=5):
-        """
-        EarlyStopping callback to exit the training loop if training or
+        """EarlyStopping callback to exit the training loop if training or
         validation loss does not improve by a certain amount for a certain
-        number of epochs
+        number of epochs.
 
         Arguments
         ---------
@@ -398,15 +383,12 @@ class EarlyStopping(Callback):
 
 
 class LRScheduler(Callback):
-    """
-    Schedule the learning rate according to some function of the 
-    current epoch index, current learning rate, and current train/val loss.
-    """
+    """Schedule the learning rate according to some function of the current
+    epoch index, current learning rate, and current train/val loss."""
 
     def __init__(self, schedule):
-        """
-        LearningRateScheduler callback to adapt the learning rate
-        according to some function
+        """LearningRateScheduler callback to adapt the learning rate according
+        to some function.
 
         Arguments
         ---------
@@ -451,13 +433,10 @@ class LRScheduler(Callback):
 
 
 class ReduceLROnPlateau(Callback):
-    """
-    Reduce the learning rate if the train or validation loss plateaus
-    """
+    """Reduce the learning rate if the train or validation loss plateaus."""
 
     def __init__(self, monitor='val_loss', factor=0.1, patience=10, epsilon=0, cooldown=0, min_lr=0, verbose=0):
-        """
-        Reduce the learning rate if the train or validation loss plateaus
+        """Reduce the learning rate if the train or validation loss plateaus.
 
         Arguments
         ---------
@@ -469,7 +448,7 @@ class ReduceLROnPlateau(Callback):
             number of epochs to wait for loss improvement before reducing lr
         epsilon : float
             how much improvement must be made to reset patience
-        cooldown : integer 
+        cooldown : integer
             number of epochs to cooldown after a lr reduction
         min_lr : float
             minimum value to ever let the learning rate decrease to
@@ -492,9 +471,7 @@ class ReduceLROnPlateau(Callback):
         super(ReduceLROnPlateau, self).__init__()
 
     def _reset(self):
-        """
-        Reset the wait and cooldown counters
-        """
+        """Reset the wait and cooldown counters."""
         self.monitor_op = lambda a, b: (a - b) < -self.epsilon
         self.best_loss = 1e15
         self.cooldown_counter = 0
@@ -535,13 +512,10 @@ class ReduceLROnPlateau(Callback):
 
 
 class CSVLogger(Callback):
-    """
-    Logs epoch-level metrics to a CSV file
-    """
+    """Logs epoch-level metrics to a CSV file."""
 
     def __init__(self, file, separator=',', append=False):
-        """
-        Logs epoch-level metrics to a CSV file
+        """Logs epoch-level metrics to a CSV file.
 
         Arguments
         ---------
@@ -680,9 +654,7 @@ class ExperimentLogger(Callback):
 
 
 class LambdaCallback(Callback):
-    """
-    Callback for creating simple, custom callbacks on-the-fly.
-    """
+    """Callback for creating simple, custom callbacks on-the-fly."""
 
     def __init__(self,
                  on_epoch_begin=None,
