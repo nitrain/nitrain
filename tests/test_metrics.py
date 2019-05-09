@@ -1,3 +1,4 @@
+# python -m pytest --tb=line -svv tests/test_metrics.py
 import unittest
 import torch
 

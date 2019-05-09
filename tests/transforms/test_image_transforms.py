@@ -1,6 +1,6 @@
 """
 Tests for torchsample/transforms/image_transforms.py
-pytest tests/transforms/test_image_transforms.py -svvv --tb=line
+python -m pytest tests/transforms/test_image_transforms.py -svvv --tb=line
 """
 
 import torch as th
@@ -12,7 +12,9 @@ from torchsample.transforms import (Grayscale, RandomGrayscale, Gamma, RandomGam
 # ----------------------------------------------------
 # ----------------------------------------------------
 
+
 class TestImageTransforms(object):
+
     @classmethod
     def setup_class(cls):
         # the test img resolution is 400x300
@@ -57,7 +59,6 @@ class TestImageTransforms(object):
 
         return images
 
-
     def multi_gray2d_setup(self):
         old_imgs = self.gray2d_setup()
         images = {}
@@ -89,7 +90,6 @@ class TestImageTransforms(object):
             images[k + '_3imgs'] = [v, v, v]
             images[k + '_4imgs'] = [v, v, v, v]
         return images
-
 
     # ----------------------------------------------------
     # ----------------------------------------------------

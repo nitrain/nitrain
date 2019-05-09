@@ -390,7 +390,7 @@ def th_random_choice(a, n_samples=1, replace=True, p=None):
             raise ValueError('p must sum to 1.0, p: {}'.format(p))
         if not replace:
             raise ValueError('replace must equal true if probabilities given')
-        idx_vec = th.cat([th.zeros(round(p[i] * 1000)) + i for i in range(len(p))])
+        idx_vec = th.cat([th.zeros(round(float(p[i]) * 1000)) + i for i in range(len(p))])
         idx = (th.floor(th.rand(n_samples) * 999)).long()
         idx = idx_vec[idx].long()
     selection = a[idx]

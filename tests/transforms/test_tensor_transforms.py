@@ -1,6 +1,6 @@
 """
 Tests for torchsample/transforms/tensor_transforms.py
-pytest tests/transforms/test_tensor_transforms.py -svvv --tb=line
+python -m pytest tests/transforms/test_tensor_transforms.py -svvv --tb=line
 """
 
 import torch as th
@@ -16,6 +16,7 @@ from torchsample.transforms import (ToTensor, ToCuda, ToFile, ChannelsLast, HWC,
 
 
 class TestTensorTransforms(object):
+
     @classmethod
     def setup_class(cls):
         ## DATA SET ##
@@ -49,7 +50,6 @@ class TestTensorTransforms(object):
         images['gray_02'] = x
         return images
 
-
     def multi_gray2d_setup(self):
         old_imgs = self.gray2d_setup()
         images = {}
@@ -82,14 +82,13 @@ class TestTensorTransforms(object):
             images[k + '_4imgs'] = [v, v, v, v]
         return images
 
-
     # ----------------------------------------------------
     # ----------------------------------------------------
     ## TFORMS SETUP ###
     def test_ToTensor(self):
         tforms = {}
         tforms['totensor'] = ToTensor()
-        self._test_image_transforms_runtime(tforms)
+        self._test_tensor_transforms_runtime(tforms)
 
     def ToCuda(self):
         tforms = {}
@@ -103,19 +102,19 @@ class TestTensorTransforms(object):
         tforms['tofile_pth'] = ToFile(root=ROOT, ext='.pth')
         tforms['tofile_jpg'] = ToFile(root=ROOT, ext='.jpg')
         tforms['tofile_png'] = ToFile(root=ROOT, ext='.png')
-        self._test_image_transforms_runtime(tforms)
+        self._test_tensor_transforms_runtime(tforms)
 
     def test_ChannelsLast(self):
         tforms = {}
         tforms['channels_last'] = ChannelsLast()
         tforms['hwc'] = HWC()
-        self._test_image_transforms_runtime(tforms)
+        self._test_tensor_transforms_runtime(tforms)
 
     def test_ChannelsFirst(self):
         tforms = {}
         tforms['channels_first'] = ChannelsFirst()
         tforms['chw'] = CHW()
-        self._test_image_transforms_runtime(tforms)
+        self._test_tensor_transforms_runtime(tforms)
 
     def test_TypeCast(self):
         tforms = {}
@@ -125,14 +124,14 @@ class TestTensorTransforms(object):
         tforms['int'] = TypeCast('int')
         tforms['long'] = TypeCast('long')
         tforms['short'] = TypeCast('short')
-        self._test_image_transforms_runtime(tforms)
+        self._test_tensor_transforms_runtime(tforms)
 
     def test_AddChannel(self):
         tforms = {}
         tforms['addchannel_axis0'] = AddChannel(axis=0)
         tforms['addchannel_axis1'] = AddChannel(axis=1)
         tforms['addchannel_axis2'] = AddChannel(axis=2)
-        self._test_image_transforms_runtime(tforms)
+        self._test_tensor_transforms_runtime(tforms)
 
     def test_Transpose(self):
         tforms = {}
@@ -142,7 +141,7 @@ class TestTensorTransforms(object):
         tforms['transpose_12'] = Transpose(1, 2)
         tforms['transpose_20'] = Transpose(2, 0)
         tforms['transpose_21'] = Transpose(2, 1)
-        self._test_image_transforms_runtime(tforms)
+        self._test_tensor_transforms_runtime(tforms)
 
     def test_RangeNormalize(self):
         tforms = {}
@@ -150,14 +149,12 @@ class TestTensorTransforms(object):
         tforms['rangenorm_-11'] = RangeNormalize(-1, 1)
         tforms['rangenorm_-33'] = RangeNormalize(-3, 3)
         tforms['rangenorm_02'] = RangeNormalize(0, 2)
-        self._test_image_transforms_runtime(tforms)
+        self._test_tensor_transforms_runtime(tforms)
 
     def test_StdNormalize(self):
         tforms = {}
         tforms['stdnorm'] = StdNormalize()
-        self._test_image_transforms_runtime(tforms)
-
-
+        self._test_tensor_transforms_runtime(tforms)
 
     def test_RandomCrop(self):
         tforms = {}
@@ -167,7 +164,7 @@ class TestTensorTransforms(object):
         tforms['randomcrop_99'] = RandomCrop((9, 9))
         tforms['randomcrop_79'] = RandomCrop((7, 9))
         tforms['randomcrop_97'] = RandomCrop((9, 7))
-        self._test_image_transforms_runtime(tforms)
+        self._test_tensor_transforms_runtime(tforms)
 
     def test_SpecialCrop(self):
         tforms = {}
@@ -205,8 +202,7 @@ class TestTensorTransforms(object):
         tforms['specialcrop_4_99'] = SpecialCrop((9, 9), 4)
         tforms['specialcrop_4_79'] = SpecialCrop((7, 9), 4)
         tforms['specialcrop_4_97'] = SpecialCrop((9, 7), 4)
-        self._test_image_transforms_runtime(tforms)
-
+        self._test_tensor_transforms_runtime(tforms)
 
     def test_Pad(self):
         tforms = {}
@@ -218,7 +214,7 @@ class TestTensorTransforms(object):
         tforms['pad_4139'] = Pad((41, 39))
         tforms['pad_4138'] = Pad((41, 38))
         tforms['pad_3841'] = Pad((38, 41))
-        self._test_image_transforms_runtime(tforms)
+        self._test_tensor_transforms_runtime(tforms)
 
     def test_RandomFlip(self):
         tforms = {}
@@ -234,14 +230,14 @@ class TestTensorTransforms(object):
         tforms['randomflip_hv_02'] = RandomFlip(h=True, v=True, p=0)
         tforms['randomflip_hv_03'] = RandomFlip(h=True, v=True, p=1)
         tforms['randomflip_hv_04'] = RandomFlip(h=True, v=True, p=0.3)
-        self._test_image_transforms_runtime(tforms)
+        self._test_tensor_transforms_runtime(tforms)
 
     def test_RandomOrder(self):
         tforms = {}
         tforms['randomorder'] = RandomOrder()
-        self._test_image_transforms_runtime(tforms)
+        self._test_tensor_transforms_runtime(tforms)
 
-    def _test_image_transforms_runtime(self, tforms):
+    def _test_tensor_transforms_runtime(self, tforms):
         """
         Test that there are no runtime errors
         """
