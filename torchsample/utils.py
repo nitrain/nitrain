@@ -72,7 +72,7 @@ def th_gather_nd(x, coords):
 def th_affine2d(x, matrix, mode='bilinear', center=True):
     """
     2D Affine image transform on th.Tensor
-    
+
     Arguments
     ---------
     x : th.Tensor of size (C, H, W)
@@ -85,12 +85,12 @@ def th_affine2d(x, matrix, mode='bilinear', center=True):
         interpolation scheme to use
 
     center : boolean
-        whether to alter the bias of the transform 
+        whether to alter the bias of the transform
         so the transform is applied about the center
         of the image rather than the origin
 
     Example
-    ------- 
+    -------
     >>> import torch
     >>> from torchsample.utils import *
     >>> x = th.zeros(2,1000,1000)
@@ -382,20 +382,20 @@ def th_random_choice(a, n_samples=1, replace=True, p=None):
 
     if p is None:
         if replace:
-            idx = th.floor(th.rand(n_samples) * a.size(0)).long()
+            idx = th.floor(th.rand(n_samples) * len(a)).long()
         else:
             idx = th.randperm(len(a))[:n_samples]
     else:
         if abs(1.0 - sum(p)) > 1e-3:
-            raise ValueError('p must sum to 1.0')
+            raise ValueError('p must sum to 1.0, p: {}'.format(p))
         if not replace:
             raise ValueError('replace must equal true if probabilities given')
         idx_vec = th.cat([th.zeros(round(p[i] * 1000)) + i for i in range(len(p))])
         idx = (th.floor(th.rand(n_samples) * 999)).long()
         idx = idx_vec[idx].long()
     selection = a[idx]
-    if n_samples == 1:
-        selection = selection[0]
+    # if n_samples == 1:
+    #     selection = selection[0]
     return selection
 
 

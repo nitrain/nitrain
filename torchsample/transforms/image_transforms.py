@@ -1,5 +1,5 @@
 """
-Transforms very specific to images such as 
+Transforms very specific to images such as
 color, lighting, contrast, brightness, etc transforms
 
 NOTE: Most of these transforms assume your image intensity
@@ -30,7 +30,7 @@ def _blend(img1, img2, alpha):
 
 class Grayscale(object):
 
-    def __init__(self, keep_channels=False):
+    def __init__(self, keep_channels=False, format='CHW'):
         """
         Convert RGB image to grayscale
 
@@ -39,16 +39,22 @@ class Grayscale(object):
         keep_channels : boolean
             If true, will keep all 3 channels and they will be the same
             If false, will just return 1 grayscale channel
+        format: CHW or HWC
         """
         self.keep_channels = keep_channels
         if keep_channels:
             self.channels = 3
         else:
             self.channels = 1
+        self.format = format
 
     def __call__(self, *inputs):
         outputs = []
         for idx, _input in enumerate(inputs):
+            _input_channels = _input.shape[0] if self.format == 'CHW' else _input.shape[-1]
+            if _input_channels == 1:
+                outputs.append(_input)
+                continue
             _input_dst = _input[0] * 0.299 + _input[1] * 0.587 + _input[2] * 0.114
             _input_gs = _input_dst.repeat(self.channels, 1, 1)
             outputs.append(_input_gs)
@@ -84,10 +90,10 @@ class Gamma(object):
 
     def __init__(self, value):
         """
-        Performs Gamma Correction on the input image. Also known as 
-        Power Law Transform. This function transforms the input image 
-        pixelwise according 
-        to the equation Out = In**gamma after scaling each 
+        Performs Gamma Correction on the input image. Also known as
+        Power Law Transform. This function transforms the input image
+        pixelwise according
+        to the equation Out = In**gamma after scaling each
         pixel to the range 0 to 1.
 
         Arguments
@@ -112,9 +118,9 @@ class RandomGamma(object):
     def __init__(self, min_val, max_val):
         """
         Performs Gamma Correction on the input image with some
-        randomly selected gamma value between min_val and max_val. 
-        Also known as Power Law Transform. This function transforms 
-        the input image pixelwise according to the equation 
+        randomly selected gamma value between min_val and max_val.
+        Also known as Power Law Transform. This function transforms
+        the input image pixelwise according to the equation
         Out = In**gamma after scaling each pixel to the range 0 to 1.
 
         Arguments
@@ -144,8 +150,8 @@ class RandomChoiceGamma(object):
         """
         Performs Gamma Correction on the input image with some
         gamma value selected in the list of given values.
-        Also known as Power Law Transform. This function transforms 
-        the input image pixelwise according to the equation 
+        Also known as Power Law Transform. This function transforms
+        the input image pixelwise according to the equation
         Out = In**gamma after scaling each pixel to the range 0 to 1.
 
         Arguments
@@ -333,14 +339,14 @@ class Contrast(object):
 
     """
 
-    def __init__(self, value):
+    def __init__(self, value, fmt='CHW'):
         """
         Adjust Contrast of image.
 
         Contrast is adjusted independently for each channel of each image.
 
-        For each channel, this Op computes the mean of the image pixels 
-        in the channel and then adjusts each component x of each pixel to 
+        For each channel, this Op computes the mean of the image pixels
+        in the channel and then adjusts each component x of each pixel to
         (x - mean) * contrast_factor + mean.
 
         Arguments
@@ -350,15 +356,19 @@ class Contrast(object):
             ZERO: channel means
             larger positive value: greater contrast
             larger negative value: greater inverse contrast
+        fmt: CHW or HWC
         """
         self.value = value
+        self.fmt = fmt
 
     def __call__(self, *inputs):
         outputs = []
         for idx, _input in enumerate(inputs):
-            channel_means = _input.mean(1).mean(2)
-            channel_means = channel_means.expand_as(_input)
-            _input = th.clamp((_input-channel_means) * self.value + channel_means, 0, 1)
+            if self.fmt == 'CHW':
+                channel_means = _input.mean(dim=(1,2), keepdim=True)
+            else:
+                channel_means = _input.mean(dim=(0,1), keepdim=True)
+            _input = th.clamp((_input - channel_means) * self.value + channel_means, 0, 1)
             outputs.append(_input)
         return outputs if idx > 1 else outputs[0]
 

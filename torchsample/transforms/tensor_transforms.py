@@ -8,7 +8,7 @@ import torch
 import mmcv
 import torch as th
 import torch.nn.functional as F
-
+import mmcv
 from ..utils import th_random_choice
 
 
@@ -117,7 +117,7 @@ class ToFile(object):
     NOTE: Only supports saving to Numpy currently
     """
 
-    def __init__(self, root):
+    def __init__(self, root, ext='.npy', fmt='CHW'):
         """
         Saves an image to file. Useful as a pass-through ransform
         when wanting to observe how augmentation affects the data
@@ -132,12 +132,25 @@ class ToFile(object):
         if root.startswith('~'):
             root = osp.expanduser(root)
         self.root = root
+        self.fmt = fmt
+        self.ext = ext
         self.counter = 0
 
     def __call__(self, *inputs):
-        for idx, _input in inputs:
-            fpath = osp.join(self.root, 'img_%i_%i.npy' % (self.counter, idx))
-            np.save(fpath, _input.numpy())
+        for idx, _input in enumerate(inputs):
+            fpath = osp.join(self.root, 'img_{}_{}{}'.format(self.counter, idx, self.ext))
+            if self.ext == '.npy':
+                np.save(fpath, _input.cpu().numpy())
+            elif self.ext == '.pth':
+                th.save(_input, fpath)
+            elif self.ext in ['.png', '.jpg']:
+                if self.fmt == 'CHW':
+                    img_save = _input.cpu().numpy().transpose((1, 2, 0))
+                else:
+                    img_save = _input.cpu().numpy()
+                mmcv.imwrite(img_save, fpath)
+            else:
+                raise NotImplementedError('not supported file extension {}'.format(self.ext))
         self.counter += 1
         return inputs
 
