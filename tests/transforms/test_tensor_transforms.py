@@ -267,6 +267,7 @@ def RandomOrder_setup():
 
 
 def test_image_transforms_runtime(verbose=1):
+    DEBUG = False
     ### MAKE TRANSFORMS ###
     tforms = {}
     tforms.update(ToTensor_setup())
@@ -298,6 +299,15 @@ def test_image_transforms_runtime(verbose=1):
         # print('im_key: ', im_key)
         for tf_key, tf_val in tforms.items():
             # print('tf_key: ', tf_key, 'tf_val: ', tf_val)
+            if DEBUG:
+                if isinstance(im_val, (tuple, list)):
+                    if any(k in tf_key for k in ['randomflip', 'specialcrop', 'pad']):
+                        continue
+                    # print(type(im_val), len(im_val))
+                    tf_val(*im_val)
+                else:
+                    # print('single image: ', im_val.shape)
+                    tf_val(im_val)
             try:
                 if isinstance(im_val, (tuple, list)):
                     if any(k in tf_key for k in ['randomflip', 'specialcrop', 'pad']):
@@ -316,6 +326,7 @@ def test_image_transforms_runtime(verbose=1):
 
     print('# SUCCESSES: ', len(successes))
     print('# FAILURES: ', len(failures))
+    assert len(failures) == 0
 
 
 if __name__ == '__main__':

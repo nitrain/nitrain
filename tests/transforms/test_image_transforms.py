@@ -195,6 +195,7 @@ def test_image_transforms_runtime(verbose=1):
 
     print('# SUCCESSES: ', len(successes))
     print('# FAILURES: ', len(failures))
+    assert len(failures) == 0
 
 
 if __name__ == '__main__':
