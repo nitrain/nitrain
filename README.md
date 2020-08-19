@@ -1,5 +1,3 @@
-If you are hiring for a Python-based software engineer or data analyst, email me at nickcullen31 at gmail dot com.
-
 
 # High-Level Training, Data Augmentation, and Utilities for Pytorch
 
