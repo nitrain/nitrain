@@ -277,7 +277,7 @@ class ModuleTrainer(object):
                         metrics_logs = self.metric_container(output_batch, target_batch)
                         batch_logs.update(metrics_logs)
 
-                    batch_logs['loss'] = loss.data[0]
+                    batch_logs['loss'] = loss.data.item()
                     callback_container.on_batch_end(batch_idx, batch_logs)
 
                 if has_val_data:
