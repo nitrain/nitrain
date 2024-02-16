@@ -129,7 +129,7 @@ class Affine(object):
                                    self.tform_matrix,
                                    mode=interp[idx])
             outputs.append(input_tf)
-        return outputs if idx > 1 else outputs[0]
+        return outputs if idx >= 1 else outputs[0]
 
 
 class AffineCompose(object):
@@ -180,7 +180,7 @@ class AffineCompose(object):
                                    tform_matrix,
                                    mode=interp[idx])
             outputs.append(input_tf)
-        return outputs if idx > 1 else outputs[0]
+        return outputs if idx >= 1 else outputs[0]
 
 
 class RandomRotate(object):
@@ -321,7 +321,7 @@ class Rotate(object):
                                        mode=interp[idx],
                                        center=True)
                 outputs.append(input_tf)
-            return outputs if idx > 1 else outputs[0]
+            return outputs if idx >= 1 else outputs[0]
 
 
 class RandomTranslate(object):
@@ -488,7 +488,7 @@ class Translate(object):
                                        mode=interp[idx],
                                        center=True)
                 outputs.append(input_tf)
-            return outputs if idx > 1 else outputs[0]
+            return outputs if idx >= 1 else outputs[0]
 
 
 class RandomShear(object):
@@ -610,7 +610,7 @@ class Shear(object):
                                        mode=interp[idx],
                                        center=True)
                 outputs.append(input_tf)
-            return outputs if idx > 1 else outputs[0]
+            return outputs if idx >= 1 else outputs[0]
 
 
 class RandomZoom(object):
@@ -762,6 +762,6 @@ class Zoom(object):
                                        mode=interp[idx],
                                        center=True)
                 outputs.append(input_tf)
-            return outputs if idx > 1 else outputs[0]
+            return outputs if idx >= 1 else outputs[0]
 
 
