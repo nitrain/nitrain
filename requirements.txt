@@ -2,3 +2,4 @@ nibabel
 torch
 pandas
 tqdm
+numpy
