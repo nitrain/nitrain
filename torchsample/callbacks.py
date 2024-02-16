@@ -6,7 +6,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 from collections import OrderedDict
-from collections import Iterable
+from collections.abc import Iterable
 import warnings
 
 import os
