@@ -9,6 +9,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.9"
 numpy = "^1.26.4"
+nibabel = "^5.2.0"
 
 
 [build-system]
