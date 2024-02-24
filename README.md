@@ -32,18 +32,13 @@ import nitrain
 
 ### Types of transforms
 
-The nitrain package supports standard image-based transformations:
+The nitrain package supports an extensive amount of neuroimaging-based transforms:
 
-- Rotate
-- Translate
-- Shear
-- Zoom
-- Flip
-- Pad
+- Affine (Rotate, Translate, Shear, Zoom)
+- Flip, Pad, Crop, Slice
 - Noise
+- Motion
 - Intensity normalization
-- Crop
-- Slice
 
 But nitrain also supports more extreme transformations such as those derived from non-linear image registration using the [https://github.com/antsx/ants][ANTs] framework.
 
