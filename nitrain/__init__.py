@@ -1,3 +1,3 @@
 
-from . import explain, models, plot, loaders, train, transforms, utils
+from . import explain, models, plot, sample, train, transforms, utils
 

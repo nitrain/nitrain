@@ -10,6 +10,14 @@ readme = "README.md"
 python = ">=3.9"
 numpy = "^1.26.4"
 nibabel = "^5.2.0"
+pybids = "^0.16.4"
+datalad = "^0.19.6"
+
+[tool.poetry.group.keras]
+optional = true
+
+[tool.poetry.group.keras.dependencies]
+keras = "*"
 
 
 [build-system]
