@@ -21,7 +21,7 @@ from nitrain import sample, train, explain
 
 ```
 
-## Sampling and augmentation of neuroimages
+## Sampling and augmentation
 
 Nitrain provides extensive functionality to help you sample neuroimages with imaging-native data augmentation techniques. Our focus is on speed, meaning you never have to convert your neuroimages into numpy arrays. Here is an example of how sampling works:
 
@@ -29,6 +29,25 @@ Nitrain provides extensive functionality to help you sample neuroimages with ima
 import nitrain
 
 ```
+
+### Types of transforms
+
+The nitrain package supports standard image-based transformations:
+
+- Rotate
+- Translate
+- Shear
+- Zoom
+- Flip
+- Pad
+- Noise
+- Intensity normalization
+- Crop
+- Slice
+
+But nitrain also supports more extreme transformations such as those derived from non-linear image registration using the [https://github.com/antsx/ants][ANTs] framework.
+
+All of these transforms can be combined using a single `Compose` transform that ensures efficient augmentation during model training.
 
 ## Training with popular frameworks
 
@@ -68,9 +87,11 @@ import nitrain
 nitrain.register_pretrained(model, 'my-cool-model')
 ```
 
-### Visualizing and explaining deep learning model results
+## Visualizing model results
 
-The idea that deep learning models are "black boxes" is out-dated, particularly when it comes to images. There are numerous techiques to help you understand which parts of the brain a trained model is weighing most when making predictions. One such technique is called the occlusion method, where you systematically "black out" different patches of an input image and see how the model prediction is affected. The idea here is that when important areas of an image are occluded, the model prediction will change a lot relative to its prediction on the original image.
+The idea that deep learning models are "black boxes" is out-dated, particularly when it comes to images. There are numerous techiques to help you understand which parts of the brain a trained model is weighing most when making predictions.
+
+One such technique is called the occlusion method, where you systematically "black out" different patches of an input image and see how the model prediction is affected. The idea is that when, when occluded, important areas result in a large change in model prediction compared to the original image.
 
 Nilearn provides tools to perform this techique - along with many others - and can help you visualize the results of such explainability experiments directly in brain space. Here is what that might look like:
 
