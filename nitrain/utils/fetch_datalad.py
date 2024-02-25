@@ -31,9 +31,6 @@ def fetch_datalad(name, path=None):
     if path is None:
         path = get_nitrain_dir()
     
-    if os.path.exists(os.path.join(path, name)):
-        return dl.Dataset(path = os.path.join(path, name))
-    
     ref = dl.clone(source=f'///openneuro/{name}', path=os.path.join(path, name))
     return ref
 

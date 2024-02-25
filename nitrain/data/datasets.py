@@ -3,6 +3,9 @@
 # - non-locally in S3 or Github
 # - in memory via numpy arrays
 
+# Improving performance:
+# https://www.tensorflow.org/guide/data_performance
+
 import os
 import bids
 import nibabel
@@ -11,15 +14,22 @@ import numpy as np
 import pandas as pd
 
 from .. import utils
-# layout.get_subjects()
-# layout.get_datatypes()
-# layout.get(datatype='anat', suffix='T1w',  return_type='filename')
-        
-class S3Dataset:
-    pass
 
-class GithubDataset:
-    pass
+__all__ = [
+    'S3Dataset',
+    'GithubDataset',
+    'FileDataset',
+    'MemoryDataset',
+    'CSVDataset'
+]
+
+
+class MemoryDataset:
+    
+    def __init__(self, X, y):
+        self.X = X
+        self.y = y
+
 
 class FileDataset:
     
@@ -82,24 +92,12 @@ class FileDataset:
         
         return X, y
 
-"""
-# download relevant T1 images
-layout = bids.BIDSLayout(ds.path)
-files = layout.get(extension='nii.gz', datatype='anat', suffix='T1w', return_type='filename')[:50]
-res = ds.get(files)
 
-# read participants file
-df = pd.read_csv(os.path.join(ds.path, 'participants.tsv'), sep='\t')
-df = df[df['participant_id'].isin(['sub-'+s for s in layout.get_subjects()[:50]])]
+class CSVDataset:
+    pass
 
-# get final arrays
-X = utils.files_to_array(files)
-y = df['age'].to_numpy() # (50,)
-"""
+class S3Dataset:
+    pass
 
-
-class Dataset:
-    
-    def __init__(self, X, y):
-        self.X = X
-        self.y = y
+class GithubDataset:
+    pass
