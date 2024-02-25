@@ -1,44 +1,36 @@
-# Full example of training a convolutional neural network (AlexNet)
-# on T1 MRI images with a continuous outcome (age) using Keras
-#
-# This example gives a good overview of main topics in nitrain:
-# - data loading + augmentation
-# - high-level training
-# - visualization + explainability
+# An example of how to download a dataset
 
+import os
+import bids
+import nibabel
+import datalad.api as dl
+import numpy as np
+import pandas as pd
 from nitrain import utils, data
-import keras
 
-# download and load the data into memory
-ds = utils.fetch_datalad('ds004711')
-dataset = data.FileDataset(path = ds.path, 
-                           layout = 'bids',
-                           meta = 'participants.tsv',
-                           x_config = {'suffix': 'T1w'},
-                           y_config = {'filename': 'participants.tsv', 'column': 'age'})
-dataset = dataset.filter('age < 80')
-x, y = dataset.load(n=10)
+download = utils.fetch_datalad('ds004711')
 
-# create a data loader from an in-memory dataset
-loader = data.DatasetLoader(
-    dataset = data.MemoryDataset(x, y)
-)
+# use a Datalad/BIDS folder -> create a FolderDataset 
+ds = data.FolderDataset(path = download.path, 
+                        layout = 'bids',
+                        x_config = {'suffix': 'T1w', 'run': [None, '01']},
+                        y_config = {'column': 'age'})
 
-# create the model
-num_classes = 2
-input_shape = loader.input_shape
+# access image filenames via index (note this does not read in data)
+x, y = ds[:5]
 
-model = keras.Sequential(
-    [
-        keras.layers.Input(shape=input_shape),
-        keras.layers.Conv2D(64, kernel_size=(3, 3), activation="relu"),
-        keras.layers.Conv2D(64, kernel_size=(3, 3), activation="relu"),
-        keras.layers.MaxPooling2D(pool_size=(2, 2)),
-        keras.layers.Conv2D(128, kernel_size=(3, 3), activation="relu"),
-        keras.layers.Conv2D(128, kernel_size=(3, 3), activation="relu"),
-        keras.layers.GlobalAveragePooling2D(),
-        keras.layers.Dropout(0.5),
-        keras.layers.Dense(num_classes, activation="softmax"),
-    ]
-)
-model.fit(loader)
+
+
+# load images into memory
+x, y = ds.load(n=7)
+
+
+## use in-memory images -> create a MemoryDataset
+ds_memory = data.MemoryDataset(x, y)
+
+loader = data.DatasetLoader(ds_memory,
+                            batch_size=2)
+
+
+for x, y in loader:
+    print(y)

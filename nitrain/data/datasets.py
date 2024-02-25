@@ -10,6 +10,7 @@
 
 import copy
 import os
+import ants
 import bids
 import nibabel
 import datalad.api as dl
@@ -49,6 +50,7 @@ class FolderDataset:
                  path, 
                  x_config,
                  y_config,
+                 x_transform=None,
                  layout='bids'):
         """
         Initialize a nitrain dataset consisting of local filepaths.
@@ -96,6 +98,7 @@ class FolderDataset:
         self.path = path
         self.x_config = x_config
         self.y_config = y_config
+        self.x_transform = x_transform
         self.layout = layout
         self.participants = participants
         self.x = x
@@ -131,30 +134,33 @@ class FolderDataset:
         ds.y = y
         return ds
 
-    
-    def load(self, n=None):
-        """
-        Load data into memory
-        """
-        files = self.x
-        if n is not None:
-            files = files[:n]
+    def __getitem__(self, idx):
+        files = self.x[idx]
+        if not isinstance(idx, slice):
+            files = [files]
+        y = self.y[idx]
         
         # make sure files are downloaded
         ds = dl.Dataset(path = self.path)
         res = ds.get(files)
         
-        x = utils.files_to_array(files)
+        x = []
+        for file in files:
+            img = ants.image_read(file)
         
-        # handle y
-        y = self.y
-        if n is not None:
-            y = y[:n]
+            if self.x_transform is not None:
+                img = self.x_transform(img)
+                if not isinstance(img, np.ndarray):
+                    img = img.numpy()
+            else:
+                img = img.numpy()
+            x.append(img)
+        x = np.array(x, dtype='float32')
+        
+        if not isinstance(idx, slice):
+            x = x[0]
 
         return x, y
-
-    def __getitem__(self, idx):
-        return self.x[idx], self.y[idx]
     
     def __len__(self):
         return len(self.x)
@@ -164,6 +170,7 @@ class FolderDataset:
             path=self.path,
             x_config=self.x_config,
             y_config=self.y_config,
+            x_transform=self.x_transform,
             layout=self.layout
         )
     
