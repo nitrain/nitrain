@@ -5,3 +5,6 @@
 # - data loading + augmentation
 # - high-level training
 # - visualization + explainability
+import nitrain
+
+data = nitrain.get_data('ds004711', return_data=True)

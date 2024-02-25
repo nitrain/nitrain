@@ -1,19 +1,23 @@
 # An example of how to download a dataset
 
+import os
 import bids
-from nitrain.utils import download_data
+import nibabel
+import datalad.api as dl
+import numpy as np
+import pandas as pd
+from nitrain import utils, data
 
-# will go to downloads directory
-download_data('ds003826')
+ds = utils.fetch_datalad('ds004711')
 
-# get some data
-# ds = dl.Dataset(localizer_path)
+dataset = data.FileDataset(path=ds.path, 
+                           layout='bids',
+                           X_config = {'extension': 'nii.gz', 'datatype': 'anat', 'suffix': 'T1w'},
+                           y_config = {'filename': 'participants.tsv', 'column': 'age'})
 
-# todo: use bids instead of glob
-# file_list = glob.glob(os.path.join(localizer_path, 'derivatives', 'fmriprep', '*', 'func', '*task-localizer_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz'))
+X, y = dataset.fetch_data(n=10)
 
-# result = ds.get(file_list[0])
-
+dataset2 = data.Dataset(X, y)
 
 
-# https://dartbrains.org/content/Download_Data.html
+

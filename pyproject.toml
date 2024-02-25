@@ -12,6 +12,8 @@ numpy = "^1.26.4"
 nibabel = "^5.2.0"
 pybids = "^0.16.4"
 datalad = "^0.19.6"
+pandas = "^2.2.1"
+keras = "^3.0.5"
 
 [tool.poetry.group.keras]
 optional = true

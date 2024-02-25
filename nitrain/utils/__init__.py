@@ -1,3 +1,3 @@
 # utility functions
 
-from .get_data import download_data
+from .fetch_datalad import *
