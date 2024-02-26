@@ -18,6 +18,9 @@ import datalad.api as dl
 import numpy as np
 import pandas as pd
 
+from torch.utils.data import Dataset
+
+
 from .. import utils
 
 __all__ = [
@@ -27,17 +30,24 @@ __all__ = [
 ]
 
             
-class MemoryDataset:
+class MemoryDataset(Dataset):
     
-    def __init__(self, x, y):
+    def __init__(self, x, y, x_transform=None):
         self.x = x
         self.y = y
+        self.x_transform = x_transform
         
     def filter(self, expr):
         raise NotImplementedError('Not implemented yet')
     
     def __getitem__(self, idx):
-        return self.x[idx], self.y[idx]
+        x = self.x[idx]
+        if self.x_transform is not None:
+            if isinstance(x, list):
+                x = [self.x_transform(xx) for xx in x]
+            else:
+                x = self.x_transform(x)
+        return x, self.y[idx]
 
     def __len__(self):
         return len(self.x)
@@ -57,15 +67,14 @@ class FolderDataset:
         
         Arguments
         ---------
-        X_datatype : string or n-tuple of strings
-            the datatype which determines the input images for the model. if
-            you supply a n-tupple, then it is assumed that you want to use
-            n images as input to the model. See bids.BIDSLayout
-            
-        X_suffix : string or n-tuple of strings
-            the suffix which determines the input images for the model. if
-            you supply a n-tupple, then it is assumed that you want to use
-            n images as input to the model. See bids.BIDSLayout
+        x_config : dict or list of dicts
+            Info used to grab the correct images from the folder. A list
+            of dicts means you want to return multiple images. This is helpful
+            if you need some other image(s) to help process the primary image - e.g.,
+            you can supply a list of 2-dicts to read in T1w images + the associated
+            mask. Then, you could use `x_transform` to mask the T1w image and only
+            return the masked T1w image from the dataset.
+
         
         Example
         -------

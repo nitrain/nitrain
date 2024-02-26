@@ -1,40 +1,30 @@
 # An example of how to download a dataset
 
 import os
-import bids
-import nibabel
-import datalad.api as dl
 import numpy as np
-import pandas as pd
+import ants
+import torch
+import keras
+from keras import layers
 from nitrain import utils, data, transforms as tx
 
 download = utils.fetch_datalad('ds004711')
+ds_pre = data.FolderDataset(path = download.path, 
+                            layout = 'bids',
+                            x_config = {'suffix': 'T1w', 
+                                        'scope': 'derivatives', 
+                                        'desc': 'precompute'},
+                            y_config = {'column': 'age'})
+# load into memory + create memory dataset to make things faster
+x, y = ds_pre[:]
+y = np.arange(len(x))
+ds = data.MemoryDataset(x, y, 
+                        x_transform=lambda x: np.expand_dims(x.resample_image((4,4)).numpy(),-1))
 
-# use a Datalad/BIDS folder -> create a FolderDataset 
-ds = data.FolderDataset(path = download.path, 
-                        layout = 'bids',
-                        x_config = {'suffix': 'T1w', 
-                                    'scope': 'derivatives',
-                                    'desc': 'precompute'},
-                        y_config = {'column': 'age'})
-# load in some data
-x, y = ds[:]
-
-## create a memory dataset for 
-ds_memory = data.MemoryDataset(x, y)
-
-loader = data.DatasetLoader(ds_memory,
-                            batch_size=10)
-
-# loop through each x, y pair for one epoch
-for x, y in loader:
-    print(x.shape)
-    print(y)
+l = data.DatasetLoader(ds, batch_size=10)
+l2 = torch.utils.data.DataLoader(ds, batch_size=10, shuffle=True)
 
 # build simple keras model
-import keras
-from keras import layers
-
 inputs = keras.Input(shape=(64,64,1))
 x = layers.Conv2D(8, 3, strides=2)(inputs)
 x = layers.MaxPooling2D(pool_size=2)(x)
@@ -48,17 +38,11 @@ model.compile(
     metrics=[keras.metrics.MeanSquaredError(name="mse")],
 )
 
-for epoch in range(10):
-    print(epoch)
-    for x_batch, y_batch in loader:
-        model.train_on_batch(x_batch, y_batch)
-        print(model.test_on_batch(x_batch, y_batch)[1])
+model.fit(l, epochs=20)
 
-
-loader = data.DatasetLoader(ds_memory,
-                            batch_size=150)
-x_test, y_test = next(iter(loader))
-y_pred = model.predict(x_test).flatten()
+# predict on train dataset
+x_test, y_test = ds[:]
+y_pred = model.predict(np.array(x_test)).flatten()
 
 # plot true age versus predicted age
 import matplotlib.pyplot as plt
