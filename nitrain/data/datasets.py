@@ -21,8 +21,6 @@ import pandas as pd
 from .. import utils
 
 __all__ = [
-    'S3Dataset',
-    'GithubDataset',
     'FolderDataset',
     'MemoryDataset',
     'CSVDataset'
@@ -77,13 +75,15 @@ class FolderDataset:
         
         if isinstance(layout, str):
             if layout.lower() == 'bids':
-                layout = bids.BIDSLayout(path)
+                layout = bids.BIDSLayout(path, derivatives=True)
             else:
                 raise Exception('Only bids layouts are accepted right now.')
         
         # GET X
         ids = layout.get(return_type='id', target='subject', **x_config)
         x = layout.get(return_type='filename', **x_config)
+        if len(x) == 0:
+            raise Exception('No images found matching the specified x_config.')
         
         # GET Y
         participants_file = layout.get(suffix='participants', extension='tsv')[0]
@@ -196,6 +196,7 @@ class FolderDataset:
         config['desc'] = desc
         self.x = self.layout.derivatives['nitrain'].get(return_type='filename', **config)
         self.x_config = config
+        self.x_transform = None
 
     def __getitem__(self, idx):
         files = self.x[idx]
@@ -238,10 +239,57 @@ class FolderDataset:
     
 
 class CSVDataset:
-    pass
+    
+    def __init__(self,
+                 path, 
+                 x_config,
+                 y_config,
+                 x_transform=None):
+        
+        data = pd.read_csv(path)
+        x = list(data[x_config['column']].to_numpy())
+        y = data[y_config['column']].to_numpy()
+        
+        self.path = path
+        self.x_config = x_config
+        self.y_config = y_config
+        self.x_transform = x_transform
+        self.data = data
+        self.x = x
+        self.y = y
 
-class S3Dataset:
-    pass
+    def __getitem__(self, idx):
+        files = self.x[idx]
+        if not isinstance(idx, slice):
+            files = [files]
+            
+        y = self.y[idx]
+        
+        x = []
+        for file in files:
+            img = ants.image_read(file)
+        
+            if self.x_transform is not None:
+                img = self.x_transform(img)
+            
+            img = img.numpy()
+            x.append(img)
+            
+        x = np.array(x, dtype='float32')
+        
+        if not isinstance(idx, slice):
+            x = x[0]
 
-class GithubDataset:
-    pass
+        return x, y
+    
+    def __len__(self):
+        return len(self.x)
+    
+    def __copy__(self):
+        return CSVDataset(
+            path=self.path,
+            x_config=self.x_config,
+            y_config=self.y_config,
+            x_transform=self.x_transform
+        )
+    
