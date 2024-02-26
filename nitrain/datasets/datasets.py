@@ -33,8 +33,8 @@ class MemoryDataset:
         self.x = x
         self.y = y
         
-    def filter(self, query):
-        pass
+    def filter(self, expr):
+        raise NotImplementedError('Not implemented yet')
     
     def __getitem__(self, idx):
         return self.x[idx], self.y[idx]
@@ -258,6 +258,12 @@ class CSVDataset:
         self.x = x
         self.y = y
 
+    def filter(self, expr):
+        raise NotImplementedError('Not implemented yet')
+
+    def precompute_transforms(self, expr):
+        raise NotImplementedError('Not implemented yet')
+    
     def __getitem__(self, idx):
         files = self.x[idx]
         if not isinstance(idx, slice):

@@ -7,7 +7,7 @@ import datalad.api as dl
 import numpy as np
 import pandas as pd
 import ants
-from nitrain import utils, data
+from nitrain import utils, datasets
 
 download = utils.fetch_datalad('ds004711')
 
@@ -18,7 +18,7 @@ def transform_fn(img):
     return img
 
 # use a Datalad/BIDS folder -> create a FolderDataset 
-ds = data.FolderDataset(path = download.path, 
+ds = datasets.FolderDataset(path = download.path, 
                         layout = 'bids',
                         x_config = {'suffix': 'T1w', 'run': [None, '01']},
                         y_config = {'column': 'age'},
@@ -35,7 +35,7 @@ ds_males = ds.filter('gender == "male"')
 # run the transform function on all input images and save results to derivatives/nitrain/
 ds.precompute_transforms(desc='precompute')
 
-ds_pre = data.FolderDataset(path = download.path, 
+ds_pre = datasets.FolderDataset(path = download.path, 
                             layout = 'bids',
                             x_config = {'suffix': 'T1w', 
                                         'scope': 'derivatives', 
@@ -49,11 +49,11 @@ df['t1_precompute_path'] = ds_pre.x
 csv_path = os.path.join(os.path.expanduser('~/Desktop'), 'dataset.csv')
 df.to_csv(csv_path)
 
-ds_csv = data.CSVDataset(path = os.path.join(os.path.expanduser('~/Desktop'), 'dataset.csv'), 
+ds_csv = datasets.CSVDataset(path = os.path.join(os.path.expanduser('~/Desktop'), 'dataset.csv'), 
                          x_config = {'column': 't1_precompute_path'},
                          y_config = {'column': 'age'})
 x, y = ds_csv[:3]
 
 ## use in-memory images -> create a MemoryDataset
-ds_memory = data.MemoryDataset(x, y)
+ds_memory = datasets.MemoryDataset(x, y)
 
