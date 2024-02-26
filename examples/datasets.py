@@ -13,9 +13,9 @@ download = utils.fetch_datalad('ds004711')
 
 def transform_fn(img):
     img = img.resample_image((4,4,4))
-    img = img.slice_image(2, 32)
+    #img = img.slice_image(2, 32)
     img = img.mask_image(ants.get_mask(img))
-    return np.expand_dims(img.numpy(), -1)
+    return img
 
 # use a Datalad/BIDS folder -> create a FolderDataset 
 ds = data.FolderDataset(path = download.path, 
@@ -23,6 +23,10 @@ ds = data.FolderDataset(path = download.path,
                         x_config = {'suffix': 'T1w', 'run': [None, '01']},
                         y_config = {'column': 'age'},
                         x_transform = transform_fn)
+
+# run the transform function on all input images and save results to derivatives/nitrain/
+ds.precompute_transforms(desc='precompute')
+
 
 # read in + transform the first three images via indexing
 x, y = ds[0:3]
