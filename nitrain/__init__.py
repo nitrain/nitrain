@@ -1,2 +1,2 @@
 
-from . import datasets, explain, loaders, models, plot, train, transforms
+from . import data, explain, models, plot, train, transforms

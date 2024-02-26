@@ -1,5 +1,6 @@
 # loaders help you feed your data into deep learning models with transforms
 import math
+import numpy as np
 
 class DatasetLoader:
     
@@ -13,8 +14,10 @@ class DatasetLoader:
        dataset = self.dataset
        
        while batch_idx < self.n_batches():
-           data_indices = list(range(batch_idx*batch_size, min((batch_idx+1)*batch_size, len(dataset))))
-           x, y = self.dataset[data_indices]
+           data_indices = slice(batch_idx*batch_size, min((batch_idx+1)*batch_size, len(dataset)))
+           imgs, y = self.dataset[data_indices]
+           x = np.array([img.numpy() for img in imgs], dtype='float32')
+           x = np.expand_dims(x, -1)
            yield x, y
            batch_idx += 1
     

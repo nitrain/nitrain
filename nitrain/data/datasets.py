@@ -40,7 +40,7 @@ class MemoryDataset:
         return self.x[idx], self.y[idx]
 
     def __len__(self):
-        return self.x.shape[0]
+        return len(self.x)
 
 
 class FolderDataset:
@@ -50,6 +50,7 @@ class FolderDataset:
                  x_config,
                  y_config,
                  x_transform=None,
+                 y_transform=None,
                  layout='bids'):
         """
         Initialize a nitrain dataset consisting of local filepaths.
@@ -75,7 +76,10 @@ class FolderDataset:
         
         if isinstance(layout, str):
             if layout.lower() == 'bids':
-                layout = bids.BIDSLayout(path, derivatives=True)
+                if 'scope' in x_config.keys():
+                    layout = bids.BIDSLayout(path, derivatives=True)
+                else:
+                    layout = bids.BIDSLayout(path, derivatives=False)
             else:
                 raise Exception('Only bids layouts are accepted right now.')
         
@@ -100,6 +104,7 @@ class FolderDataset:
         self.x_config = x_config
         self.y_config = y_config
         self.x_transform = x_transform
+        self.y_transform = y_transform
         self.layout = layout
         self.participants = participants
         self.x = x
@@ -204,6 +209,9 @@ class FolderDataset:
             files = [files]
         y = self.y[idx]
         
+        if self.y_transform is not None:
+            y = np.array([self.y_transform(yy) for yy in y])
+        
         # make sure files are downloaded
         ds = dl.Dataset(path = self.path)
         res = ds.get(files)
@@ -215,10 +223,7 @@ class FolderDataset:
             if self.x_transform is not None:
                 img = self.x_transform(img)
             
-            img = img.numpy()
             x.append(img)
-            
-        x = np.array(x, dtype='float32')
         
         if not isinstance(idx, slice):
             x = x[0]
@@ -278,10 +283,8 @@ class CSVDataset:
             if self.x_transform is not None:
                 img = self.x_transform(img)
             
-            img = img.numpy()
             x.append(img)
             
-        x = np.array(x, dtype='float32')
         
         if not isinstance(idx, slice):
             x = x[0]
