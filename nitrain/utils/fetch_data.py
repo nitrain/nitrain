@@ -25,13 +25,16 @@ def fetch_data(name, path=None):
     Example
     -------
     >>> from nitrain.utils import download_data
-    >>> ds = download_data('ds004711')
+    >>> ds = fetch_data('openneuro/ds004711')
     """
     
     if path is None:
         path = get_nitrain_dir()
     
-    ref = dl.clone(source=f'///openneuro/{name}', path=os.path.join(path, name))
+    save_dir = os.path.join(path, name)
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
+    ref = dl.clone(source=f'///{name}', path=save_dir)
     return ref
 
 

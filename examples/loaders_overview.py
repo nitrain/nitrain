@@ -6,23 +6,34 @@ import ants
 import torch
 import keras
 from keras import layers
-from nitrain import utils, datasets, transforms as tx
+from nitrain import utils, datasets, loaders, transforms as tx
 
-download = utils.fetch_openneuro('ds004711')
-ds_pre = datasets.FolderDataset(path = download.path, 
-                            layout = 'bids',
-                            x_config = {'suffix': 'T1w', 
-                                        'scope': 'derivatives', 
-                                        'desc': 'precompute'},
-                            y_config = {'column': 'age'})
+download = utils.fetch_data('openneuro/ds004711')
+def transform_fn(img):
+    img = img.resample_image((4,4,4))
+    img = img.slice_image(2, 32)
+    img = img.mask_image(ants.get_mask(img))
+    return img
+
+# use a Datalad/BIDS folder -> create a FolderDataset 
+ds = datasets.FolderDataset(path = download.path, 
+                        layout = 'bids',
+                        x_config = {'suffix': 'T1w', 'run': [None, '01']},
+                        y_config = {'column': 'age'},
+                        x_transform = transform_fn)
 # load into memory + create memory dataset to make things faster
-x, y = ds_pre[:]
-y = np.arange(len(x))
-ds = datasets.MemoryDataset(x, y, 
-                        x_transform=lambda x: np.expand_dims(x.resample_image((4,4)).numpy(),-1))
+x, y = ds[:10]
+y = np.arange(len(y))
 
-l = datasets.DatasetLoader(ds, batch_size=10)
-l2 = torch.utils.data.DataLoader(ds, batch_size=10, shuffle=True)
+ds2 = datasets.MemoryDataset(x, y)
+                        #x_transform=lambda x: np.expand_dims(x.resample_image((4,4)).numpy(),-1))
+    
+
+l = loaders.TorchLoader(ds2, batch_size=4)
+l2 = loaders.TorchLoader(ds2, batch_size=4, shuffle=True)
+
+for a, b in l:
+    print(b)
 
 # build simple keras model
 inputs = keras.Input(shape=(64,64,1))
@@ -38,7 +49,7 @@ model.compile(
     metrics=[keras.metrics.MeanSquaredError(name="mse")],
 )
 
-model.fit(l, epochs=20)
+model.fit(l, epochs=100)
 
 # predict on train dataset
 x_test, y_test = ds[:]
