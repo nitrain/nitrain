@@ -26,21 +26,27 @@ x, y = ds[:10]
 y = np.arange(len(y))
 
 ds2 = datasets.MemoryDataset(x, y)
-                        #x_transform=lambda x: np.expand_dims(x.resample_image((4,4)).numpy(),-1))
-    
 
-l = loaders.TorchLoader(ds2, batch_size=4)
-l2 = loaders.TorchLoader(ds2, batch_size=4, shuffle=True)
+
+l = loaders.NumpyLoader(ds2, batch_size=4, 
+                        x_transforms=[tx.RandomSlice(axis=2)]) # returns numpy arrays
+l2 = loaders.TorchLoader(ds2, batch_size=4) # returns torch tensors
+#l3 = loaders.TFLoader(ds2, batch_size=4) # returns tf tensors
+l3 = loaders.KerasLoader(ds2, batch_size=4)
 
 for a, b in l:
     print(b)
 
+for a, b in l2:
+    print(b)
+
+            
 # build simple keras model
 inputs = keras.Input(shape=(64,64,1))
-x = layers.Conv2D(8, 3, strides=2)(inputs)
-x = layers.MaxPooling2D(pool_size=2)(x)
-x = layers.Flatten()(x)
-outputs = layers.Dense(1, activation=None)(x)
+x = keras.layers.Conv2D(8, 3, strides=2)(inputs)
+x = keras.layers.MaxPooling2D(pool_size=2)(x)
+x = keras.layers.Flatten()(x)
+outputs = keras.layers.Dense(1, activation=None)(x)
 model = keras.Model(inputs, outputs)
 
 model.compile(
