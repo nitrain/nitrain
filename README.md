@@ -2,6 +2,8 @@
 
 Nitrain provides tools for sampling and augmenting neuroimaging datasets, training deep learning models on neuroimages, and visualizing or explaining deep learning model results in a neuroimaging context. Nitrain also makes it easy to use pre-trained models for training or integration into imaging pipelines.
 
+<br />
+
 ## Installation
 
 The package can be installed from github:
@@ -9,6 +11,8 @@ The package can be installed from github:
 ```
 python -m pip install git+github.com/ncullen93/nitrain.git
 ```
+
+<br />
 
 ## Quickstart
 
@@ -21,7 +25,9 @@ from nitrain import sample, train, explain
 
 ```
 
-## Sampling and augmentation
+<br />
+
+## Datasets, Loaders, and Transforms
 
 Nitrain provides extensive functionality to help you sample neuroimages with imaging-native data augmentation techniques. Our focus is on speed, meaning you never have to convert your neuroimages into numpy arrays. Here is an example of how sampling works:
 
@@ -44,7 +50,9 @@ But nitrain also supports more extreme transformations such as those derived fro
 
 All of these transforms can be combined using a single `Compose` transform that ensures efficient augmentation during model training.
 
-## Training with popular frameworks
+<br />
+
+## Trainers
 
 Nitrain can be used to train models on Pytorch, Keras, and Tensorflow.
 
@@ -66,7 +74,9 @@ To train with Tensorflow, use the `nitrain.tensorflow` module:
 import nitrain
 ```
 
-## Starting from pre-trained models
+<br />
+
+## Architectures and Pre-trained models
 
 We provide a collection of pre-trained models that may prove extremely useful as a starting point for your training. If your dataset is small (<500 participants) than you may especially benefit from using our pre-trained models, since they have already learned the basic patterns of a neuroimage. Fine-tuning a pre-trained model is simple:
 
@@ -82,7 +92,9 @@ import nitrain
 nitrain.register_pretrained(model, 'my-cool-model')
 ```
 
-## Visualizing model results
+<br />
+
+## Explainers
 
 The idea that deep learning models are "black boxes" is out-dated, particularly when it comes to images. There are numerous techiques to help you understand which parts of the brain a trained model is weighing most when making predictions.
 
@@ -93,6 +105,8 @@ Nilearn provides tools to perform this techique - along with many others - and c
 ```python
 from nitrain import explain
 ```
+
+<br />
 
 ## Contributing
 
