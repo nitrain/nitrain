@@ -8,7 +8,7 @@ def get_nitrain_dir():
     downloads_path = str(Path.home() / "Desktop/")
     return downloads_path    
 
-def fetch_datalad(name, path=None):
+def fetch_data(name, path=None):
     """
     Download example datasets from OpenNeuro and other sources.
     Datasets are pulled using `datalad` so the raw data will 

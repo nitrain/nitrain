@@ -1,3 +1,3 @@
 # utility functions
 
-from .fetch_datalad import *
+from .fetch_data import *

@@ -6,10 +6,10 @@ import ants
 import torch
 import keras
 from keras import layers
-from nitrain import utils, data, transforms as tx
+from nitrain import utils, datasets, transforms as tx
 
-download = utils.fetch_datalad('ds004711')
-ds_pre = data.FolderDataset(path = download.path, 
+download = utils.fetch_openneuro('ds004711')
+ds_pre = datasets.FolderDataset(path = download.path, 
                             layout = 'bids',
                             x_config = {'suffix': 'T1w', 
                                         'scope': 'derivatives', 
@@ -18,10 +18,10 @@ ds_pre = data.FolderDataset(path = download.path,
 # load into memory + create memory dataset to make things faster
 x, y = ds_pre[:]
 y = np.arange(len(x))
-ds = data.MemoryDataset(x, y, 
+ds = datasets.MemoryDataset(x, y, 
                         x_transform=lambda x: np.expand_dims(x.resample_image((4,4)).numpy(),-1))
 
-l = data.DatasetLoader(ds, batch_size=10)
+l = datasets.DatasetLoader(ds, batch_size=10)
 l2 = torch.utils.data.DataLoader(ds, batch_size=10, shuffle=True)
 
 # build simple keras model
