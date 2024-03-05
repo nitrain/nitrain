@@ -39,8 +39,8 @@ loader = nit.DatasetLoader(dataset,
                                          nit.RandomNoise(sd=0.2)])
 
 # create model from architecture
-architecture_fn = nit.fetch_architecture('alexnet')
-model = architecture_fn(layers=[128, 64, 32, 1])
+architecture_fn = nit.fetch_architecture('alexnet', task='continuous_prediction')
+model = architecture_fn(layers=[128, 64, 32, 10], n_outcomes=1)
 
 # create trainer and fit model
 trainer = nit.ModelTrainer(model,
