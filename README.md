@@ -21,8 +21,32 @@ Let's say you want to predict a disease-related phenotype from structural T1 ima
 This is a canonical example for using nitrain. Here's how it would look like:
 
 ```python
-from nitrain import sample, train, explain
+import nitrain as nit
 
+# create dataset from folder of images + participants file
+dataset = nit.FolderDataset('ds004711',
+                            x={'pattern': 'sub-*/anat/*_T1w.nii.gz'},
+                            y={'file': 'participants.tsv',
+                                    'column': 'age'},
+                            x_transforms=[nit.ResizeImage((64,64,64)),
+                                          nit.NormalizeIntensity(0,1)])
+
+# create loader with random transforms
+loader = nit.DatasetLoader(dataset,
+                           batch_size=32,
+                           x_transforms=[nit.RandomSlice(axis=2),
+                                         nit.RandomNoise(sd=0.2)])
+
+# create model from architecture
+architecture_fn = nit.fetch_architecture('alexnet')
+model = architecture_fn((128,64,32,1))
+
+# compile and fit model
+model.compile(loss='mse', optimizer='Adam', lr=1e-3)
+model.fit(loader, epochs=100)
+
+# upload trained model to platform
+nit.register_model(model, 'nick/t1-brainage-model')
 ```
 
 <br />
