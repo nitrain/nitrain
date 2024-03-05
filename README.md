@@ -24,7 +24,7 @@ This is a canonical example for using nitrain. Here's how it would look like:
 import nitrain as nit
 
 # create dataset from folder of images + participants file
-dataset = nit.FolderDataset('ds004711',
+dataset = nit.FolderDataset(base_dir='ds004711',
                             x={'pattern': 'sub-*/anat/*_T1w.nii.gz'},
                             y={'file': 'participants.tsv',
                                     'column': 'age'},
@@ -34,19 +34,25 @@ dataset = nit.FolderDataset('ds004711',
 # create loader with random transforms
 loader = nit.DatasetLoader(dataset,
                            batch_size=32,
+                           shuffle=True,
                            x_transforms=[nit.RandomSlice(axis=2),
                                          nit.RandomNoise(sd=0.2)])
 
 # create model from architecture
 architecture_fn = nit.fetch_architecture('alexnet')
-model = architecture_fn((128,64,32,1))
+model = architecture_fn(layers=[128, 64, 32, 1])
 
-# compile and fit model
-model.compile(loss='mse', optimizer='Adam', lr=1e-3)
-model.fit(loader, epochs=100)
+# create trainer and fit model
+trainer = nit.ModelTrainer(model,
+                           loss='mse',
+                           optimizer='adam',
+                           lr=1e-3,
+                           callbacks=[nit.EarlyStopping(),
+                                      nit.ModelCheckpoints(freq=25)])
+trainer.fit(loader, epochs=100)
 
 # upload trained model to platform
-nit.register_model(model, 'nick/t1-brainage-model')
+nit.register_model(trainer.model, 'nick/t1-brainage-model')
 ```
 
 <br />
