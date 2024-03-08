@@ -130,7 +130,7 @@ The idea that deep learning models are "black boxes" is out-dated, particularly 
 
 One such technique is called the occlusion method, where you systematically "black out" different patches of an input image and see how the model prediction is affected. The idea is that when, when occluded, important areas result in a large change in model prediction compared to the original image.
 
-Nilearn provides tools to perform this techique - along with many others - and can help you visualize the results of such explainability experiments directly in brain space. Here is what that might look like:
+Nitrain provides tools to perform this techique - along with many others - and can help you visualize the results of such explainability experiments directly in brain space. Here is what that might look like:
 
 ```python
 from nitrain import explain
@@ -140,4 +140,4 @@ from nitrain import explain
 
 ## Contributing
 
-If you would like to contribute to nilearn, we would be extremely thankful. The best way to start is by posting an issue to discuss your proposed feature. We use Poetry as our build tool.
+If you would like to contribute to nitrain, we would be extremely thankful. The best way to start is by posting an issue to discuss your proposed feature. We use Poetry as our build tool.
