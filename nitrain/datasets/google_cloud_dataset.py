@@ -89,6 +89,10 @@ class GoogleCloudDataset:
             y_blob.download_to_filename(tmp_file.name)
             y_df = pd.read_csv(tmp_file.name, sep='\t')
             tmp_file.close()
+            
+            self.credentials = credentials
+            self.storage_client = storage_client
+            self.bucket_client = bucket_client
 
         # match x and y ids
         p_col = y_df.columns[0] # assume participant id is first row
@@ -105,9 +109,6 @@ class GoogleCloudDataset:
         x = [x[idx] for idx in range(len(x)) if x_ids[idx] in y_ids]
         x_ids = y_ids
         
-        self.credentials = credentials if credentials else None
-        self.storage_client = storage_client if storage_client else None
-        self.bucket_client = bucket_client if bucket_client else None
         self.bucket = bucket
         self.base_dir = base_dir
         self.x_config = x_config
