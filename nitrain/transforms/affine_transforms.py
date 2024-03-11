@@ -15,3 +15,6 @@ class Shear(BaseTransform):
 
 class Zoom(BaseTransform):
     pass
+
+class Flip(BaseTransform):
+    pass
