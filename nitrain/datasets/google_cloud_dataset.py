@@ -49,7 +49,6 @@ class GoogleCloudDataset:
             
             # GET X
             x = glob.glob(x_config['pattern'], root_dir=base_dir)
-            print(x)
             if 'exclude' in x_config.keys():
                 x = [file for file in x if not fnmatch(file, x_config['exclude'])]
             x_ids = [xx.split('/')[0] for xx in x]
@@ -61,7 +60,6 @@ class GoogleCloudDataset:
             # GET Y
             y_file = os.path.join(base_dir, y_config['file'])
             y_df = pd.read_csv(y_file, sep='\t')
-            print(y_df)
             
         else:
             if isinstance(credentials, str):
@@ -90,9 +88,11 @@ class GoogleCloudDataset:
             y_df = pd.read_csv(tmp_file.name, sep='\t')
             tmp_file.close()
             
+            # properties specific to non-fuse scenarios
             self.credentials = credentials
             self.storage_client = storage_client
             self.bucket_client = bucket_client
+            self.tmp_dir = tempfile.TemporaryDirectory()
 
         # match x and y ids
         p_col = y_df.columns[0] # assume participant id is first row
@@ -117,7 +117,6 @@ class GoogleCloudDataset:
         self.y = y
         self.x_transforms = x_transforms
         self.y_transforms = y_transforms
-        self.tmp_dir = tempfile.TemporaryDirectory()
         self.fuse = fuse
 
     def __getitem__(self, idx):
@@ -131,7 +130,6 @@ class GoogleCloudDataset:
         
         x = []
         for file in files:
-            print(file)
             # if on vertex, file will be available to access. otherwise, download it to local tmp dir.
             if self.fuse:
                 local_filepath = file
