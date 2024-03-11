@@ -23,7 +23,7 @@ class GoogleCloudDataset:
                  x_transforms=None,
                  y_transforms=None,
                  credentials=None,
-                 use_vertex=False):
+                 use_fuse=False):
         """
         Initialize a nitrain dataset consisting of local filepaths.
         
@@ -94,7 +94,7 @@ class GoogleCloudDataset:
         self.x_transforms = x_transforms
         self.y_transforms = y_transforms
         self.tmp_dir = tempfile.TemporaryDirectory()
-        self.use_vertex = use_vertex
+        self.use_fuse = use_fuse
 
     def __getitem__(self, idx):
         files = self.x[idx]
@@ -109,8 +109,9 @@ class GoogleCloudDataset:
         x = []
         for file in files:
             # if on vertex, file will be available to access. otherwise, download it to local tmp dir.
-            if self.use_vertex:
-                local_filepath = os.path.join('gcs://', self.bucket, file)
+            if self.use_fuse:
+                local_filepath = os.path.join('/gcs/', self.bucket, file)
+                print(local_filepath)
             else:
                 local_filepath = os.path.join(self.tmp_dir.name, file)
                 if not os.path.exists(local_filepath):

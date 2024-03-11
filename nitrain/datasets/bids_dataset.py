@@ -5,7 +5,6 @@ import os
 import json
 import ants
 import bids
-import nibabel
 import datalad.api as dl
 import numpy as np
 import pandas as pd
