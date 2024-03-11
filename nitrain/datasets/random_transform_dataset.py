@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-class TransformDataset(torch.utils.data.Dataset):
+class RandomTransformDataset(torch.utils.data.Dataset):
     
     def __init__(self, dataset, x_transforms=None):
         self.dataset = dataset

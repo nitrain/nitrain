@@ -18,7 +18,7 @@ from torch.utils.data import Dataset
 from .. import utils
 
 
-class FolderDataset:
+class BIDSDataset:
     
     def __init__(self,
                  base_dir, 
@@ -26,7 +26,7 @@ class FolderDataset:
                  y,
                  x_transforms=None,
                  y_transforms=None,
-                 layout='bids'):
+                 layout=None):
         """
         Initialize a nitrain dataset consisting of local filepaths.
         
@@ -50,61 +50,28 @@ class FolderDataset:
         >>> model.fit(dataset)
         """
         
-        if isinstance(layout, str):
-            if layout.lower() == 'bids':
-                if 'scope' in x.keys():
-                    layout = bids.BIDSLayout(base_dir, derivatives=True)
-                else:
-                    layout = bids.BIDSLayout(base_dir, derivatives=False)
+        if layout is None:
+            if 'scope' in x.keys():
+                layout = bids.BIDSLayout(base_dir, derivatives=True)
             else:
-                raise Exception('Only bids layouts are accepted right now.')
+                layout = bids.BIDSLayout(base_dir, derivatives=False)
         
         x_config = x
         y_config = y
         
-        if layout:
-            # GET X
-            ids = layout.get(return_type='id', target='subject', **x_config)
-            x = layout.get(return_type='filename', **x_config)
-            if len(x) == 0:
-                raise Exception('No images found matching the specified x.')
-        else:
-            pattern = x_config['pattern']
-            glob_pattern = pattern.replace('{id}','*')
-            x = sorted(glob.glob(glob_pattern, root_dir=base_dir))
-            if 'exclude' in x_config.keys():
-                x = [file for file in x if not fnmatch(file, x_config['exclude'])]
-            x_ids = [parse(pattern.replace('*','{other}'), file).named['id'] for file in x]
-            x = [os.path.join(base_dir, file) for file in x]
+        # GET X
+        ids = layout.get(return_type='id', target='subject', **x_config)
+        x = layout.get(return_type='filename', **x_config)
+        if len(x) == 0:
+            raise Exception('No images found matching the specified x.')
             
             
-        # GET Y
-        if layout:
-            participants_file = layout.get(suffix='participants', extension='tsv')[0]
-            participants = pd.read_csv(participants_file, sep='\t')
-            p_col = participants.columns[0] # assume participant id is first row
-            p_suffix = 'sub-' # assume participant col starts with 'sub-'
-            participants = participants[participants[p_col].isin([p_suffix+id for id in ids])]
-            y = participants[y_config['column']].to_numpy()
-        else:
-            participants_file = os.path.join(base_dir, y_config['file'])
-            participants = pd.read_csv(participants_file, sep='\t')
-            
-            # match x and y ids
-            p_col = participants.columns[0] # assume participant id is first row
-            participants = participants.sort_values(p_col)
-            all_y_ids = participants[p_col].to_numpy()
-            if len(x_ids) != len(all_y_ids):
-                warnings.warn(f'Mismatch between x ids {len(x_ids)} and y ids {len(all_y_ids)} - finding intersection')
-            y_ids = sorted(list(set(x_ids) & set(all_y_ids)))
-            
-            participants = participants[participants[p_col].isin(y_ids)]
-            y = participants[y_config['column']].to_numpy()
-            
-            # remove x values that are not found in y
-            x = [x[idx] for idx in range(len(x)) if x_ids[idx] in y_ids]
-            x_ids = y_ids
-
+        participants_file = layout.get(suffix='participants', extension='tsv')[0]
+        participants = pd.read_csv(participants_file, sep='\t')
+        p_col = participants.columns[0] # assume participant id is first row
+        p_suffix = 'sub-' # assume participant col starts with 'sub-'
+        participants = participants[participants[p_col].isin([p_suffix+id for id in ids])]
+        y = participants[y_config['column']].to_numpy()
 
         if len(x) != len(y):
             warnings.warn(f'len(x) [{len(x)}] != len(y) [{len(y)}]. Do some participants have multiple runs?')
@@ -117,10 +84,8 @@ class FolderDataset:
         self.layout = layout
         self.participants = participants
         self.x = x
-        self.x_ids = x_ids
         self.y = y
-        self.y_ids = y_ids
-        
+
     def filter(self, expr, inplace=False):
         """
         Filter the dataset by column values in the participants file
@@ -246,7 +211,7 @@ class FolderDataset:
         return len(self.x)
     
     def __copy__(self):
-        return FolderDataset(
+        return BIDSDataset(
             path=self.base_dir,
             x=self.x,
             y=self.y,

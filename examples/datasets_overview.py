@@ -19,10 +19,16 @@ def transform_fn(img):
 
 # use a Datalad/BIDS folder -> create a FolderDataset 
 ds = datasets.FolderDataset(path = download.path, 
-                        layout = 'bids',
-                        x_config = {'suffix': 'T1w', 'run': [None, '01']},
-                        y_config = {'column': 'age'},
-                        x_transform = transform_fn)
+                            layout = 'bids',
+                            input = {'suffix': 'T1w', 'run': [None, '01']},
+                            output = {'column': 'age'},
+                            input_transform = transform_fn)
+
+#ds = datasets.FolderDataset(path = download.path, 
+#                            input = {'glob': '**T1w.nii.gz'},
+#                            output = {'file': 'participants.tsv', 'column': 'age'},
+#                            input_transform = transform_fn)
+
 
 # read in + transform the first three images via indexing
 x, y = ds[0:3]
