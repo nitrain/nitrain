@@ -108,6 +108,21 @@ The nitrain package supports an extensive amount of neuroimaging-based transform
 - Motion
 - Intensity normalization
 
+Writing your own transform is extremely easy! Just remember that the transform will operate on the `antsImage` type and that you should inherit from the `BaseTransform` class.
+
+```python
+from nitrain.transforms import BaseTransform
+class CoolTransform(BaseTransform):
+        def __init__(self, parameters):
+                self.parameters = parameters
+        def __call__(self, image):
+                image = my_function(image, self.parameters)
+                return image
+
+tx_fn = CoolTranform(parameters=123)
+img_tranformed = tx_fn(img)
+```
+
 <br />
 
 ## Trainers
