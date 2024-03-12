@@ -119,8 +119,8 @@ class CoolTransform(BaseTransform):
                 image = my_function(image, self.parameters)
                 return image
 
-tx_fn = CoolTranform(parameters=123)
-img_tranformed = tx_fn(img)
+tx_fn = CoolTransform(parameters=123)
+img_transformed = tx_fn(img)
 ```
 
 <br />
