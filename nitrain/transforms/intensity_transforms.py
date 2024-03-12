@@ -1,4 +1,5 @@
 import ants
+import antspynet
 
 import random
 import numpy as np
@@ -41,7 +42,7 @@ class Threshold(BaseTransform):
         for image in images:
             new_image = image * (image > self.threshold)
             new_images.append(new_image)
-        return new_images
+        return new_images if len(new_images) > 1 else new_images[0]
 
 
 class RangeNormalize(BaseTransform):
@@ -54,7 +55,7 @@ class RangeNormalize(BaseTransform):
         for image in images:
             new_image = (image - image.min()) / (image.max() - image.min())
             new_images.append(new_image)
-        return new_images
+        return new_images if len(new_images) > 1 else new_images[0]
 
 
 class Smoothing(BaseTransform):
@@ -87,7 +88,7 @@ class Smoothing(BaseTransform):
                                           self.std,
                                           physical_space=self.physical_space)
             new_images.append(new_image)
-        return new_images
+        return new_images if len(new_images) > 1 else new_images[0]
 
 
 class RandomSmoothing(BaseTransform):
@@ -105,7 +106,7 @@ class RandomSmoothing(BaseTransform):
                                           std,
                                           physical_space=self.physical_space)
             new_images.append(new_image)
-        return new_images
+        return new_images if len(new_images) > 1 else new_images[0]
         
 
 class RandomNoise(BaseTransform):
@@ -129,7 +130,7 @@ class RandomNoise(BaseTransform):
                                                 'additivegaussian',
                                                 (0, std))
             new_images.append(new_image)
-        return new_images
+        return new_images if len(new_images) > 1 else new_images[0]
 
 
 class HistogramWarpIntensity(BaseTransform):
@@ -149,8 +150,6 @@ class HistogramWarpIntensity(BaseTransform):
         self.transform_domain_size = transform_domain_size
 
     def __call__(self, *images):
-        import antspynet
-        
         new_images = []
         for image in images:
             new_image = antspynet.histogram_warp_image_intensities(
@@ -162,4 +161,4 @@ class HistogramWarpIntensity(BaseTransform):
                 transform_domain_size = self.transform_domain_size
             )
             new_images.append(new_image)
-        return new_images
+        return new_images if len(new_images) > 1 else new_images[0]

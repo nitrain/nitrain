@@ -27,6 +27,28 @@ doc = ["sphinx"]
 tests = ["coverage", "pytest"]
 
 [[package]]
+name = "antspynet"
+version = "0.2.3"
+description = "A collection of deep learning architectures ported to the python language and tools for basic medical image processing."
+optional = false
+python-versions = "*"
+files = [
+    {file = "antspynet-0.2.3-py3-none-any.whl", hash = "sha256:aecb9a557c258c0db81f25e7a236595f1bf84e4619b5ae57fcbcfb7931a2b5b8"},
+    {file = "antspynet-0.2.3.tar.gz", hash = "sha256:4c24f7c200cefa77f89cf2d284f597c144737125e8b45bad77ac25c7a795e101"},
+]
+
+[package.dependencies]
+antspyx = "*"
+keras = "*"
+matplotlib = "*"
+numpy = "*"
+requests = "*"
+scikit-learn = "*"
+statsmodels = "*"
+tensorflow = "*"
+tensorflow-probability = "*"
+
+[[package]]
 name = "antspyx"
 version = "0.4.2"
 description = "Advanced Normalization Tools in Python"
@@ -392,6 +414,17 @@ files = [
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
+name = "cloudpickle"
+version = "3.0.0"
+description = "Pickler class to extend the standard pickle.Pickler functionality"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "cloudpickle-3.0.0-py3-none-any.whl", hash = "sha256:246ee7d0c295602a036e86369c77fecda4ab17b506496730f2f576d9016fd9c7"},
+    {file = "cloudpickle-3.0.0.tar.gz", hash = "sha256:996d9a482c6fb4f33c1a35335cf8afd065d2a56e973270364840712d9131a882"},
+]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -579,6 +612,17 @@ full = ["BeautifulSoup4", "annexremote", "argcomplete (>=1.12.3)", "boto", "char
 misc = ["argcomplete (>=1.12.3)", "pyperclip", "python-dateutil"]
 publish = ["python-gitlab"]
 tests = ["BeautifulSoup4", "httpretty (>=0.9.4)", "mypy", "pytest", "pytest-cov", "pytest-fail-slow (>=0.2,<1.0)", "types-python-dateutil", "types-requests", "vcrpy"]
+
+[[package]]
+name = "decorator"
+version = "5.1.1"
+description = "Decorators for Humans"
+optional = false
+python-versions = ">=3.5"
+files = [
+    {file = "decorator-5.1.1-py3-none-any.whl", hash = "sha256:b8c3f85900b9dc423225913c5aace94729fe1fa9763b38939a95226f02d37186"},
+    {file = "decorator-5.1.1.tar.gz", hash = "sha256:637996211036b6385ef91435e4fae22989472f9d571faba8927ba8253acbc330"},
+]
 
 [[package]]
 name = "distro"
@@ -3078,6 +3122,29 @@ tensorflow-gpu = ["tensorflow-gpu (>=2.15.0,<2.16.0)"]
 tensorflow-rocm = ["tensorflow-rocm (>=2.15.0,<2.16.0)"]
 
 [[package]]
+name = "tensorflow-probability"
+version = "0.23.0"
+description = "Probabilistic modeling and statistical inference in TensorFlow"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "tensorflow_probability-0.23.0-py2.py3-none-any.whl", hash = "sha256:dda5cacfe50cb19ecd96f3ce81e6ff8680d84213bcfe94ca0aaf6e5f51c88061"},
+]
+
+[package.dependencies]
+absl-py = "*"
+cloudpickle = ">=1.3"
+decorator = "*"
+dm-tree = "*"
+gast = ">=0.3.2"
+numpy = ">=1.13.3"
+six = ">=1.10.0"
+
+[package.extras]
+jax = ["jax", "jaxlib"]
+tfds = ["tensorflow-datasets (>=2.2.0)"]
+
+[[package]]
 name = "termcolor"
 version = "2.4.0"
 description = "ANSI color formatting for output in terminal"
@@ -3418,4 +3485,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9"
-content-hash = "1336a7c5166d4456b608d551982f9f41785ce831c2a62abfc065176fcf2d9927"
+content-hash = "1031e14e74793d66ad4c91a6cb28c03ac3e1416d1b5fc1ae473407f61ac86208"

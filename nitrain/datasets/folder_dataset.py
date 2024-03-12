@@ -4,8 +4,6 @@ import copy
 import os
 import json
 import ants
-import bids
-import nibabel
 import datalad.api as dl
 import numpy as np
 import pandas as pd
@@ -26,7 +24,7 @@ class FolderDataset:
                  y,
                  x_transforms=None,
                  y_transforms=None,
-                 layout='bids'):
+                 datalad=False):
         """
         Initialize a nitrain dataset consisting of local filepaths.
         
@@ -48,73 +46,52 @@ class FolderDataset:
                                     y={'file':'participants.tsv', 'column':'age'})
         >>> model = nitrain.models.fetch_pretrained('t1-brainage', finetune=True)
         >>> model.fit(dataset)
-        """
-        
-        if isinstance(layout, str):
-            if layout.lower() == 'bids':
-                if 'scope' in x.keys():
-                    layout = bids.BIDSLayout(base_dir, derivatives=True)
-                else:
-                    layout = bids.BIDSLayout(base_dir, derivatives=False)
-            else:
-                raise Exception('Only bids layouts are accepted right now.')
-        
+        """        
         x_config = x
         y_config = y
         
-        if layout:
-            # GET X
-            ids = layout.get(return_type='id', target='subject', **x_config)
-            x = layout.get(return_type='filename', **x_config)
-            if len(x) == 0:
-                raise Exception('No images found matching the specified x.')
-        else:
-            pattern = x_config['pattern']
-            glob_pattern = pattern.replace('{id}','*')
-            x = sorted(glob.glob(glob_pattern, root_dir=base_dir))
-            if 'exclude' in x_config.keys():
-                x = [file for file in x if not fnmatch(file, x_config['exclude'])]
+        pattern = x_config['pattern']
+        glob_pattern = pattern.replace('{id}','*')
+        x = sorted(glob.glob(glob_pattern, root_dir=base_dir))
+        if 'exclude' in x_config.keys():
+            x = [file for file in x if not fnmatch(file, x_config['exclude'])]
+        
+        # TODO: support '{id}/*' but 
+        if '{id}' in pattern:
             x_ids = [parse(pattern.replace('*','{other}'), file).named['id'] for file in x]
-            x = [os.path.join(base_dir, file) for file in x]
-            
-            
-        # GET Y
-        if layout:
-            participants_file = layout.get(suffix='participants', extension='tsv')[0]
-            participants = pd.read_csv(participants_file, sep='\t')
-            p_col = participants.columns[0] # assume participant id is first row
-            p_suffix = 'sub-' # assume participant col starts with 'sub-'
-            participants = participants[participants[p_col].isin([p_suffix+id for id in ids])]
-            y = participants[y_config['column']].to_numpy()
         else:
-            participants_file = os.path.join(base_dir, y_config['file'])
-            participants = pd.read_csv(participants_file, sep='\t')
-            
-            # match x and y ids
-            p_col = participants.columns[0] # assume participant id is first row
-            participants = participants.sort_values(p_col)
-            all_y_ids = participants[p_col].to_numpy()
-            if len(x_ids) != len(all_y_ids):
-                warnings.warn(f'Mismatch between x ids {len(x_ids)} and y ids {len(all_y_ids)} - finding intersection')
-            y_ids = sorted(list(set(x_ids) & set(all_y_ids)))
-            
-            participants = participants[participants[p_col].isin(y_ids)]
-            y = participants[y_config['column']].to_numpy()
-            
-            # remove x values that are not found in y
-            x = [x[idx] for idx in range(len(x)) if x_ids[idx] in y_ids]
-            x_ids = y_ids
+            x_ids = [xx.split('/')[0] for xx in x]
+        x = [os.path.join(base_dir, file) for file in x]
+        
+        # GET Y
+        participants_file = os.path.join(base_dir, y_config['file'])
+        participants = pd.read_csv(participants_file, sep='\t')
+        
+        # match x and y ids
+        p_col = participants.columns[0] # assume participant id is first row
+        participants = participants.sort_values(p_col)
+        all_y_ids = participants[p_col].to_numpy()
+        if len(x_ids) != len(all_y_ids):
+            warnings.warn(f'Mismatch between x ids {len(x_ids)} and y ids {len(all_y_ids)} - finding intersection')
+        y_ids = sorted(list(set(x_ids) & set(all_y_ids)))
+        
+        participants = participants[participants[p_col].isin(y_ids)]
+        y = participants[y_config['column']].to_numpy()
+        
+        # remove x values that are not found in y
+        x = [x[idx] for idx in range(len(x)) if x_ids[idx] in y_ids]
+        x_ids = y_ids
 
 
         if len(x) != len(y):
             warnings.warn(f'len(x) [{len(x)}] != len(y) [{len(y)}]. Do some participants have multiple runs?')
         
         self.base_dir = base_dir
+        self.datalad = datalad
         self.x_config = x_config
         self.y_config = y_config
         self.x_transforms = x_transforms
         self.y_transforms = y_transforms
-        self.layout = layout
         self.participants = participants
         self.x = x
         self.x_ids = x_ids
@@ -185,7 +162,10 @@ class FolderDataset:
         
         for file in files:
             img = ants.image_read(file)
-            img = self.x_transforms(img)
+            
+            if self.x_transforms:
+                for x_tx in self.x_transforms:
+                    img = x_tx(img)
             
             file_ending = file.replace(f'{self.base_dir}/', '')
             
@@ -224,7 +204,7 @@ class FolderDataset:
             y = np.array([self.y_transforms(yy) for yy in y])
         
         # make sure files are downloaded
-        if self.layout:
+        if self.datalad:
             ds = dl.Dataset(path = self.base_dir)
             res = ds.get(files)
         
@@ -232,8 +212,9 @@ class FolderDataset:
         for file in files:
             img = ants.image_read(file)
         
-            if self.x_transforms is not None:
-                img = self.x_transforms(img)
+            if self.x_transforms:
+                for x_tx in self.x_transforms:
+                    img = x_tx(img)
             
             x.append(img)
         
@@ -250,7 +231,6 @@ class FolderDataset:
             path=self.base_dir,
             x=self.x,
             y=self.y,
-            x_transforms=self.x_transforms,
-            layout=self.layout
+            x_transforms=self.x_transforms
         )
     

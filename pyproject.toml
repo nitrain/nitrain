@@ -19,8 +19,7 @@ pydot = "^2.0.0"
 torch = "^2.2.1"
 google-auth = "^2.28.2"
 parse = "^1.20.1"
-tensorflow = "^2.16.1"
-keras = "^3.0.5"
+antspynet = "^0.2.3"
 
 [build-system]
 requires = ["poetry-core"]

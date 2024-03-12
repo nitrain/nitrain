@@ -18,9 +18,9 @@ class RandomTransformDataset(torch.utils.data.Dataset):
                 x = self.x_transforms(x)
         
         if isinstance(x, list):
-            return np.array([np.expand_dims(xx.numpy(), -1) for xx in x]), y
+            return np.array([xx.numpy() for xx in x]), y
         else:
-            return np.expand_dims(x.numpy(), -1), y
+            return x.numpy(), y
 
     def __len__(self):
         return len(self.dataset)
