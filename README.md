@@ -12,6 +12,10 @@ The package can be installed from github:
 python -m pip install git+github.com/ncullen93/nitrain.git
 ```
 
+### Dependencies
+
+The main
+
 <br />
 
 ## Quickstart
