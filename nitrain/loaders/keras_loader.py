@@ -5,7 +5,7 @@ import math
 from ..datasets.random_transform_dataset import RandomTransformDataset
 
 # keras 3.0
-#class KerasLoader(keras.utils.PyDataset):
+#class Keras3Loader(keras.utils.PyDataset):
 #
 #    def __init__(self, dataset, batch_size, x_transforms=None, y_transforms=None, co_transforms=None, **kwargs):
 #        super().__init__(**kwargs)

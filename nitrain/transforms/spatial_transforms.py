@@ -21,6 +21,5 @@ class Zoom(BaseTransform):
 class Flip(BaseTransform):
     pass
 
-
 class RandomDisplacementField(BaseTransform):
     pass

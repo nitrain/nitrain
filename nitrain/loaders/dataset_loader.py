@@ -1,8 +1,5 @@
 import math
 import numpy as np
-import torch
-import ants
-import types
 
 from ..datasets.random_transform_dataset import RandomTransformDataset
 
@@ -14,6 +11,7 @@ class DatasetLoader:
                  x_transforms=None, 
                  y_transforms=None, 
                  co_transforms=None,
+                 expand_dim=-1,
                  shuffle=False):
         """
         Arguments
@@ -30,6 +28,7 @@ class DatasetLoader:
         #self._dataset = transform_dataset
         self.dataset = dataset
         self.batch_size = batch_size
+        self.expand_dim = expand_dim
 
     def __iter__(self):
        batch_size = self.batch_size
@@ -46,7 +45,13 @@ class DatasetLoader:
        while batch_idx < n_batches:
            data_indices = slice(batch_idx*batch_size, min((batch_idx+1)*batch_size, len(dataset)))
            x, y = dataset[data_indices]
-           yield np.array([xx.numpy() for xx in x]), y
+           
+           if self.expand_dim is not None:
+               x_arr = np.array([np.expand_dims(xx.numpy(), self.expand_dim) for xx in x])
+           else:
+               x_arr = np.array([xx.numpy() for xx in x])
+
+           yield x_arr, y
            batch_idx += 1
 
     def __len__(self):

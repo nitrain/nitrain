@@ -14,7 +14,7 @@ python -m pip install git+github.com/ncullen93/nitrain.git
 
 ### Dependencies
 
-The main
+The nitrain package is developed with Python3.10 as the focus. In terms of dependencies, it requires `ants` and `antspynet`. The antspynet package in particular does not use Keras 3, so it requires `tensorflow==2.12`.
 
 <br />
 

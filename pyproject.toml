@@ -20,6 +20,9 @@ parse = "^1.20.1"
 tensorflow = "2.12"
 antspynet = "^0.2.3"
 tensorflow-probability = "0.20"
+ipython = "8.14"
+google-cloud = "^0.34.0"
+google-cloud-storage = "^2.15.0"
 
 [build-system]
 requires = ["poetry-core"]
