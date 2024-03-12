@@ -24,35 +24,37 @@ class DatasetLoader:
         xb, yb = next(iter(ld))
 
         """
-        #transform_dataset = RandomTransformDataset(dataset, x_transforms=x_transforms)
-        #self._dataset = transform_dataset
         self.dataset = dataset
         self.batch_size = batch_size
         self.expand_dim = expand_dim
+        self.x_transforms = x_transforms
 
     def __iter__(self):
-       batch_size = self.batch_size
-       dataset = self.dataset
-       n_batches = math.ceil(len(dataset) / batch_size)
-       
-       # perform random transforms
-       
-       # gather slices
-       
-       # shuffle images / slices
-       
-       batch_idx = 0
-       while batch_idx < n_batches:
-           data_indices = slice(batch_idx*batch_size, min((batch_idx+1)*batch_size, len(dataset)))
-           x, y = dataset[data_indices]
+        batch_size = self.batch_size
+        dataset = self.dataset
+        n_batches = math.ceil(len(dataset) / batch_size)
+              
+        batch_idx = 0
+        while batch_idx < n_batches:
+            data_indices = slice(batch_idx*batch_size, min((batch_idx+1)*batch_size, len(dataset)))
+            x, y = dataset[data_indices]
            
-           if self.expand_dim is not None:
-               x_arr = np.array([np.expand_dims(xx.numpy(), self.expand_dim) for xx in x])
-           else:
-               x_arr = np.array([xx.numpy() for xx in x])
+            # perform random transforms
+            if self.x_transforms:
+                for tx_fn in self.x_transforms:
+                    x = [tx_fn(img) for img in x]
+          
+            # gather slices
+       
+            # shuffle images / slices
+           
+            if self.expand_dim is not None:
+                x_arr = np.array([np.expand_dims(xx.numpy(), self.expand_dim) for xx in x])
+            else:
+                x_arr = np.array([xx.numpy() for xx in x])
 
-           yield x_arr, y
-           batch_idx += 1
+            yield x_arr, y
+            batch_idx += 1
 
     def __len__(self):
         return math.ceil(len(self.dataset) / self.batch_size)

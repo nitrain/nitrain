@@ -96,15 +96,17 @@ class RandomSmoothing(BaseTransform):
     def __init__(self, min_std, max_std, physical_space=True):
         self.min_std = min_std
         self.max_std = max_std
+        self.physical_space = physical_space
 
     def __call__(self, *images):
         std = random.uniform(self.min_std, self.max_std)
+        print(std)
         
         new_images = []
         for image in images:
             new_image = ants.smooth_image(image, 
                                           std,
-                                          physical_space=self.physical_space)
+                                          self.physical_space)
             new_images.append(new_image)
         return new_images if len(new_images) > 1 else new_images[0]
         
