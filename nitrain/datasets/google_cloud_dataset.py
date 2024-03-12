@@ -142,8 +142,9 @@ class GoogleCloudDataset:
             
             img = ants.image_read(local_filepath)
         
-            if self.x_transforms is not None:
-                img = self.x_transforms(img)
+            if self.x_transforms:
+                for x_tx in self.x_transforms:
+                    img = x_tx(img)
             
             x.append(img)
         
