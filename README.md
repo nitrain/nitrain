@@ -98,7 +98,7 @@ The loader can be be used directly as a batch generator to fit models in tensorf
 
 ### Types of transforms
 
-The philosophy of nitrain is to be as neuroimaging-native as possible. That means that all transforms are applied directly on images (specifically, `antsImage` types from the (https://github.com/antsx/antspy)[ANTsPy] package) and only at the very end of batch generator are the images converted to numpy arrays.
+The philosophy of nitrain is to be as neuroimaging-native as possible. That means that all transforms are applied directly on images - specifically, `antsImage` types from the (https://github.com/antsx/antspy)[ANTsPy] package - and only at the very end of batch generator are the images converted to numpy arrays.
 
 The nitrain package supports an extensive amount of neuroimaging-based transforms:
 
