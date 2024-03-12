@@ -9,9 +9,6 @@ class Registration():
 class BrainExtraction():
     pass
 
-class ReorientImage:
-    pass
-
 class SimulateBiasField():
     """
             if do_simulate_bias_field and random.sample((True, False), 1)[0]:

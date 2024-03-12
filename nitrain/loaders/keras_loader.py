@@ -1,10 +1,10 @@
-import keras
+import tensorflow as tf
 import numpy as np
 import math
 
 from ..datasets.random_transform_dataset import RandomTransformDataset
 
-class KerasLoader(keras.utils.PyDataset):
+class KerasLoader(tf.keras.utils.PyDataset):
 
     def __init__(self, dataset, batch_size, x_transforms=None, y_transforms=None, co_transforms=None, **kwargs):
         super().__init__(**kwargs)

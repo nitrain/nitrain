@@ -7,3 +7,4 @@ Inspiration from https://github.com/ntustison/ANTsXNetTraining/
 
 
 from .base_transform import *
+from .intensity_transforms import *

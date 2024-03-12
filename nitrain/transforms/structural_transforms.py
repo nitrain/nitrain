@@ -6,6 +6,8 @@ class ExpandDims(BaseTransform):
 class SwapAxes:
     pass
 
+class ReorientImage:
+    pass
 
 class Slice(BaseTransform):
     pass

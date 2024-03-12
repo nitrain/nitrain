@@ -1,6 +1,8 @@
 
 from .base_transform import BaseTransform
 
+#("translation", "rigid", "scaleShear", "affine", "affineAndDeformation", "deformation")
+
 class Affine(BaseTransform):
     pass
 
@@ -17,4 +19,8 @@ class Zoom(BaseTransform):
     pass
 
 class Flip(BaseTransform):
+    pass
+
+
+class RandomDisplacementField(BaseTransform):
     pass
