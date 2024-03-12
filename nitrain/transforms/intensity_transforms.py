@@ -100,7 +100,6 @@ class RandomSmoothing(BaseTransform):
 
     def __call__(self, *images):
         std = random.uniform(self.min_std, self.max_std)
-        print(std)
         
         new_images = []
         for image in images:
