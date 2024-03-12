@@ -112,6 +112,7 @@ Writing your own transform is extremely easy! Just remember that the transform w
 
 ```python
 from nitrain.transforms import BaseTransform
+
 class CoolTransform(BaseTransform):
         def __init__(self, parameters):
                 self.parameters = parameters
