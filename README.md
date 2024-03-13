@@ -20,7 +20,7 @@ The nitrain package is developed with Python3.10 as the focus. In terms of depen
 
 ## Quickstart
 
-Here is a canonical example of using nitrain, but if you want to learn more then you can follow the 10-minute tutorial of the key components of nitrain further down.
+Here is a canonical example of using nitrain to give you a quick overview. If you want to learn a bit more about key components of nitrain then you can follow the 10-minute tutorial further down.
 
 Alternatively, you can check out the [tutorials](github.com/ncullen93/nitrain) for in-depth overviews of everything that nitrain has to offer.
 
