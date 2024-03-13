@@ -108,6 +108,21 @@ The nitrain package supports an extensive amount of neuroimaging-based transform
 - Motion
 - Intensity normalization
 
+If you want to explore what a transform does, you can take a sample of it over any number of trials on the same image and then plot the results:
+
+```python
+import ants
+import numpy as np
+from nitrain import transforms as tx
+
+img = ants.image_read(ants.get_ants_data('r16'))
+
+my_tx = tx.RandomSmoothing(0, 2)
+imgs = my_tx.sample(img, n=12)
+
+ants.plot_grid(np.array(imgs).reshape(4,3))
+```
+
 Writing your own transform is extremely easy! Just remember that the transform will operate on the `antsImage` type and that you should inherit from the `BaseTransform` class.
 
 ```python
