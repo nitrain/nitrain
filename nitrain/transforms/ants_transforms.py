@@ -7,7 +7,11 @@ import numpy as np
 
 from .base_transform import BaseTransform
 
+
 class ApplyAntsTransform(BaseTransform):
+    """
+    Apply an ANTs transform to an image
+    """
     def __init__(self, transform):
         self.transform = transform
         
@@ -17,6 +21,9 @@ class ApplyAntsTransform(BaseTransform):
 
 
 class BrainExtraction(BaseTransform):
+    """
+    Extract brain from image 
+    """
     
     def __init__(self):
         pass
@@ -35,16 +42,16 @@ class SimulateBiasField(BaseTransform):
     >>> from nitrain import transforms as tx
     >>> import ants
     >>> img = ants.image_read(ants.get_data('mni'))
-    >>> my_tx = tx.SimulateBiasField(field_strength = 4)
+    >>> my_tx = tx.SimulateBiasField()
     >>> new_img = my_tx(img)
     >>> ants.plot_ortho_stack([new_img, img])
     """
-    def __init__(self, sd=1.0, n_points=10, n_levels=2, mesh_size=10, field_strength=2, normalize=False):
+    def __init__(self, sd=1.0, n_points=10, n_levels=2, mesh_size=10, field_power=2, normalize=False):
         self.sd = sd
         self.n_points = n_points
         self.n_levels = n_levels
         self.mesh_size = mesh_size
-        self.field_strength = field_strength
+        self.field_power = field_power
         self.normalize = normalize
     
     def __call__(self, image):
@@ -54,7 +61,7 @@ class SimulateBiasField(BaseTransform):
                                                   number_of_fitting_levels=self.n_levels, 
                                                   mesh_size=self.mesh_size)
         log_field = log_field.iMath("Normalize")
-        field_array = np.power(np.exp(log_field.numpy()), self.field_strength)
+        field_array = np.power(np.exp(log_field.numpy()), self.field_power)
         new_image = ants.image_clone(image) * ants.from_numpy(field_array, origin=image.origin, spacing=image.spacing, direction=image.direction)
         
         if self.normalize:
