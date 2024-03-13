@@ -43,9 +43,7 @@ class SliceSampler:
         
         # apply shuffling
         if self.shuffle:
-            print('shuffling')
             indices = random.sample(range(len(self.y)), len(self.y))
-            print(indices)
             self.x = [self.x[i] for i in indices]
             self.y = self.y[indices]
             
