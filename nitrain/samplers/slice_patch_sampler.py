@@ -1,0 +1,4 @@
+
+class SlicePatchSampler:
+    
+    pass

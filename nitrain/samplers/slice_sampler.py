@@ -2,31 +2,15 @@ import numpy as np
 import random
 import math
 
-def create_slices(images, values, axis):
-    slices = []
-    new_values = []
-    for image, value in zip(images, values):
-        for i in range(image.shape[axis]):
-            slices.append(image.slice_image(axis, i))
-            new_values.append(value)
-            
-    return slices, np.array(new_values)
-    
     
 class SliceSampler:
     """
-    Standard sampler that just returns the batch with or without shuffling
-    
-    Examples
-    --------
-    
+    Sampler that returns batches of 2D slices from 3D images.
     """
     def __init__(self, sub_batch_size, axis=0, shuffle=False):
         self.sub_batch_size = sub_batch_size
-        self.shuffle = shuffle
         self.axis = axis
-        self.x = None
-        self.y = None
+        self.shuffle = shuffle
     
     def __call__(self, x, y):
         # create slices of all images
@@ -64,3 +48,14 @@ class SliceSampler:
         number of batches from the sampler
         """
         return 1
+
+
+def create_slices(images, values, axis):
+    slices = []
+    new_values = []
+    for image, value in zip(images, values):
+        for i in range(image.shape[axis]):
+            slices.append(image.slice_image(axis, i))
+            new_values.append(value)
+            
+    return slices, np.array(new_values)
