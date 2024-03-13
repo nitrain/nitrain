@@ -20,9 +20,9 @@ The nitrain package is developed with Python3.10 as the focus. In terms of depen
 
 ## Quickstart
 
-Let's say you want to predict a disease-related phenotype from structural T1 images using a convolutional neural network in Pytorch. You have a cohort of 200 participants and to avoid overfitting you want to perform neuroimage-specific data augmentation (e.g., affine transforms) during training. When the model is finalized, you'd like to understand which parts of the brain the model is paying attention to most.
+Here is a canonical example of using nitrain, but if you want to learn more then you can follow the 10-minute tutorial of the key components of nitrain further down.
 
-This is a canonical example for using nitrain. Here's how it would look like:
+Alternatively, you can check out the [tutorials](github.com/ncullen93/nitrain) for in-depth overviews of everything that nitrain has to offer.
 
 ```python
 from nitrain import datasets, loaders, models, trainers, transforms as tx
@@ -58,8 +58,6 @@ trainer.fit(loader, epochs=100)
 # upload trained model to platform
 models.register_model(trainer.model, 'nick/t1-brainage-model')
 ```
-
-That was a canonical example of using nitrain, but if you want to learn more then you can follow the 10-minute tutorial of the key components of nitrain right below. Alternatively, you can check out the [tutorials](github.com/ncullen93/nitrain) for in-depth overviews of everything that nitrain has to offer.
 
 <br />
 
