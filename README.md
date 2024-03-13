@@ -60,6 +60,7 @@ models.register_model(trainer.model, 'nick/t1-brainage-model')
 ```
 
 That was a canonical example of using nitrain, but if you want to learn more then you can follow the 10-minute tutorial of the key components of nitrain right below. Alternatively, you can check out the [tutorials](github.com/ncullen93/nitrain) for in-depth overviews of everything that nitrain has to offer.
+
 <br />
 
 ## Datasets and Loaders
