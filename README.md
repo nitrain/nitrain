@@ -116,7 +116,7 @@ loader = loaders.DatasetLoader(dataset,
                                batch_size=3,
                                x_transforms=[tx.RandomSmoothing(0, 1)],
                                expand_dims=-1,
-                               sampler=sp.SliceSampler(batch_size=24, axis=0, shuffle=True))
+                               sampler=sp.SliceSampler(sub_batch_size=24, axis=0, shuffle=True))
 ```
 
 What happens is that we start with the ~190 images from the dataset, but 3 images will be read in from file at a time. Then, all possible 2D slices will be created from those 3 images and served in shuffled batches of 24 from the loader. Once all "sub-batches" (sets of 24 slices from the 3 images) have been served, the loader will move on to the next 3 images and serve slices from those images. One epoch is completed when all slices from all images have been served.
