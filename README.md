@@ -104,7 +104,9 @@ The loader can be be used directly as a batch generator to fit models in tensorf
 
 ## Samplers
 
-Samplers allow you to keep the same dataset + loader workflow but on entire images but then expand those images to create batches in special ways. For instance, samplers let you create batches from 2D slices of 3D images, blocks of 3D images, and so forth. This supports common deep learning workflows for medical imaging where you often want to train a model on only parts of the image at once.
+Samplers allow you to keep the same dataset + loader workflow that batches entire images and applies transforms to them, but then expand on those transformed image batches to create special "sub-batches".
+
+For instance, samplers let you serve batches of 2D slices from 3D images, or 3D blocks from 3D images, and so forth. Samplers are essntial for common deep learning workflows in medical imaging where you often want to train a model on only parts of the image at once.
 
 All you have to do is supply a sampler instance to your dataset loader. Here is an example:
 
