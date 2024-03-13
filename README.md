@@ -115,7 +115,7 @@ import ants
 import numpy as np
 from nitrain import transforms as tx
 
-img = ants.image_read(ants.get_ants_data('r16'))
+img = ants.image_read(ants.get_data('r16'))
 
 my_tx = tx.RandomSmoothing(0, 2)
 imgs = my_tx.sample(img, n=12)
