@@ -33,7 +33,53 @@ class BrainExtraction(BaseTransform):
         return new_image * image
 
 
-class SimulateBiasField(BaseTransform):
+class DisplacementField(BaseTransform):
+    """
+    Simulate and apply a random displacement field
+    
+    Examples
+    --------
+    >>> from nitrain import transforms as tx
+    >>> import ants
+    >>> img = ants.image_read(ants.get_data('r16'))
+    >>> my_tx = tx.DisplacementField()
+    >>> new_img = my_tx(img)
+    >>> new_img.plot()
+    """
+    
+    def __init__(self, 
+                 field_type="bspline", 
+                 number_of_random_points=1000, 
+                 sd_noise=10.0,
+                 enforce_stationary_boundary=True,
+                 number_of_fitting_levels=4,
+                 mesh_size=1,
+                 sd_smoothing=4.0):
+        self.field_type = field_type 
+        self.number_of_random_points = number_of_random_points
+        self.sd_noise = sd_noise
+        self.enforce_stationary_boundary = enforce_stationary_boundary
+        self.number_of_fitting_levels = number_of_fitting_levels
+        self.mesh_size = mesh_size
+        self.sd_smoothing = sd_smoothing
+    
+    def __call__(self, image):
+        sim_field = ants.simulate_displacement_field(
+            image,
+            field_type = self.field_type,
+            number_of_random_points = self.number_of_random_points,
+            sd_noise = self.sd_noise,
+            enforce_stationary_boundary = self.enforce_stationary_boundary,
+            number_of_fitting_levels = self.number_of_fitting_levels,
+            mesh_size = self.mesh_size,
+            sd_smoothing = self.sd_smoothing
+        )
+        sim_transform = ants.transform_from_displacement_field(sim_field)
+        new_image = ants.apply_ants_transform_to_image(sim_transform, image, image)
+        return new_image
+
+
+class BiasField(BaseTransform):
     """
     Simulate and apply a bias field
     
@@ -42,7 +88,7 @@ class SimulateBiasField(BaseTransform):
     >>> from nitrain import transforms as tx
     >>> import ants
     >>> img = ants.image_read(ants.get_data('mni'))
-    >>> my_tx = tx.SimulateBiasField()
+    >>> my_tx = tx.BiasField()
     >>> new_img = my_tx(img)
     >>> ants.plot_ortho_stack([new_img, img])
     """

@@ -8,4 +8,6 @@ Inspiration from https://github.com/ntustison/ANTsXNetTraining/
 from .ants_transforms import *
 from .base_transform import *
 from .intensity_transforms import *
+from .spatial_transforms import *
 from .structural_transforms import *
+from .utility_transforms import *
