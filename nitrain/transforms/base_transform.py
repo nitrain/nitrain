@@ -4,6 +4,9 @@ import numpy as np
 
 class BaseTransform:
     
+    def __init__(self, prob=1):
+        self.prob = prob
+        
     def fit(self, *inputs):
         raise NotImplementedError
     
