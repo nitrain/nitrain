@@ -22,7 +22,7 @@ The nitrain package is developed with Python3.10 as the focus. In terms of depen
 
 Here is a canonical example of using nitrain to give you a quick overview. If you want to learn a bit more about key components of nitrain then you can follow the 10-minute tutorial further down.
 
-Alternatively, you can check out the [tutorials](github.com/ncullen93/nitrain) for in-depth overviews of everything that nitrain has to offer.
+Alternatively, you can check out the [tutorials](github.com/ncullen93/nitrain) for an in-depth introduction to everything that nitrain has to offer or the [examples](github.com/ncullen93/nitrain) for self-contained, end-to-end examples of how to perform common deep learning tasks.
 
 ```python
 from nitrain import datasets, loaders, models, trainers, transforms as tx
