@@ -59,6 +59,7 @@ trainer.fit(loader, epochs=100)
 models.register_model(trainer.model, 'nick/t1-brainage-model')
 ```
 
+That was a canonical example of using nitrain, but if you want to learn more then you can follow the 10-minute tutorial of the key components of nitrain right below. Alternatively, you can check out the [tutorials](github.com/ncullen93/nitrain) for in-depth overviews of everything that nitrain has to offer.
 <br />
 
 ## Datasets and Loaders
@@ -224,8 +225,4 @@ from nitrain import explain
 
 ## Contributing
 
-If you would like to contribute to nitrain, we would be extremely thankful. The best way to start is by posting an issue to discuss your proposed feature. We use Poetry as our build tool.
-
-```
-
-```
+If you would like to contribute to nitrain, we would be extremely thankful. The best way to start is by posting an issue to discuss your proposed feature.
