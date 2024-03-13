@@ -27,6 +27,8 @@ Alternatively, you can check out the [tutorials](github.com/ncullen93/nitrain) f
 ```python
 from nitrain import datasets, loaders, models, trainers, transforms as tx
 
+#### Brain-age example ####
+
 # create dataset from folder of images + participants file
 dataset = datasets.FolderDataset(base_dir='ds004711',
                             x={'pattern': 'sub-*/anat/*_T1w.nii.gz'},
