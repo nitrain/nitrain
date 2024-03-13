@@ -1,6 +1,6 @@
+import antspynet
 
-
-def fetch_pretrained(name):
+def fetch_pretrained(name, cache_dir=None):
     """
     Fetch a pretrained model from ANTsPyNet. Pretrained
     models can be used to make predictions (inference) on
@@ -13,13 +13,5 @@ def fetch_pretrained(name):
     convenience functions. The actual model can be accessed via
     the .model property.
     """
-    pass
-
-
-class PretrainedModel:
-    
-    def __init__(self, name, model):
-        pass
-    
-    def fine_tune(self, data):
-        pass
+    weights = antspynet.get_pretrained_network(name, 
+                                               antsxnet_cache_directory=cache_dir)

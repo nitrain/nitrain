@@ -4,7 +4,6 @@ import random
 
 from .base_transform import BaseTransform
 
-
 class RandomAffine(BaseTransform):
     pass
 
@@ -16,18 +15,6 @@ class RandomTranslate(BaseTransform):
 
 class RandomShear(BaseTransform):
     pass
-
-
-def create_centered_affine_transform(image, matrix):
-    transform = ants.create_ants_transform(
-        transform_type="AffineTransform", 
-        precision='float', 
-        matrix=matrix,
-        center=[image.shape[i]/2 for i in range(image.dimension)],
-        dimension=image.dimension
-    )
-    return transform
-
 
 class RandomZoom(BaseTransform):
     """
@@ -89,3 +76,13 @@ class RandomFlip(BaseTransform):
             
         return image
         
+
+def create_centered_affine_transform(image, matrix):
+    transform = ants.create_ants_transform(
+        transform_type="AffineTransform", 
+        precision='float', 
+        matrix=matrix,
+        center=[image.shape[i]/2 for i in range(image.dimension)],
+        dimension=image.dimension
+    )
+    return transform

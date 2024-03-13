@@ -141,9 +141,52 @@ img_transformed = tx_fn(img)
 
 <br />
 
+## Architectures and pretrained models
+
+The nitrain package provides an interface to an extensive amount of deep learning model architectures for all kinds of tasks - regression, classification, image-to-image generation, segmentation, autoencoders, etc.
+
+The available architectures can be listed and explored:
+
+```python
+from nitrain import models
+print(models.list_architectures())
+```
+
+You first fetch an architecture function which provides a blueprint on creating a model of the given architecture type. Then, you call the fetched architecture function in order to actually create a specific model with you given parameters.
+
+```python
+from nitrain import models
+
+vgg_fn = models.fetch_architecture('vgg', dim=3)
+vgg_model = vgg_fn((128, 128, 128, 1))
+
+autoencoder_fn = models.fetch_architecture('autoencoder')
+autoencoder_model = autoencoder_fn((784, 500, 500, 2000, 10))
+```
+
+There is also a large collection of pretrained models available as a starting point for your training or simply to use for inference. If your dataset is small (<500 participants) than you may especially benefit from using pre-trained models.
+
+Similarly to architectures, you fetch a pretrained model based on its name. The result of fetching a pretrained model is the actual instantianed model with the pretrained weights loaded.
+
+```python
+from nitrain import models
+model = models.fetch_pretrained('basic-t1')
+```
+
+If you have trained an interested deep learning model on neuroimages and would like to share it with the community, it is possible to do so directly from nitrain. Any model you share will be hosted and available for use by anyone else through the `fetch_pretrained` function.
+
+```python
+from nitrain import models
+models.register_pretrained(model, 'my-cool-model')
+```
+
+<br />
+
+<br />
+
 ## Trainers
 
-Nitrain can be used to train models on Pytorch, Keras, and Tensorflow.
+After you have either fetched and created an architecture, fetched a pretrained model, or created a model yourself in your framework of choice, then it's time to actually train the model on the dataset / loader that you've created.
 
 To train with Pytorch, use the `nitrain.torch` module:
 
@@ -165,24 +208,6 @@ import nitrain
 
 <br />
 
-## Architectures and Pre-trained models
-
-We provide a collection of pre-trained models that may prove extremely useful as a starting point for your training. If your dataset is small (<500 participants) than you may especially benefit from using our pre-trained models, since they have already learned the basic patterns of a neuroimage. Fine-tuning a pre-trained model is simple:
-
-```python
-import nitrain
-model = nitrain.fetch_pretrained('basic-t1')
-```
-
-If you have trained an interested deep learning model on neuroimages and would like to share it with the community, it is possible to do so directly from nitrain. Any model you share will be hosted by us and available for use by anyone else through the `fetch_pretrained` function.
-
-```python
-import nitrain
-nitrain.register_pretrained(model, 'my-cool-model')
-```
-
-<br />
-
 ## Explainers
 
 The idea that deep learning models are "black boxes" is out-dated, particularly when it comes to images. There are numerous techiques to help you understand which parts of the brain a trained model is weighing most when making predictions.
@@ -200,3 +225,7 @@ from nitrain import explain
 ## Contributing
 
 If you would like to contribute to nitrain, we would be extremely thankful. The best way to start is by posting an issue to discuss your proposed feature. We use Poetry as our build tool.
+
+```
+
+```
