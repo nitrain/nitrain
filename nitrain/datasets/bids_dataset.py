@@ -20,6 +20,7 @@ class BIDSDataset:
                  y,
                  x_transforms=None,
                  y_transforms=None,
+                 datalad=False,
                  layout=None):
         """
         Initialize a nitrain dataset consisting of local filepaths.
@@ -79,6 +80,7 @@ class BIDSDataset:
         self.participants = participants
         self.x = x
         self.y = y
+        self.datalad = datalad
 
     def filter(self, expr, inplace=False):
         """
@@ -175,15 +177,17 @@ class BIDSDataset:
 
     def __getitem__(self, idx):
         files = self.x[idx]
+        y = self.y[idx]
         if not isinstance(idx, slice):
             files = [files]
-        y = self.y[idx]
+            y = np.array([y])
         
         if self.y_transforms is not None:
-            y = np.array([self.y_transforms(yy) for yy in y])
+            for y_tx in self.y_transforms:
+                y = np.array([y_tx(yy) for yy in y])
         
         # make sure files are downloaded
-        if self.layout:
+        if self.datalad:
             ds = dl.Dataset(path = self.base_dir)
             res = ds.get(files)
         
@@ -191,13 +195,15 @@ class BIDSDataset:
         for file in files:
             img = ants.image_read(file)
         
-            if self.x_transforms is not None:
-                img = self.x_transforms(img)
+            if self.x_transforms:
+                for x_tx in self.x_transforms:
+                    img = x_tx(img)
             
             x.append(img)
         
         if not isinstance(idx, slice):
             x = x[0]
+            y = y[0]
 
         return x, y
     

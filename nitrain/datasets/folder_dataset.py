@@ -201,7 +201,8 @@ class FolderDataset:
         y = self.y[idx]
         
         if self.y_transforms is not None:
-            y = np.array([self.y_transforms(yy) for yy in y])
+            for y_tx in self.y_transforms:
+                y = y_tx(y)
         
         # make sure files are downloaded
         if self.datalad:

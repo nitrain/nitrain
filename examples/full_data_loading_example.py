@@ -4,7 +4,7 @@
 # but it lets you use your own code to create and train the model.
 
 import os
-from nitrain import datasets, loaders, samplers, transforms as tx
+from nitrain import datasets, loaders, models, samplers, transforms as tx
 
 ### fetch a dataset
 # The ds004711 from openneuro will be cloned using datalad, so you have to have datalad installed.
@@ -23,9 +23,15 @@ datasets.fetch_data('openneuro/ds004711', path=work_dir)
 # would be done beforehand. And indeed it is possible to precompute the dataset transforms (not shown here).
 dataset = datasets.BIDSDataset(base_dir=os.path.join(work_dir, 'openneuro/ds004711'),
                                x={'suffix': 'T1w', 'run': [None, '01']},
-                               y={'file': 'participants.tsv', 'column': 'age'},
                                x_transforms=[tx.Resample((4,4,4), use_spacing=True),
-                                             tx.BrainExtraction()])
+                                             tx.BrainExtraction()],
+                               y={'file': 'participants.tsv', 'column': 'age'},
+                               y_transforms=[tx.CustomFunction(lambda age: int(age > 50))],
+                               datalad=True)
+
+# read in and transform the first three images + ages to see what it looks like
+# x_raw is a list of resampled + brain extract images; y_raw is a np array of age classifications
+x_raw, y_raw = dataset[:3]
 
 ### create sampler
 # samplers are needed if you want to train your model on something other than the full image.
@@ -38,7 +44,7 @@ dataset = datasets.BIDSDataset(base_dir=os.path.join(work_dir, 'openneuro/ds0047
 # consumed all the slices from those 4 images. Then, the next 4 images from th dataset will be
 # read in and the slice batching process will run again. That will happen until all images from
 # the dataset have been read in. 
-sampler = samplers.SliceSampler(axis=0, sub_batch_size=32, shuffle=True)
+sampler = samplers.SliceSampler(axis=2, sub_batch_size=32, shuffle=True)
 
 ### create loader
 # We create the dataset loader which acts as the actual data generator for the model.
@@ -54,11 +60,27 @@ sampler = samplers.SliceSampler(axis=0, sub_batch_size=32, shuffle=True)
 loader = loaders.DatasetLoader(dataset=dataset,
                                batch_size=4,
                                sampler=sampler,
-                               expand_dims=-1,
                                x_transforms=[tx.RandomNoise(0, 2),
                                              tx.RandomFlip(p=0.5),
-                                             tx.RandomSmooth(0, 2)])
+                                             tx.RandomSmoothing(0, 2)])
 
-# create model manually
+# read in the first batch to see what it looks like
+# x_batch is a np array with shape (32, 64, 64, 1) - it is 32 random slices from the first 4 images
+# with the last dimension expanded for model training purposes (optional: see `expand_dims` argument)
+# y_batch is a np array of length 32 - it is the age classification each slice's source participant
+# Note that there are 187 participants, 48 slices per participant, and a batch size of 32. Therefore,
+# one training epoch will have 187 * 48 / 32 = 280.5 => 281 batches and will see 8976 slices in total.
+x_batch, y_batch = next(iter(loader))
+
+# create model
+arch_fn = models.fetch_architecture('alexnet', dim=2)
+model = arch_fn(input_image_size=(64,64,1), 
+                number_of_classification_labels=2)
+
+from tensorflow.keras import losses
+model.compile(optimizer='adam',
+              loss=losses.SparseCategoricalCrossentropy(from_logits=True),
+              metrics=['accuracy'])
 
 # fit model manually 
+model.fit_generator(loader)

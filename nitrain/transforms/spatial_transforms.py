@@ -69,7 +69,7 @@ class RandomFlip(BaseTransform):
         
         axis = self.axis
         if axis is None:
-            axis = np.randomc.choice(range(image.dimension), size=1)[0]
+            axis = np.random.choice(range(image.dimension), size=1)[0]
             
         if apply_tx:
             image = image.reflect_image(axis=axis)

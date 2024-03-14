@@ -3,6 +3,9 @@ from inspect import getmembers, isfunction
 
 import antspynet
 
+import tensorflow as tf
+import tensorflow.keras.backend as K
+
 
 def fetch_architecture(name, dim=None):
     """
