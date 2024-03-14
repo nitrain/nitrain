@@ -1,4 +1,4 @@
-# Nitrain - a neuroimaging-native deep learning framework
+# Nitrain - a medical imaging-native deep learning framework
 
 [![Coverage Status](https://coveralls.io/repos/github/ncullen93/nitrain/badge.svg?branch=main)](https://coveralls.io/github/ncullen93/nitrain?branch=main)
 
