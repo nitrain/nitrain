@@ -20,7 +20,7 @@ The nitrain package is developed with Python3.10 as the focus. In terms of depen
 
 ## Quickstart
 
-Here is a canonical example of using nitrain to give you a quick overview. If you want to learn a bit more about key components of nitrain then you can follow the 10-minute tutorial further down.
+Here is a canonical example of using nitrain to give you a quick overview. If you want to learn a bit more about key components of nitrain then you can follow the overview tutorials just below the quickstart.
 
 Alternatively, you can check out the [tutorials](github.com/ncullen93/nitrain) for an in-depth introduction to everything that nitrain has to offer or the [examples](github.com/ncullen93/nitrain) for self-contained, end-to-end examples of how to perform common deep learning tasks.
 
@@ -62,6 +62,17 @@ models.register_model(trainer.model, 'nick/t1-brainage-model')
 ```
 
 <br />
+
+## Overview of nitrain
+
+The 10-minute overview presented below will take you through the key components of nitrain:
+
+- [Datasets and Loaders]()
+- [Samplers]()
+- [Transforms]()
+- [Architectures and pretrained models]()
+- [Model trainers]()
+- [Explainers]()
 
 ## Datasets and Loaders
 
@@ -211,7 +222,7 @@ models.register_pretrained(model, 'my-cool-model')
 
 <br />
 
-## Trainers
+## Model trainers
 
 After you have either fetched and created an architecture, fetched a pretrained model, or created a model yourself in your framework of choice, then it's time to actually train the model on the dataset / loader that you've created.
 
