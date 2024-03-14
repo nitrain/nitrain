@@ -37,7 +37,8 @@ class PatchSampler:
         # apply shuffling
         if self.shuffle:
             indices = random.sample(range(len(self.y)), len(self.y))
-            self.x = [self.x[i] for i in indices]
+            x = self.x
+            self.x = [x[i] for i in indices]
             self.y = self.y[indices]
             
         return self
