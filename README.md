@@ -115,6 +115,8 @@ for x_batch, y_batch in loader:
 
 The loader can be be used directly as a batch generator to fit models in tensorflow, keras, pytorch, or any other framework. Note that we also have loaders geared specifically towards those frameworks to allow you to use some additional loading functionality that they provide.
 
+<br />
+
 ## Samplers
 
 Samplers allow you to keep the same dataset + loader workflow that batches entire images and applies transforms to them, but then expand on those transformed image batches to create special "sub-batches".
@@ -135,6 +137,8 @@ loader = loaders.DatasetLoader(dataset,
 What happens is that we start with the ~190 images from the dataset, but 3 images will be read in from file at a time. Then, all possible 2D slices will be created from those 3 images and served in shuffled batches of 24 from the loader. Once all "sub-batches" (sets of 24 slices from the 3 images) have been served, the loader will move on to the next 3 images and serve slices from those images. One epoch is completed when all slices from all images have been served.
 
 The important thing to remember is that the batch size your model will see is 24. In total, then, there are (n_images \* n_slices_per_image / sampler_batch_size) total batches in one epoch instead of (n_images / loader_batch_size) like there normally are.
+
+<br />
 
 ## Transforms
 
@@ -219,8 +223,6 @@ If you have trained an interested deep learning model on neuroimages and would l
 from nitrain import models
 models.register_pretrained(model, 'my-cool-model')
 ```
-
-<br />
 
 <br />
 
