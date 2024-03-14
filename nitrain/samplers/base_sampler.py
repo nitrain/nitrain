@@ -12,8 +12,6 @@ class BaseSampler:
     """
     def __init__(self, shuffle=False):
         self.shuffle = shuffle
-        self.x = None
-        self.y = None
     
     def __call__(self, x, y):
         self.x = x
