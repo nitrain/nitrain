@@ -67,12 +67,14 @@ models.register_model(trainer.model, 'nick/t1-brainage-model')
 
 The 10-minute overview presented below will take you through the key components of nitrain:
 
-- [Datasets and Loaders]()
-- [Samplers]()
-- [Transforms]()
-- [Architectures and pretrained models]()
-- [Model trainers]()
-- [Explainers]()
+- [Datasets and Loaders](#datasets-and-loaders)
+- [Samplers](#samplers)
+- [Transforms](#transforms)
+- [Architectures and pretrained models](#architectures-and-pretrained-models)
+- [Model trainers](#model-trainers)
+- [Explainers](#explainers)
+
+<br />
 
 ## Datasets and Loaders
 
