@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nitrain"
-version = "0.1.0"
+version = "0.2.0"
 description = "Neuroimaging-native tools for deep learning"
 authors = ["ncullen93 <nicholas.cullen@med.lu.se>"]
 license = "MIT"
