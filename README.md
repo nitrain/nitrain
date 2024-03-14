@@ -1,4 +1,4 @@
-# Nitrain
+# Nitrain - a neuroimaging-native deep learning framework
 
 Nitrain is a neuroimaging-native framework for training and visualizing deep learning models. It provides tools for sampling and augmenting neuroimaging datasets, training deep learning models on neuroimages, and visualizing or explaining deep learning model results in a neuroimaging context. Nitrain also makes it easy to use pre-trained models for training or integration into imaging pipelines.
 
