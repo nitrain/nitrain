@@ -4,7 +4,9 @@
 # but it lets you use your own code to create and train the model.
 
 import os
+import math
 from nitrain import datasets, loaders, models, samplers, transforms as tx
+import tensorflow as tf
 
 ### fetch a dataset
 # The ds004711 from openneuro will be cloned using datalad, so you have to have datalad installed.
@@ -26,12 +28,14 @@ dataset = datasets.BIDSDataset(base_dir=os.path.join(work_dir, 'openneuro/ds0047
                                x_transforms=[tx.Resample((4,4,4), use_spacing=True),
                                              tx.BrainExtraction()],
                                y={'file': 'participants.tsv', 'column': 'age'},
-                               y_transforms=[tx.CustomFunction(lambda age: int(age > 50))],
+                               y_transforms=[tx.CustomFunction(lambda age: [int(age > 50), int(age < 50)])],
                                datalad=True)
 
 # read in and transform the first three images + ages to see what it looks like
 # x_raw is a list of resampled + brain extract images; y_raw is a np array of age classifications
 x_raw, y_raw = dataset[:3]
+dataset.x = dataset.x[:100]
+dataset.y = dataset.y[:100]
 
 ### create sampler
 # samplers are needed if you want to train your model on something other than the full image.
@@ -57,6 +61,7 @@ sampler = samplers.SliceSampler(axis=2, sub_batch_size=32, shuffle=True)
 # to the images each time they're served. These are transforms that are meant to be applied
 # only during training, since they can greatly distort the images in order to make the model
 # more robust to different images.
+
 loader = loaders.DatasetLoader(dataset=dataset,
                                batch_size=4,
                                sampler=sampler,
@@ -82,10 +87,8 @@ model = arch_fn(input_image_size=(64,64,1),
                 mode='classification')
 
 # compile and fit model
-from tensorflow.keras import losses
-
 model.compile(optimizer='adam',
-              loss=losses.SparseCategoricalCrossentropy(from_logits=True),
+              loss=tf.keras.losses.CategoricalCrossentropy(),
               metrics=['accuracy'])
 
-model.fit_generator(loader)
+model.fit(loader.as_keras_loader(), steps_per_epoch=150, epochs=10)

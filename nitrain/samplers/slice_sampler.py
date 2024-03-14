@@ -47,7 +47,10 @@ class SliceSampler:
         """
         number of batches from the sampler
         """
-        return 1
+        if self.n_batches is not None:
+            return self.n_batches
+        else:
+            return 0
 
 
 def create_slices(images, values, axis):
