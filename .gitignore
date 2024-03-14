@@ -1,6 +1,7 @@
 .vscode
 .DS_Store
-examples/temp.py
+examples/draft*
+tutorials/draft*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

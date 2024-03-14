@@ -24,6 +24,9 @@ ipython = "8.14"
 google-cloud = "^0.34.0"
 google-cloud-storage = "^2.15.0"
 
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.3"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
