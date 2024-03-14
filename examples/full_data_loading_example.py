@@ -72,15 +72,20 @@ loader = loaders.DatasetLoader(dataset=dataset,
 # one training epoch will have 187 * 48 / 32 = 280.5 => 281 batches and will see 8976 slices in total.
 x_batch, y_batch = next(iter(loader))
 
-# create model
+### create model 
+# The model here is created based on the provided Alexnet architecture. As you can see, the
+# architectures are a sort of blueprint that let you flexibly create a model of a given type
+# based on your task (classification, regression, etc) and the size and shape of your data.
 arch_fn = models.fetch_architecture('alexnet', dim=2)
 model = arch_fn(input_image_size=(64,64,1), 
-                number_of_classification_labels=2)
+                number_of_classification_labels=2,
+                mode='classification')
 
+# compile and fit model
 from tensorflow.keras import losses
+
 model.compile(optimizer='adam',
               loss=losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
-# fit model manually 
 model.fit_generator(loader)
