@@ -14,7 +14,7 @@ done
 
 if [[ $COVERAGE -eq 1 ]]; then
     coverage erase
-    PYCMD="coverage run --parallel-mode --source ants "
+    PYCMD="coverage run --parallel-mode --source nitrain "
     echo "coverage flag found. Setting command to: \"$PYCMD\""
 fi
 
