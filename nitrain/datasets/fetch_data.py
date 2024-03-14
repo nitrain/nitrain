@@ -1,12 +1,7 @@
 import os
-from pathlib import Path
 import datalad.api as dl
-import nibabel
-import numpy as np
 
-def get_nitrain_dir():
-    downloads_path = str(Path.home() / "Desktop/")
-    return downloads_path    
+from ..utils import get_nitrain_dir
 
 def fetch_data(name, path=None):
     """
@@ -33,18 +28,8 @@ def fetch_data(name, path=None):
     
     save_dir = os.path.join(path, name)
     if not os.path.exists(save_dir):
-        os.mkdir(save_dir)
+        os.makedirs(save_dir, exist_ok=True)
     ref = dl.clone(source=f'///{name}', path=save_dir)
     return ref
 
 
-def files_to_array(files, dtype='float32'):
-    # read in the images to a numpy array
-    img_arrays = []
-    for file in files:
-        img = nibabel.load(file)
-        img_array = img.get_fdata()
-        img_arrays.append(img_array)
-        
-    img_arrays = np.array(img_arrays, dtype=dtype)
-    return img_arrays
