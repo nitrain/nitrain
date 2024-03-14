@@ -1,4 +1,4 @@
-# Nitrain - train AI models natively on medical images
+# Nitrain - a framework for fitting deep learning models natively on medical images
 
 [![Coverage Status](https://coveralls.io/repos/github/ncullen93/nitrain/badge.svg?branch=main)](https://coveralls.io/github/ncullen93/nitrain?branch=main)
 
