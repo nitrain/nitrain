@@ -34,8 +34,6 @@ dataset = datasets.BIDSDataset(base_dir=os.path.join(work_dir, 'openneuro/ds0047
 # read in and transform the first three images + ages to see what it looks like
 # x_raw is a list of resampled + brain extract images; y_raw is a np array of age classifications
 x_raw, y_raw = dataset[:3]
-dataset.x = dataset.x[:100]
-dataset.y = dataset.y[:100]
 
 ### create sampler
 # samplers are needed if you want to train your model on something other than the full image.
@@ -61,7 +59,6 @@ sampler = samplers.SliceSampler(axis=2, sub_batch_size=32, shuffle=True)
 # to the images each time they're served. These are transforms that are meant to be applied
 # only during training, since they can greatly distort the images in order to make the model
 # more robust to different images.
-
 loader = loaders.DatasetLoader(dataset=dataset,
                                batch_size=4,
                                sampler=sampler,
