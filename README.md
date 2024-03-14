@@ -8,7 +8,7 @@ Nitrain is a medical imaging-native framework for training and visualizing deep 
 
 ## Installation
 
-The package can be installed from pypi:
+The latest release of nitrain can be installed from pypi:
 
 ```
 pip install nitrain
