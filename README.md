@@ -4,7 +4,7 @@
 [![Build](https://github.com/ncullen93/nitrain/actions/workflows/test.yml/badge.svg)](https://github.com/ncullen93/nitrain/actions/workflows/test.yml)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/nitrain)
 
-Nitrain is a python library that complements pytorch, keras, and tensorflow by providing tools for sampling and augmenting medical images, training models, and visualizing model results in a medical imaging context.
+Nitrain is a python library that complements pytorch, keras, and tensorflow by providing tools for sampling and augmenting medical images, training models on medical imaging datasets, and visualizing model results in a medical imaging context.
 
 You can also train models HIPAA-compliantly in the cloud using nitrain. You are encouraged to make your fitted models available to the community via nitrain, or you can easily use other's pretrained models for fine-tuning or standard image processing.
 
