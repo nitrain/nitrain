@@ -89,7 +89,7 @@ class RandomSlice(BaseTransform):
         if not self.allow_blank:
             image = image.crop_image()
         
-        idx = random.sample(range(image.shape[self.axis]))[0]
+        idx = random.sample(range(image.shape[self.axis]), 1)[0]
         new_image = image.slice_image(self.axis, idx)
         
         return new_image
