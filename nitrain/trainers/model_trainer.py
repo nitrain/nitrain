@@ -3,8 +3,9 @@
 
 class ModelTrainer:
     """
-    The ModelTrainer class is a high-level tool for training
-    a deep learning model on your data.
+    The ModelTrainer class provides high-level functionality to train
+    deep learning models on dataset loaders. It wraps the most popular
+    frameworks - pytorch, keras, tensorflow - under a common interface.
     
     Examples
     --------
@@ -14,12 +15,11 @@ class ModelTrainer:
     >>> model_fn = fetch_architecture('autoencoder')
     >>> model = model_fn((120, 60, 30))
     >>> trainer = ModelTrainer(model)
-    >>> trainer.compile(optimizer='Adam')
-    >>> trainer.fit_loader(loader)
+    >>> trainer.fit(loader, epochs=10)
     """
     
     def __init__(self, model):
         self.model = model
         
-    def fit_loader(self, data):
+    def fit(self, loader, epochs):
         pass

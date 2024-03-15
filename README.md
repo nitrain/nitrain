@@ -4,7 +4,7 @@
 [![Build](https://github.com/ncullen93/nitrain/actions/workflows/test.yml/badge.svg)](https://github.com/ncullen93/nitrain/actions/workflows/test.yml)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/nitrain)
 
-Nitrain is a medical imaging-native framework for training and visualizing deep learning models. It provides tools for sampling and augmenting neuroimaging datasets, training deep learning models on neuroimages, and visualizing or explaining deep learning model results in a neuroimaging context.
+Nitrain is a medical imaging-native framework for training and visualizing deep learning models. It supports pytorch, keras, and tensorflow and complements them by providing tools for sampling and augmenting medical imaging datasets, training models on medical images, and visualizing or explaining model results in a medical imaging context.
 
 With nitrain, it is also possible to train models HIPAA-compliantly in the cloud. Once you've trained a model, you are welcome to make it available to the community via nitrain, and you can easily use other's pretrained models for your own fine-tuning or image processing.
 
@@ -36,8 +36,6 @@ Here is a canonical example of using nitrain to fit a brain-age model. If you wa
 
 ```python
 from nitrain import datasets, loaders, models, trainers, transforms as tx
-
-#### Brain-age example ####
 
 # create dataset from folder of images + participants file
 dataset = datasets.FolderDataset(base_dir='ds004711',
