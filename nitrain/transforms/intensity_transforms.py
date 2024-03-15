@@ -85,7 +85,7 @@ class Smoothing(BaseTransform):
         for image in images:
             new_image = ants.smooth_image(image, 
                                           self.std,
-                                          physical_space=self.physical_space)
+                                          self.physical_space)
             new_images.append(new_image)
         return new_images if len(new_images) > 1 else new_images[0]
 

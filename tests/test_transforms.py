@@ -86,5 +86,63 @@ class TestClass_StructuralTransforms(unittest.TestCase):
         self.assertTrue(img_tx.shape == (300,300,300))
 
 
+class TestClass_IntensityTransforms(unittest.TestCase):
+    def setUp(self):
+        self.img2d = ants.image_read(ants.get_data('r16'))
+        self.img3d = ants.image_read(ants.get_data('mni'))
+
+    def tearDown(self):
+        pass
+    
+    def test_StandardNormalize(self):
+        my_tx = tx.StandardNormalize()
+        img_tx = my_tx(self.img2d)
+
+        my_tx = tx.StandardNormalize()
+        img_tx = my_tx(self.img3d)
+
+    def test_Threshold(self):
+        my_tx = tx.Threshold(0.5)
+        img_tx = my_tx(self.img2d)
+
+        my_tx = tx.Threshold(0.5)
+        img_tx = my_tx(self.img3d)
+
+    def test_RangeNormalize(self):
+        my_tx = tx.RangeNormalize(0, 1)
+        img_tx = my_tx(self.img2d)
+
+        my_tx = tx.RangeNormalize(0, 1)
+        img_tx = my_tx(self.img3d)
+
+    def test_Smoothing(self):
+        my_tx = tx.Smoothing(2)
+        img_tx = my_tx(self.img2d)
+
+        my_tx = tx.Smoothing(2)
+        img_tx = my_tx(self.img3d)
+
+    def test_RandomSmoothing(self):
+        my_tx = tx.RandomSmoothing(1, 3)
+        img_tx = my_tx(self.img2d)
+
+        my_tx = tx.RandomSmoothing(1, 3)
+        img_tx = my_tx(self.img3d)
+
+    def test_RandomNoise(self):
+        my_tx = tx.RandomNoise(0, 8)
+        img_tx = my_tx(self.img2d)
+
+        my_tx = tx.RandomNoise(0, 8)
+        img_tx = my_tx(self.img3d)
+
+    def test_HistogramWarpIntensity(self):
+        my_tx = tx.HistogramWarpIntensity()
+        img_tx = my_tx(self.img2d)
+
+        my_tx = tx.HistogramWarpIntensity()
+        img_tx = my_tx(self.img3d)
+
+
 if __name__ == '__main__':
     run_tests()
