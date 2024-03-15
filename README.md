@@ -88,81 +88,80 @@ The 10-minute overview presented below will take you through the key components 
 
 <br />
 
-## Datasets and Loaders
+### Datasets and Loaders
 
-Nitrain provides extensive functionality to help you sample neuroimages with imaging-native data augmentation techniques. Our focus is on speed, meaning you never have to convert your neuroimages into numpy arrays.
-
-You start by creating a `dataset` from wherever your images are stored -- in a local folder, in a bids folder, in memory, on a cloud service, etc. Say that your data is stored in a local folder. To grab inputs (`x`), supply a dictionary with a glob pattern and optional exclude pattern. To grab outputs (`y`), specify a dataframe file to read and a column to pull from that dataframe. Both x and y can be image configs, and they can also be lists of configs if you want to grab multiple images at once.
+Datasets help you read in your images from wherever they are stored -- in a local folder with BIDS or datalad, in memory, on a cloud service. You can flexibly specify the inputs and outputs using glob patterns, BIDS entities, etc. Transforms can also be passed to your datasets as a sort of preprocessing pipeline that will be applied whenever the dataset is accessed.
 
 ```python
-from nitrain import datasets
-dataset = datasets.FolderDataset(base_dir='ds004711',
+from nitrain import datasets, transforms as tx
+
+dataset = datasets.FolderDataset(base_dir='~/datasets/ds004711',
                                  x={'pattern': 'sub-*/anat/*_T1w.nii.gz', 'exclude': '**run-02*'},
                                  y={'file': 'participants.tsv', 'column': 'age'},
-                                 x_transforms=[tx.Resample((4,4,4), use_spacing=True),
-                                               tx.RangeNormalize(0,1)])
-
+                                 x_transforms=[tx.Resample((64,64,64))])
 ```
 
-Notice also that there the `x_transforms` argument has been supplied. These transforms are applied every time the input image is read into file. These are meant to be "fixed" transforms - i.e., not random - because the results can be cached to speed up sampling in the long-run.
-
-Once you have a dataset, you can grab images from it as you would with any iterator. This gives you the first input image (with transforms applied) and the first age value.
+Although you will rarely need to do this, data can be read into memory by indexing the dataset:
 
 ```python
-x, y = dataset[0]
+x_raw, y_raw = dataset[:3]
 ```
 
-The dataset can then be passed into a `loader` in order to actually sample batches. With loaders, you can specify parameters like batch size and whether to expand dims. You can also pass in more transforms that will be applied at each batch sampling. These transforms, in contrast, are meant to be random data augmentation transforms.
+To prepare your images for batch generation during training, you pass the dataset into one the loaders. Here is where you can also pass in random transforms that will act as data augmentation. If you want to train on slices, patches, or blocks of images then you will additionally provide a sampler. The different samplers are explained later.
 
 ```python
+from nitrain import loaders, samplers
+
 loader = loaders.DatasetLoader(dataset,
                                batch_size=32,
-                               x_transforms=[tx.RandomSmoothing(0, 1)],
-                               expand_dims=-1)
+                               x_transforms=[tx.RandomSmoothing(0, 1)])
 
 # loop through all images in batches for one epoch
 for x_batch, y_batch in loader:
         print(y_batch)
 ```
 
-The loader can be be used directly as a batch generator to fit models in tensorflow, keras, pytorch, or any other framework. Note that we also have loaders geared specifically towards those frameworks to allow you to use some additional loading functionality that they provide.
+The loader can be be used directly as a batch generator to fit models in tensorflow, keras, pytorch, or any other framework.
 
 <br />
 
-## Samplers
+### Samplers
 
 Samplers allow you to keep the same dataset + loader workflow that batches entire images and applies transforms to them, but then expand on those transformed image batches to create special "sub-batches".
 
 For instance, samplers let you serve batches of 2D slices from 3D images, or 3D blocks from 3D images, and so forth. Samplers are essntial for common deep learning workflows in medical imaging where you often want to train a model on only parts of the image at once.
 
-All you have to do is supply a sampler instance to your dataset loader. Here is an example:
-
 ```python
-from nitrain import loaders, samplers as sp, transforms as tx
+from nitrain import loaders, samplers, transforms as tx
 loader = loaders.DatasetLoader(dataset,
-                               batch_size=3,
+                               batch_size=4,
                                x_transforms=[tx.RandomSmoothing(0, 1)],
-                               expand_dims=-1,
-                               sampler=sp.SliceSampler(sub_batch_size=24, axis=0, shuffle=True))
+                               sampler=samplers.SliceSampler(sub_batch_size=24, axis=2))
 ```
 
-What happens is that we start with the ~190 images from the dataset, but 3 images will be read in from file at a time. Then, all possible 2D slices will be created from those 3 images and served in shuffled batches of 24 from the loader. Once all "sub-batches" (sets of 24 slices from the 3 images) have been served, the loader will move on to the next 3 images and serve slices from those images. One epoch is completed when all slices from all images have been served.
-
-The important thing to remember is that the batch size your model will see is 24. In total, then, there are (n_images \* n_slices_per_image / sampler_batch_size) total batches in one epoch instead of (n_images / loader_batch_size) like there normally are.
+What happens is that we start with the ~190 images from the dataset, but 4 images will be read in from file at a time. Then, all possible 2D slices will be created from those 4 images and served in shuffled batches of 24 from the loader. Once all "sub-batches" (sets of 24 slices from the 4 images) have been served, the loader will move on to the next 4 images and serve slices from those images. One epoch is completed when all slices from all images have been served.
 
 <br />
 
-## Transforms
+### Transforms
 
-The philosophy of nitrain is to be as neuroimaging-native as possible. That means that all transforms are applied directly on images - specifically, `antsImage` types from the [ANTsPy](https://github.com/antsx/antspy) package - and only at the very end of batch generator are the images converted to numpy arrays.
+The philosophy of nitrain is to be medical imaging-native. This means that all transforms are applied directly on images - specifically, `antsImage` types from the [ANTsPy](https://github.com/antsx/antspy) package - and only at the very end of batch generator are the images converted to arrays / tensors for model consumption.
 
-The nitrain package supports an extensive amount of neuroimaging-based transforms:
+The nitrain package supports an extensive amount of medical imaging transforms:
 
 - Affine (Rotate, Translate, Shear, Zoom)
 - Flip, Pad, Crop, Slice
 - Noise
 - Motion
 - Intensity normalization
+
+You can create your own transform with the `CustomTransform` class:
+
+```python
+from nitrain import transforms as tx
+
+my_tx = tx.CustomTransform(lambda x: x * 2)
+```
 
 If you want to explore what a transform does, you can take a sample of it over any number of trials on the same image and then plot the results:
 
@@ -179,25 +178,9 @@ imgs = my_tx.sample(img, n=12)
 ants.plot_grid(np.array(imgs).reshape(4,3))
 ```
 
-Writing your own transform is extremely easy! Just remember that the transform will operate on the `antsImage` type and that you should inherit from the `BaseTransform` class.
-
-```python
-from nitrain.transforms import BaseTransform
-
-class CoolTransform(BaseTransform):
-        def __init__(self, parameters):
-                self.parameters = parameters
-        def __call__(self, image):
-                image = my_function(image, self.parameters)
-                return image
-
-tx_fn = CoolTransform(parameters=123)
-img_transformed = tx_fn(img)
-```
-
 <br />
 
-## Architectures and pretrained models
+### Architectures and pretrained models
 
 The nitrain package provides an interface to an extensive amount of deep learning model architectures for all kinds of tasks - regression, classification, image-to-image generation, segmentation, autoencoders, etc.
 
@@ -220,59 +203,21 @@ autoencoder_fn = models.fetch_architecture('autoencoder')
 autoencoder_model = autoencoder_fn((784, 500, 500, 2000, 10))
 ```
 
-There is also a large collection of pretrained models available as a starting point for your training or simply to use for inference. If your dataset is small (<500 participants) than you may especially benefit from using pre-trained models.
+<br />
 
-Similarly to architectures, you fetch a pretrained model based on its name. The result of fetching a pretrained model is the actual instantianed model with the pretrained weights loaded.
+### Trainers
 
-```python
-from nitrain import models
-model = models.fetch_pretrained('basic-t1')
-```
+After you have either fetched and created an architecture, fetched a pretrained model, or created a model yourself in your framework of choice, then it's time to actually train the model on the dataset / loader that you've created. The primary way to train a model locally is using the `ModelTrainer` class.
 
-If you have trained an interested deep learning model on neuroimages and would like to share it with the community, it is possible to do so directly from nitrain. Any model you share will be hosted and available for use by anyone else through the `fetch_pretrained` function.
-
-```python
-from nitrain import models
-models.register_pretrained(model, 'my-cool-model')
-```
+Additionally, you can train your model in the cloud using the `CloudTrainer` class. All training takes place on HIPAA-compliant servers.
 
 <br />
 
-## Model trainers
-
-After you have either fetched and created an architecture, fetched a pretrained model, or created a model yourself in your framework of choice, then it's time to actually train the model on the dataset / loader that you've created.
-
-To train with Pytorch, use the `nitrain.torch` module:
-
-```python
-import nitrain
-```
-
-To train with Keras, use the `nitrain.keras` module:
-
-```python
-import nitrain
-```
-
-To train with Tensorflow, use the `nitrain.tensorflow` module:
-
-```python
-import nitrain
-```
-
-<br />
-
-## Explainers
+### Explainers
 
 The idea that deep learning models are "black boxes" is out-dated, particularly when it comes to images. There are numerous techiques to help you understand which parts of the brain a trained model is weighing most when making predictions.
 
-One such technique is called the occlusion method, where you systematically "black out" different patches of an input image and see how the model prediction is affected. The idea is that when, when occluded, important areas result in a large change in model prediction compared to the original image.
-
 Nitrain provides tools to perform this techique - along with many others - and can help you visualize the results of such explainability experiments directly in brain space. Here is what that might look like:
-
-```python
-from nitrain import explain
-```
 
 <br />
 
