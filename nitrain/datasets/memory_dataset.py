@@ -8,13 +8,11 @@ import datalad.api as dl
 import numpy as np
 import pandas as pd
 
-from torch.utils.data import Dataset
-
 
 from .. import utils
 
 
-class MemoryDataset(Dataset):
+class MemoryDataset:
     
     def __init__(self, x, y, x_transform=None):
         self.x = x

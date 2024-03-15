@@ -1,11 +1,6 @@
 
 from inspect import getmembers, isfunction
 
-import antspynet
-
-import tensorflow as tf
-import tensorflow.keras.backend as K
-
 
 def fetch_architecture(name, dim=None):
     """
@@ -32,6 +27,8 @@ def fetch_architecture(name, dim=None):
     >>> autoencoder_fn = models.fetch_architecture('autoencoder')
     >>> autoencoder_model = autoencoder_fn((784, 500, 500, 2000, 10))
     """
+    import antspynet
+    
     try:
         if dim is not None:
             fstr = f'create_{name}_model_{dim}d'
@@ -64,6 +61,7 @@ def list_architectures():
     >>> from nitrain import models
     >>> models.list_architectures()    
     """
+    import antspynet
     archs = [f[0].split('create_')[1].split('_model_') for f in getmembers(antspynet.architectures, isfunction) if f[0].startswith('create_')]
     # add empty string for non-dimensioned models just to be consistent
     def add_empty(x):

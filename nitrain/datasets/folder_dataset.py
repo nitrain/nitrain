@@ -10,9 +10,6 @@ import pandas as pd
 import glob
 from fnmatch import fnmatch
 
-from torch.utils.data import Dataset
-
-
 from .. import utils
 
 

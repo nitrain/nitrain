@@ -5,7 +5,7 @@ class ModelTrainer:
     """
     The ModelTrainer class provides high-level functionality to train
     deep learning models on dataset loaders. It wraps the most popular
-    frameworks - pytorch, keras, tensorflow - under a common interface.
+    frameworks under a common interface.
     
     Examples
     --------

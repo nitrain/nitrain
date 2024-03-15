@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import tensorflow as tf
 
 from .. import samplers
 
@@ -37,6 +36,8 @@ class DatasetLoader:
         self.sampler = sampler
         
     def to_keras(self, output_signature=None):
+        import tensorflow as tf
+        
         def batch_generator():
             my_iter = iter(self)
             for x_batch, y_batch in my_iter:

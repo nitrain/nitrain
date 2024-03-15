@@ -1,4 +1,4 @@
-import antspynet
+
 
 def fetch_pretrained(name, cache_dir=None):
     """
@@ -13,5 +13,6 @@ def fetch_pretrained(name, cache_dir=None):
     convenience functions. The actual model can be accessed via
     the .model property.
     """
+    import antspynet
     weights = antspynet.get_pretrained_network(name, 
                                                antsxnet_cache_directory=cache_dir)

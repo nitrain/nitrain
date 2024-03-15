@@ -26,7 +26,7 @@ python -m pip install git+github.com/ncullen93/nitrain.git
 
 ### Dependencies
 
-The nitrain package uses the ANTs python package to efficiently read and transform medical images. Additionally, we support keras (tf.keras or keras3), tensorflow, and pytorch for all core functionality.
+The nitrain package uses the `antspy` python package to efficiently read and transform medical images. It optionally uses the `antspynet` package to create some tensorflow architectures. Additionally, we support keras (tf.keras or keras3), tensorflow, or pytorch for all core functionality - with possibility to only import the framework you are using.
 
 <br />
 

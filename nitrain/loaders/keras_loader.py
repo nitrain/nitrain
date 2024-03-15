@@ -5,8 +5,7 @@ import keras
 
 from .. import samplers
 
-    
-# Keras3 only. Otherwise, use DatasetLoader().to_keras()
+# Keras v3 only - for Keras v2 use DatasetLoader().to_keras()
 if int(keras.__version__.split('.')[0]) == 3:
     
     class KerasLoader(keras.utils.PyDataset):

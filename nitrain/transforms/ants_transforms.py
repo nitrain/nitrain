@@ -1,6 +1,6 @@
 # Transforms that apply specific antspy functions to images
 import ants
-import antspynet
+
 
 import random
 import numpy as np
@@ -101,6 +101,7 @@ class BiasField(BaseTransform):
         self.normalize = normalize
     
     def __call__(self, image):
+        import antspynet
         log_field = antspynet.simulate_bias_field(image, 
                                                   number_of_points=self.n_points, 
                                                   sd_bias_field=self.sd, 

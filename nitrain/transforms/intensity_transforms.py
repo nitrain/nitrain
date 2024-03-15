@@ -1,5 +1,4 @@
 import ants
-import antspynet
 
 import random
 import numpy as np
@@ -151,6 +150,8 @@ class HistogramWarpIntensity(BaseTransform):
         self.transform_domain_size = transform_domain_size
 
     def __call__(self, *images):
+        import antspynet
+        
         new_images = []
         for image in images:
             new_image = antspynet.histogram_warp_image_intensities(
