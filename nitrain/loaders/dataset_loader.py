@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import tensorflow as tf
 
 from .. import samplers
 
@@ -30,70 +31,48 @@ class DatasetLoader:
         self.x_transforms = x_transforms
         self.y_transforms = y_transforms
         self.co_transforms = co_transforms
+        
         if sampler is None:
             sampler = samplers.BaseSampler()
         self.sampler = sampler
         
-    def as_keras_loader(self):
-        def my_func(batch_size, dataset, x_transforms, y_transforms, co_transforms,
-                    sampler, expand_dims):
-            n_batches = math.ceil(len(dataset) / batch_size)
-            
-            # TODO: apply shuffling to indices before we get to the batch loop
-            
-            batch_idx = 0
-            while True:
-                if batch_idx >= n_batches:
-                    batch_idx = 0
-                
-                data_indices = slice(batch_idx*batch_size, min((batch_idx+1)*batch_size, len(dataset)))
-                x, y = dataset[data_indices]
-                
-                batch_idx += 1
-                # perform transforms
-                if self.x_transforms:
-                    for tx_fn in x_transforms:
-                        x = [tx_fn(xx) for xx in x]
-                
-                if self.y_transforms:
-                    for tx_fn in y_transforms:
-                        y = [tx_fn(yy) for yy in y]
-                
-                if self.co_transforms:
-                    for tx_fn in co_transforms:
-                        for i in range(len(x)):
-                            x[i], y[i] = tx_fn(x[i], y[i])
-
-                # sample the batch
-                sampled_batch = sampler(x, y)
-                
-                # a normal sampler will just return the entire (shuffled, if specified) batch once
-                # a slice sampler will return shuffled slices with batch size = sampler.batch_size
-                for x_batch, y_batch in sampled_batch:
-                    if self.expand_dims is not None:
-                        x_batch = np.array([np.expand_dims(xx.numpy(), expand_dims) for xx in x_batch])
-                    else:
-                        x_batch = np.array([xx.numpy() for xx in x_batch])
-                    
-                    yield x_batch, y_batch
-
-        return my_func(self.batch_size, self.dataset, self.x_transforms, self.y_transforms, self.co_transforms,
-                    self.sampler, self.expand_dims)
+    def to_keras(self, output_signature=None):
+        def batch_generator():
+            my_iter = iter(self)
+            for x_batch, y_batch in my_iter:
+                for i in range(x_batch.shape[0]):
+                    yield x_batch[i,:], y_batch[i]
+ 
+        # generate a training batch to infer the output signature
+        if output_signature is None:
+            tmp_batch_size = self.batch_size
+            self.batch_size = 1
+            x_batch, y_batch = next(iter(self))
+            self.batch_size = tmp_batch_size
+            x_spec = tf.type_spec_from_value(x_batch[0,:])
+            y_spec = tf.type_spec_from_value(y_batch[0])
+        
+        generator = tf.data.Dataset.from_generator(
+            lambda: batch_generator(),
+            output_signature=(x_spec, y_spec)
+        ).batch(self.sampler.sub_batch_size)
+        
+        return generator
                 
     def __iter__(self):
         batch_size = self.batch_size
         dataset = self.dataset
-        n_batches = math.ceil(len(dataset) / batch_size)
+        n_image_batches = math.ceil(len(dataset) / batch_size)
         
-        # TODO: apply shuffling to indices before we get to the batch loop
+        # TODO: shuffle image indices before batch loop
         
-        batch_idx = 0
-        while batch_idx < n_batches:
+        image_batch_idx = 0
+        while image_batch_idx < n_image_batches:
             
-            batch_idx += 1
-            
-            data_indices = slice(batch_idx*batch_size, min((batch_idx+1)*batch_size, len(dataset)))
+            data_indices = slice(image_batch_idx*batch_size, min((image_batch_idx+1)*batch_size, len(dataset)))
             x, y = dataset[data_indices]
+            
+            image_batch_idx += 1
            
             # perform transforms
             if self.x_transforms:
