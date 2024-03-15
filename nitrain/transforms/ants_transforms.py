@@ -12,11 +12,16 @@ class ApplyAntsTransform(BaseTransform):
     """
     Apply an ANTs transform to an image
     """
-    def __init__(self, transform):
+    def __init__(self, transform, reference=None):
         self.transform = transform
+        self.reference = reference
         
     def __call__(self, image):
-        new_image = ants.apply_ants_transform_to_image(self.transform, image)
+        reference = self.reference
+        if reference is None:
+            reference = image
+            
+        new_image = ants.apply_ants_transform_to_image(self.transform, image, reference)
         return new_image
 
 
@@ -129,7 +134,11 @@ class AlignWithTemplate(BaseTransform):
         center_of_mass_template = ants.get_center_of_mass(self.template)
         center_of_mass_image = ants.get_center_of_mass(image)
         translation = tuple(np.array(center_of_mass_image) - np.array(center_of_mass_template))
-        xfrm = ants.create_ants_transform(transform_type="Euler3DTransform", 
+        if image.dimension == 2:
+            transform_type = 'Euler2DTransform'
+        elif image.dimension == 3:
+            transform_type = 'Euler3DTransform'
+        xfrm = ants.create_ants_transform(transform_type=transform_type, 
                                           center = center_of_mass_template,
                                           translation=translation,precision='float',
                                           dimension=image.dimension)
