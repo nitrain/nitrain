@@ -32,7 +32,7 @@ The nitrain package uses the ANTs python package to efficiently read and transfo
 
 ## Quickstart
 
-Here is a canonical example of using nitrain to give you a quick overview. If you want to learn a bit more about key components of nitrain then you can follow the overview tutorials just below the quickstart.
+Here is a canonical example of using nitrain to fit a brain-age model on structural brain images. If you want to learn a bit more about key components of nitrain then you can follow the overview tutorials just below the quickstart.
 
 ```python
 from nitrain import datasets, loaders, models, trainers, transforms as tx
