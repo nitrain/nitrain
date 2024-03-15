@@ -24,15 +24,13 @@ python -m pip install git+github.com/ncullen93/nitrain.git
 
 ### Dependencies
 
-The nitrain package is developed with Python3.10 as the focus. In terms of dependencies, it requires `ants` and `antspynet` and works with either tensorflow/keras or pytorch. Support for Keras 3 is on the roadmap.
+The nitrain package uses the ANTs python package to efficiently read and transform medical images. Additionally, we support keras (tf.keras or keras3), tensorflow, and pytorch for all core functionality.
 
 <br />
 
 ## Quickstart
 
 Here is a canonical example of using nitrain to give you a quick overview. If you want to learn a bit more about key components of nitrain then you can follow the overview tutorials just below the quickstart.
-
-Alternatively, you can check out the [tutorials](github.com/ncullen93/nitrain) for an in-depth introduction to everything that nitrain has to offer or the [examples](github.com/ncullen93/nitrain) for self-contained, end-to-end examples of how to perform common deep learning tasks.
 
 ```python
 from nitrain import datasets, loaders, models, trainers, transforms as tx
@@ -70,6 +68,8 @@ trainer.fit(loader, epochs=100)
 # upload trained model to platform
 models.register_model(trainer.model, 'nick/t1-brainage-model')
 ```
+
+A more in-depth introduction can be found in the [tutorials](github.com/ncullen93/nitrain) and if you can also check out the [examples](github.com/ncullen93/nitrain) for self-contained notebooks showing how to perform common deep learning tasks.
 
 <br />
 
