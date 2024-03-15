@@ -4,7 +4,9 @@
 [![Build](https://github.com/ncullen93/nitrain/actions/workflows/test.yml/badge.svg)](https://github.com/ncullen93/nitrain/actions/workflows/test.yml)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/nitrain)
 
-Nitrain is a medical imaging-native framework for training and visualizing deep learning models. It provides tools for sampling and augmenting neuroimaging datasets, training deep learning models on neuroimages, and visualizing or explaining deep learning model results in a neuroimaging context. Nitrain also makes it easy to use pre-trained models for training or integration into imaging pipelines.
+Nitrain is a medical imaging-native framework for training and visualizing deep learning models. It provides tools for sampling and augmenting neuroimaging datasets, training deep learning models on neuroimages, and visualizing or explaining deep learning model results in a neuroimaging context.
+
+With nitrain, it is also possible to train models HIPAA-compliantly in the cloud. Once you've trained a model, you are welcome to make it available to the community via nitrain, and you can easily use other's pretrained models for your own fine-tuning or image processing.
 
 <br />
 
