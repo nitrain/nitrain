@@ -10,6 +10,7 @@ import numpy.testing as nptest
 import ants
 from nitrain import datasets
 
+
 class TestClass_MemoryDataset(unittest.TestCase):
     def setUp(self):
         self.img2d = ants.image_read(ants.get_data('r16'))
