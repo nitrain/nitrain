@@ -202,5 +202,34 @@ class TestClass_AntsTransforms(unittest.TestCase):
         img_tx = my_tx(self.img3d)
 
 
+class TestClass_SpatialTransforms(unittest.TestCase):
+    def setUp(self):
+        self.img2d = ants.image_read(ants.get_data('r16'))
+        self.img3d = ants.image_read(ants.get_data('mni'))
+
+    def tearDown(self):
+        pass
+    
+    def test_RandomTranslate(self):
+        my_tx = tx.RandomTranslate(-20, 20)
+        img_tx = my_tx(self.img2d)
+        
+        my_tx = tx.RandomTranslate(-20, 20)
+        img_tx = my_tx(self.img3d)
+    
+    def test_RandomFlip(self):
+        my_tx = tx.RandomFlip(p=0.5)
+        img_tx = my_tx(self.img2d)
+        
+        my_tx = tx.RandomFlip(p=0.5)
+        img_tx = my_tx(self.img3d)
+        
+    def test_RandomZoom(self):
+        my_tx = tx.RandomZoom(0.8, 1.2)
+        img_tx = my_tx(self.img2d)
+        
+        my_tx = tx.RandomZoom(0.8, 1.2)
+        img_tx = my_tx(self.img3d)
+        
 if __name__ == '__main__':
     run_tests()

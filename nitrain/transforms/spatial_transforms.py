@@ -11,7 +11,66 @@ class RandomRotate(BaseTransform):
     pass
 
 class RandomTranslate(BaseTransform):
-    pass
+    """
+    Examples
+    --------
+    >>> import ants
+    >>> from nitrain import transforms as tx
+    >>> img = ants.image_read(ants.get_data('r16'))
+    >>> my_tx = RandomTranslate(-20, 20)
+    >>> img_tx = my_tx(img)
+    >>> img_tx.plot(img)
+    >>> img = ants.image_read(ants.get_data('mni'))
+    >>> my_tx = RandomTranslate(-20, 20)
+    >>> img_tx = my_tx(img)
+    >>> img_tx.plot(img)
+    """
+    
+    def __init__(self, min_value, max_value, reference=None):
+        self.min_value = min_value
+        self.max_value = max_value
+        self.reference = reference
+        if self.reference is not None:
+            self.reference_com = self.reference.get_center_of_mass()
+    
+    def __call__(self, x, y=None):
+        image_dim = x.dimension
+        
+        # create transform
+        ants_tx = ants.create_ants_transform(precision="float", 
+                                             dimension=image_dim, 
+                                             transform_type="AffineTransform")
+        if self.reference is not None:
+            ants_tx.set_fixed_parameters(self.reference_com)
+        
+        # sample translation value
+        min_value = self.min_value
+        if isinstance(min_value, (int, float)):
+            min_value = [min_value for _ in range(image_dim)]
+
+        max_value = self.max_value
+        if isinstance(max_value, (int, float)):
+            max_value = [max_value for _ in range(image_dim)]
+        
+        tx_values = [random.uniform(min_value[i], max_value[i]) for i in range(image_dim)]
+        
+        if image_dim == 2:
+            tx_matrix = np.array([[1, 0, tx_values[0]], 
+                                  [0, 1, tx_values[1]]])
+        elif image_dim == 3:
+            tx_matrix = np.array([[1, 0, 0, tx_values[0]], 
+                                  [0, 1, 0, tx_values[1]], 
+                                  [0, 0, 1, tx_values[2]]])
+            
+        ants_tx.set_parameters(tx_matrix)
+        if y is None:
+            return ants_tx.apply_to_image(x, reference=self.reference)
+        else:
+            return (
+                ants_tx.apply_to_image(x, reference=self.reference),
+                ants_tx.apply_to_image(y, reference=self.reference),
+            )
+        
 
 class RandomShear(BaseTransform):
     pass
