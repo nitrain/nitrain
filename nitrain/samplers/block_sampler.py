@@ -10,10 +10,10 @@ class BlockSampler:
     def __init__(self, block_size, stride, sub_batch_size, shuffle=False):
         
         if isinstance(block_size, int):
-            block_size = [block_size, block_size]
+            block_size = [block_size, block_size, block_size]
         
         if isinstance(stride, int):
-            stride = [stride, stride]
+            stride = [stride, stride, stride]
             
         self.block_size = block_size
         self.stride = stride

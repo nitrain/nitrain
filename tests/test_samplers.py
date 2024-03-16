@@ -34,6 +34,29 @@ class TestClass_SliceSampler(unittest.TestCase):
         self.assertTrue(len(y_batch)==12)
         # no shuffle
         self.assertTrue(all(y_batch==0))
+
+class TestClass_BlockSampler(unittest.TestCase):
+    def setUp(self):
+        img = ants.image_read(ants.get_data('mni'))
+        x = [img for _ in range(5)]
+        y = list(range(5))
+        self.dataset = datasets.MemoryDataset(x, y)
+
+    def tearDown(self):
+        pass
+    
+    def test_standard(self):
+        x_raw, y_raw = self.dataset[:3]
+        sampler = samplers.BlockSampler((30,30,30), stride=(30,30,30), sub_batch_size=12)
+        sampled_batch = sampler(x_raw, y_raw)
+        
+        x_batch, y_batch = next(iter(sampled_batch))
+        self.assertTrue(len(x_batch)==12)
+        self.assertTrue(x_batch[0].shape==(30,30,30))
+        
+        self.assertTrue(len(y_batch)==12)
+        # no shuffle
+        self.assertTrue(all(y_batch==0))
         
 if __name__ == '__main__':
     run_tests()
