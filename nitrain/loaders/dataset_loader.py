@@ -32,7 +32,7 @@ class DatasetLoader:
         self.co_transforms = co_transforms
         
         if sampler is None:
-            sampler = samplers.BaseSampler()
+            sampler = samplers.BaseSampler(sub_batch_size=batch_size)
         self.sampler = sampler
         
     def to_keras(self, output_signature=None):

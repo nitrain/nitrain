@@ -34,10 +34,14 @@ class TestClass_DatasetLoader(unittest.TestCase):
         pass
     
     def test_2d(self):
-        loader = loaders.DatasetLoader(self.dataset_2d,
-                                       batch_size=4)
-        
+        loader = loaders.DatasetLoader(self.dataset_2d, batch_size=4)
         x_batch, y_batch = next(iter(loader))
+        self.assertTrue(x_batch.shape == (4, 256, 256, 1))
+    
+    def test_to_keras(self):
+        loader = loaders.DatasetLoader(self.dataset_2d, batch_size=4)
+        keras_loader = loader.to_keras()
+        x_batch, y_batch = next(iter(keras_loader))
         self.assertTrue(x_batch.shape == (4, 256, 256, 1))
         
     def test_3d(self):
