@@ -207,7 +207,14 @@ autoencoder_model = autoencoder_fn((784, 500, 500, 2000, 10))
 
 ### Trainers
 
-After you have either fetched and created an architecture, fetched a pretrained model, or created a model yourself in your framework of choice, then it's time to actually train the model on the dataset / loader that you've created. The primary way to train a model locally is using the `ModelTrainer` class.
+After you have created a model from a nitrain architecture, fetched a pretrained model, or created a model yourself in your framework of choice, then it's time to actually train the model on the dataset / loader that you've created.
+
+Although you are free to train models on loaders using standard pytorch, keras, or tensorflow workflows, we also provide the `ModelTrainer` class to make training even easier. This class provides sensible defaults for key training parameters based on your task.
+
+```python
+trainer = trainers.ModelTrainer(model=vgg_model, task='regression')
+trainer.fit(loader, epochs=10)
+```
 
 Additionally, you can train your model in the cloud using the `CloudTrainer` class. All training takes place on HIPAA-compliant servers.
 
