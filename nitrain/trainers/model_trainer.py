@@ -87,8 +87,6 @@ class ModelTrainer:
     
     def summary(self):
         if self.framework == 'keras':
-            if type(loader).__name__ == 'DatasetLoader':
-                loader = loader.to_keras()
             return self.model.summary()
     
     def save(self):

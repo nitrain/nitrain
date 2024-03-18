@@ -31,6 +31,9 @@ class TestClass_ModelTrainer(unittest.TestCase):
     def test_trainer(self):
         trainer = trainers.ModelTrainer(self.model, task='regression')
         trainer.fit(self.loader, epochs=2)
+        res = trainer.evaluate(self.loader)
+        pred = trainer.predict(self.loader)
+        s = trainer.summary()
 
         
 if __name__ == '__main__':
