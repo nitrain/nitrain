@@ -67,20 +67,28 @@ class ModelTrainer:
                                loss='mse',
                                metrics=['mse'])
         
-    def fit(self, loader):
+    def fit(self, loader, epochs, **kwargs):
         if self.framework == 'keras':
-            return self.model.fit(loader)
+            if type(loader).__name__ == 'DatasetLoader':
+                loader = loader.to_keras()
+            return self.model.fit(loader, epochs=epochs, **kwargs)
 
     def evaluate(self, loader):
         if self.framework == 'keras':
+            if type(loader).__name__ == 'DatasetLoader':
+                loader = loader.to_keras()
             return self.model.evaluate(loader)
     
     def predict(self, loader):
         if self.framework == 'keras':
+            if type(loader).__name__ == 'DatasetLoader':
+                loader = loader.to_keras()
             return self.model.predict(loader)
     
     def summary(self):
         if self.framework == 'keras':
+            if type(loader).__name__ == 'DatasetLoader':
+                loader = loader.to_keras()
             return self.model.summary()
     
     def save(self):
