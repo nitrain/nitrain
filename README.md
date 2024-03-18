@@ -214,6 +214,9 @@ Although you are free to train models on loaders using standard pytorch, keras, 
 ```python
 trainer = trainers.ModelTrainer(model=vgg_model, task='regression')
 trainer.fit(loader, epochs=10)
+
+# access fitted model
+print(trainer.model)
 ```
 
 Additionally, you can train your model in the cloud using the `CloudTrainer` class. All training takes place on HIPAA-compliant servers.
