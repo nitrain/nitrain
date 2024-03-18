@@ -40,7 +40,6 @@ class ModelTrainer:
         # metrics
         # losses
         """
-        
         self.model = model
         if task == 'regression':
             optimizer = 'adam' if optimizer is None else optimizer
@@ -89,8 +88,9 @@ class ModelTrainer:
         if self.framework == 'keras':
             return self.model.summary()
     
-    def save(self):
-        pass
+    def save(self, path):
+        if self.framework == 'keras':
+            self.model.save(path)
 
 
 def infer_framework(model):

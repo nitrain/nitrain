@@ -2,7 +2,7 @@ import os
 import unittest
 from main import run_tests
 
-from tempfile import mktemp
+import tempfile
 
 import numpy as np
 import numpy.testing as nptest
@@ -31,10 +31,15 @@ class TestClass_ModelTrainer(unittest.TestCase):
     def test_trainer(self):
         trainer = trainers.ModelTrainer(self.model, task='regression')
         trainer.fit(self.loader, epochs=2)
-        res = trainer.evaluate(self.loader)
-        pred = trainer.predict(self.loader)
-        s = trainer.summary()
+        
+        trainer.evaluate(self.loader)
+        trainer.predict(self.loader)
+        trainer.summary()
 
+        tmpfile = tempfile.NamedTemporaryFile(suffix='.keras')
+        trainer.save(tmpfile.name)
+        tmpfile.close()
+        
         
 if __name__ == '__main__':
     run_tests()

@@ -12,6 +12,7 @@ class DatasetLoader:
                  y_transforms=None, 
                  co_transforms=None,
                  expand_dims=-1,
+                 shuffle=False,
                  sampler=None):
         """
         Arguments
