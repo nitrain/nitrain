@@ -8,6 +8,7 @@ from fnmatch import fnmatch
 from google.cloud import storage
 from google.oauth2 import service_account
 from torch.utils.data import Dataset
+import textwrap
 
 import ants
 
@@ -22,100 +23,39 @@ class PlatformDataset:
                  y,
                  x_transforms=None,
                  y_transforms=None,
-                 fuse=False,
-                 token=None):
+                 credentials=None):
         """
         Initialize a nitrain dataset consisting of local filepaths.
         
         Arguments
         ---------
-        
+        x : dict or list of dicts
+            The config dict to specify how input files should be found. This generally
+            takes one of two forms:
+            - pattern-based: {'pattern': '*/anat/*_T1w.nii.gz'}
+            - filename-based: {'filenames': ['sub-001/anat/sub-001_T1w.nii.gz', '...']}
+            If the input to the model is multiple images, then x should be a list of configs:
+            e.g., [{'pattern': '*/anat/*_T1w.nii.gz'}, {'pattern': '*/anat/*_T2w.nii.gz'}] 
+            
         Example
         -------
         >>> dataset = PlatformDataset(name='ds000711', 
                                       x={'pattern': '*/anat/*_T1w.nii.gz', 'exclude': '**run-02*'},
                                       y={'file': 'participants.tsv', 'column': 'age'})
+        >>> dataset = PlatformDataset(name='ds000711', 
+                                      x={'filenames': ['sub-001/anat/T1.nii.gz', '...']},
+                                      y={'file': 'participants.tsv', 'column': 'age'})
         """
-        x_config = x
-        y_config = y
-        bucket = 'ants-dev'
-        
-        if fuse:
-            base_dir = os.path.join('/gcs/', bucket, base_dir)
-            if not base_dir.endswith('/'): 
-                base_dir += '/'
-            
-            # GET X
-            x = glob.glob(x_config['pattern'], root_dir=base_dir)
-            if 'exclude' in x_config.keys():
-                x = [file for file in x if not fnmatch(file, x_config['exclude'])]
-            x_ids = [xx.split('/')[0] for xx in x]
-            x = [os.path.join('/gcs/', bucket, base_dir, file) for file in sorted(x)]
-            
-            if len(x) == 0:
-                raise Exception('Did not find any x values corresponding to the x config.')
-
-            # GET Y
-            y_file = os.path.join(base_dir, y_config['file'])
-            y_df = pd.read_csv(y_file, sep='\t')
-            
-        else:
-            if isinstance(credentials, str):
-                credentials = service_account.Credentials.from_service_account_file(credentials)
-            if credentials is not None:
-                storage_client = storage.Client(credentials=credentials)
-            bucket_client = storage_client.bucket(bucket)
-        
-            # GET X
-            if not base_dir.endswith('/'): base_dir += '/'
-            x_blobs = storage_client.list_blobs(bucket, match_glob=f'{base_dir}{x_config["pattern"]}')
-            x = list([blob.name.replace(base_dir, '') for blob in x_blobs])
-            if 'exclude' in x_config.keys():
-                x = [file for file in x if not fnmatch(file, x_config['exclude'])]
-            x_ids = [xx.split('/')[0] for xx in x]
-            x = [os.path.join(base_dir, file) for file in sorted(x)]
-            
-            if len(x) == 0:
-                raise Exception('Did not find any x values corresponding to the x config.')
-
-            # GET Y
-            y_file = os.path.join(base_dir, y_config['file'])
-            y_blob = bucket_client.blob(y_file)
-            tmp_file = tempfile.NamedTemporaryFile()
-            y_blob.download_to_filename(tmp_file.name)
-            y_df = pd.read_csv(tmp_file.name, sep='\t')
-            tmp_file.close()
-            
-            # properties specific to non-fuse scenarios
-            self.credentials = credentials
-            self.storage_client = storage_client
-            self.bucket_client = bucket_client
-            self.tmp_dir = tempfile.TemporaryDirectory()
-
-        # match x and y ids
-        p_col = y_df.columns[0] # assume participant id is first row
-        y_df = y_df.sort_values(p_col)
-        all_y_ids = y_df[p_col].to_numpy()
-        if len(x_ids) != len(all_y_ids):
-            warnings.warn(f'Mismatch between x ids {len(x_ids)} and y ids {len(all_y_ids)} - finding intersection')
-        y_ids = sorted(list(set(x_ids) & set(all_y_ids)))
-
-        y_df = y_df[y_df[p_col].isin(y_ids)]
-        y = y_df[y_config['column']].to_numpy()
-
-        # remove x values that are not found in y
-        x = [x[idx] for idx in range(len(x)) if x_ids[idx] in y_ids]
-        x_ids = y_ids
-        
-        self.bucket = bucket
-        self.base_dir = base_dir
-        self.x_config = x_config
-        self.y_config = y_config
-        self.x = x
-        self.y = y
+        self.name = name
+        self.x_config = x
+        self.y_config = y
+        self.x = None
+        self.y = None
         self.x_transforms = x_transforms
         self.y_transforms = y_transforms
-        self.fuse = fuse
+        
+    def initialize(self):
+        pass
 
     def __getitem__(self, idx):
         files = self.x[idx]
@@ -129,7 +69,7 @@ class PlatformDataset:
         x = []
         for file in files:
             # if on vertex, file will be available to access. otherwise, download it to local tmp dir.
-            if self.fuse:
+            if True:
                 local_filepath = file
             else:
                 local_filepath = os.path.join(self.tmp_dir.name, file)
@@ -161,6 +101,14 @@ class PlatformDataset:
             y = self.y_config,
             x_transforms = self.x_transforms,
             y_transforms = self.y_transforms,
-            token = self.token
+            credentials = self.credentials
         )
     
+    def __repr__(self):
+        tx_repr = ', '.join([repr(x_tx) for x_tx in self.x_transforms])
+        return f'''datasets.PlatformDataset(name = "{self.name}",
+                    x = {self.x_config},
+                    y = {self.y_config},
+                    x_transforms = [{tx_repr}],
+                    y_transforms = {self.y_transforms},
+                    credentials = None)'''

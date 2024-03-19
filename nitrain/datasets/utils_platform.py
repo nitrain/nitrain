@@ -5,6 +5,8 @@ import json
 from tqdm import tqdm
 import ants
 
+from .platform_dataset import PlatformDataset
+
 api_url = 'https://api.ants.dev'
 
 def list_platform_datasets():
@@ -23,7 +25,7 @@ def upload_dataset_to_platform(dataset, name):
         What to call the dataset on the platform
     """
     # create dataset record
-    _create_dataset_record(name, parameters=_dataset_parameters(dataset))
+    _create_dataset_record(name, parameters=_config_for_platform_dataset(dataset))
 
     # upload images (x)
     for i in tqdm(range(len(dataset))):
@@ -54,6 +56,23 @@ def upload_dataset_to_platform(dataset, name):
     
     # if BIDS dataset -> write json file because BIDS layout doesnt work on platform ?
     return response
+
+
+def _convert_to_platform_dataset(dataset, name):
+    """
+    Convert any nitrain dataset to a platform dataset that
+    can be used in training a model on the platform.
+    """
+    params = _config_for_platform_dataset(dataset)
+    return PlatformDataset(
+        name = name,
+        x = params['x_config'],
+        y = params['y_config'],
+        x_transforms = dataset.x_transforms,
+        y_transforms = dataset.y_transforms,
+        credentials = None
+    )
+
 
 def _create_dataset_record(name, parameters, token=None):
     if token is None:
@@ -104,8 +123,13 @@ def _upload_dataset_file(name, file, filename, token=None):
                 headers = {'Authorization': f'Bearer {token}'})
     return response
 
-def _dataset_parameters(dataset):
+def _config_for_platform_dataset(dataset):
+    """Get the x + y config that is appropriate for a PlatformDataset"""
     if type(dataset).__name__ == 'BIDSDataset':
+        # BIDS entities not
+        parameters = {'x_config': {'filenames': dataset.x},
+                      'y_config': dataset.y_config}
+    elif type(dataset).__name__ == 'FolderDataset':
         parameters = {'x_config': dataset.x_config,
                       'y_config': dataset.y_config}
     return parameters

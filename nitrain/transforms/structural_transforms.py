@@ -17,12 +17,16 @@ class Resample(BaseTransform):
     def __init__(self, params, use_spacing=False, interpolation='linear'):
         self.params = params
         self.use_spacing = use_spacing
-        self.interpolation = 0 if interpolation != 'nearest_neighbor' else 1 
+        self.interpolation = interpolation
+        
     
     def __call__(self, image):
-        image = ants.resample_image(image, self.params, not self.use_spacing, self.interpolation)
+        interpolation_value = 0 if self.interpolation != 'nearest_neighbor' else 1 
+        image = ants.resample_image(image, self.params, not self.use_spacing, interpolation_value)
         return image
 
+    def __repr__(self):
+        return f'tx.Resample({self.params}, use_spacing={self.use_spacing}, interpolation="{self.interpolation}")'
 
 class ResampleToTarget(BaseTransform):
     """

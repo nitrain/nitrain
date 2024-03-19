@@ -37,6 +37,10 @@ class BrainExtraction(BaseTransform):
         new_image = ants.get_mask(image)
         return new_image * image
 
+    def __repr__(self):
+        return f'tx.BrainExtraction()'
+
+
 
 class DisplacementField(BaseTransform):
     """

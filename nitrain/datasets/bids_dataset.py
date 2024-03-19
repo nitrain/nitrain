@@ -11,7 +11,6 @@ import sys
 
 from .. import utils
 
-
 class BIDSDataset:
     
     def __init__(self,
@@ -174,22 +173,7 @@ class BIDSDataset:
         config['desc'] = desc
         self.x = self.layout.derivatives['nitrain'].get(return_type='filename', **config)
         self.x = config
-        self.x_transforms = None
-
-    
-    def to_platform(self, name, token=None):
-        """
-        Upload dataset to the platform. This requires an API token
-        and therefore an account on the platform.
-        
-        What happens:
-        - create directory at {user}/{name}
-        - loop through x and y
-            - upload each to platform with same relative directory structure
-        - store all the dataset parameters at {user}/{name}/parameters.json
-        """
-        pass
-        
+        self.x_transforms = None        
 
     def __getitem__(self, idx):
         files = self.x[idx]
@@ -226,6 +210,9 @@ class BIDSDataset:
     
     def __len__(self):
         return len(self.x)
+    
+    def __repr__(self):
+        pass
     
     def __copy__(self):
         return BIDSDataset(
