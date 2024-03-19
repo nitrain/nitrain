@@ -2,7 +2,12 @@ import os
 import textwrap
 
 
-from ..datasets.utils_platform import _convert_to_platform_dataset, _get_user_from_token
+from ..platform import (_upload_dataset_to_platform, 
+                        _upload_job_script_to_platform,
+                        _upload_model_to_platform,
+                        _launch_training_job_on_platform,
+                        _convert_to_platform_dataset, 
+                        _get_user_from_token)
 
 class CloudTrainer:
     """
@@ -10,7 +15,7 @@ class CloudTrainer:
     on GPU resources in the cloud.
     """
     
-    def __init__(self, model, task, name, resource='gpu-small', api_token=None):
+    def __init__(self, model, task, name, resource='gpu-small', token=None):
         """
         Initialize a cloud trainer
         
@@ -28,22 +33,45 @@ class CloudTrainer:
         """
         
         # check for platform credentials
-        if api_token is None:
-            api_token = os.environ.get('NITRAIN_API_TOKEN')
-            if api_token is None:
+        if token is None:
+            token = os.environ.get('NITRAIN_API_TOKEN')
+            if token is None:
                 raise Exception('No api token given or found. Set `NITRAIN_API_TOKEN` or create an account to get your token.')
 
-        self.user = _get_user_from_token(api_token)
+        self.user = _get_user_from_token(token)
         self.model = model
         self.task = task
         self.name = name
         self.resource = resource
-        self.api_token = api_token
+        self.token = token
     
     def fit(self, loader, epochs):
         """
-        Launch a training job in the cloud
+        Launch a training job on the platform.
+        
+        This function is used in the same was as for `ModelTrainer`, except that
+        calling `fit()` with a `CloudTrainer` will launch a training job on the platform.
+        
+        If the dataset for the loader passed into this function is not a `PlatformDataset` then the
+        dataset will be temporarily uploaded to the cloud for training and then deleted after. To save
+        time on repeated training jobs, the loader can be cached by setting `cache=True` when 
+        initializing the trainer.
+        
+        Arguments
+        ---------
+        loader : an instance of DatasetLoader or similar class
+            The batch generator used to train the mode
+            
+        epochs : integer
+            The number of epochs to train the model for.
+            
+        Returns
+        -------
+        None. The status of the job can be checked by calling `trainer.status` and the
+        fitted model can be eventually retrieved by calling `trainer.model`.
         """
+        job_name = f'{self.user}__{self.name}'
+        job_dir = f'{self.user}/{self.name}'
         # Generate training script
         
         # imports
@@ -52,7 +80,7 @@ class CloudTrainer:
         '''
         
         # dataset
-        platform_dataset = _convert_to_platform_dataset(loader.dataset, f'{self.user}/{self.name}')
+        platform_dataset = _convert_to_platform_dataset(loader.dataset, job_dir)
         repr_dataset = f'''
         dataset = {repr(platform_dataset)}
         '''
@@ -64,7 +92,7 @@ class CloudTrainer:
         
         # model
         repr_model = f'''
-        model = models.load_model("/gcs/ants-dev/models/{self.user}/{self.name}")
+        model = models.load_model("/gcs/ants-dev/models/{job_dir}")
         '''
         
         # trainer
@@ -75,11 +103,12 @@ class CloudTrainer:
         
         # save model
         repr_save = f'''
-        trainer.save("/gcs/ants-dev/models/{self.user}/{self.name}")
+        trainer.save("/gcs/ants-dev/models/{job_dir}")
         '''
         
         # write training script to file
-        with open(f'/Users/ni5875cu/Desktop/{self.user}_{self.name}.py', 'w') as f:
+        script_file = f'/Users/ni5875cu/Desktop/{job_name}.py'
+        with open(script_file, 'w') as f:
             f.write(textwrap.dedent(repr_imports))
             f.write(textwrap.dedent(repr_dataset))
             f.write(textwrap.dedent(repr_loader))
@@ -87,13 +116,17 @@ class CloudTrainer:
             f.write(textwrap.dedent(repr_trainer))
             f.write(textwrap.dedent(repr_save))
         
-        # upload training script to platform
+        # upload training script to platform: /ants-dev/jobs/{job_name}.py
+        _upload_job_script_to_platform(script_file, f'{job_name}.py')
         
-        # upload original dataset to platform
+        # upload original dataset to platform: /ants-dev/datasets/{user}/{name}/
+        _upload_dataset_to_platform(loader.dataset, job_dir)
         
-        # upload untrained model to platform
+        # upload untrained model to platform: /ants-dev/models/{user}/{name}.keras
+        _upload_model_to_platform(self.model, job_dir)
         
         # launch job
+        _launch_training_job_on_platform(job_name, job_dir)
         
     
     @property

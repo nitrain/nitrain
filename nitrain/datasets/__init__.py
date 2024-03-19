@@ -8,4 +8,4 @@ from .memory_dataset import MemoryDataset
 from .platform_dataset import PlatformDataset
 
 from .utils import fetch_data
-from .utils_platform import upload_dataset_to_platform, list_platform_datasets
+from ..platform import list_platform_datasets

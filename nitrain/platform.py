@@ -5,14 +5,20 @@ import json
 from tqdm import tqdm
 import ants
 
-from .platform_dataset import PlatformDataset
+from .datasets.platform_dataset import PlatformDataset
 
 api_url = 'https://api.ants.dev'
 
 def list_platform_datasets():
     return _list_dataset_records()
-        
-def upload_dataset_to_platform(dataset, name):
+
+def _launch_training_job_on_platform(job_name):
+    """
+    Send post request to api launching job
+    """
+    pass
+
+def _upload_dataset_to_platform(dataset, name):
     """
     Upload a nitrain dataset to the platform.
     
@@ -127,6 +133,15 @@ def _upload_dataset_file(name, file, filename, token=None):
     if token is None:
         token = os.environ['NITRAIN_API_TOKEN']
     response = requests.post(f'{api_url}/datasets/{name}/files/', 
+                files={'file': file},
+                data={'relative_path': filename},
+                headers = {'Authorization': f'Bearer {token}'})
+    return response
+
+def _upload_job_script(file, filename, token=None):
+    if token is None:
+        token = os.environ['NITRAIN_API_TOKEN']
+    response = requests.post(f'{api_url}/jobs/', 
                 files={'file': file},
                 data={'relative_path': filename},
                 headers = {'Authorization': f'Bearer {token}'})
