@@ -5,8 +5,11 @@ import json
 from tqdm import tqdm
 import ants
 
-api_url = 'http://127.0.0.1:8000' #'https://api.ants.dev'
+api_url = 'https://api.ants.dev'
 
+def list_platform_datasets():
+    return _list_dataset_records()
+        
 def upload_dataset_to_platform(dataset, name):
     """
     Upload a nitrain dataset to the platform.
@@ -36,6 +39,10 @@ def upload_dataset_to_platform(dataset, name):
         response = _upload_dataset_file(name,
                                         file=tmpfile,
                                         filename=x_filename.replace(dataset.base_dir, ''))
+        
+        if response.status_code != 201:
+            print(f'Could not upload file {x_filename}')
+            
         tmpfile.close()
 
     # upload participants file (y)
@@ -69,6 +76,9 @@ def _list_dataset_records(token=None):
     
     response = requests.get(f'{api_url}/datasets/', 
                 headers = {'Authorization': f'Bearer {token}'})
+    
+    if response.status_code != 200:
+        raise Exception('Could not access datasets.')
     return json.loads(response.content)
 
 def _get_dataset_record(name, token=None):
