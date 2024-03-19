@@ -138,14 +138,16 @@ def _upload_dataset_file(name, file, filename, token=None):
                 headers = {'Authorization': f'Bearer {token}'})
     return response
 
-def _upload_job_script(file, filename, token=None):
+def _upload_file_to_platform(file, relative_path, token=None):
     if token is None:
         token = os.environ['NITRAIN_API_TOKEN']
-    response = requests.post(f'{api_url}/jobs/', 
+    response = requests.post(f'{api_url}/files/', 
                 files={'file': file},
-                data={'relative_path': filename},
+                data={'relative_path': relative_path},
                 headers = {'Authorization': f'Bearer {token}'})
-    return response
+    if response.status_code != 201:
+        print(f'Error: {response.status_code}')
+    return response 
 
 def _config_for_platform_dataset(dataset):
     """Get the x + y config that is appropriate for a PlatformDataset"""

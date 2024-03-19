@@ -1,11 +1,9 @@
 import os
 import textwrap
-
+import tempfile
 
 from ..platform import (_upload_dataset_to_platform, 
-                        _upload_job_script_to_platform,
-                        _upload_model_to_platform,
-                        _launch_training_job_on_platform,
+                        _upload_file_to_platform,
                         _convert_to_platform_dataset, 
                         _get_user_from_token)
 
@@ -31,14 +29,16 @@ class CloudTrainer:
         >>> print(job.status)
         >>> print(job.model)
         """
-        
-        # check for platform credentials
+        # must have token to use cloud trainer
         if token is None:
             token = os.environ.get('NITRAIN_API_TOKEN')
             if token is None:
                 raise Exception('No api token given or found. Set `NITRAIN_API_TOKEN` or create an account to get your token.')
 
-        self.user = _get_user_from_token(token)
+        # this will raise exception if token is not valid
+        user = _get_user_from_token(token)
+        
+        self.user = user
         self.model = model
         self.task = task
         self.name = name
@@ -92,7 +92,7 @@ class CloudTrainer:
         
         # model
         repr_model = f'''
-        model = models.load_model("/gcs/ants-dev/models/{job_dir}")
+        model = models.load_model("/gcs/ants-dev/models/untrained__{job_dir}")
         '''
         
         # trainer
@@ -107,8 +107,8 @@ class CloudTrainer:
         '''
         
         # write training script to file
-        script_file = f'/Users/ni5875cu/Desktop/{job_name}.py'
-        with open(script_file, 'w') as f:
+        script_file = tempfile.NamedTemporaryFile(suffix=f'{job_name}.py')
+        with open(script_file.name, 'w') as f:
             f.write(textwrap.dedent(repr_imports))
             f.write(textwrap.dedent(repr_dataset))
             f.write(textwrap.dedent(repr_loader))
@@ -116,19 +116,24 @@ class CloudTrainer:
             f.write(textwrap.dedent(repr_trainer))
             f.write(textwrap.dedent(repr_save))
         
-        # upload training script to platform: /ants-dev/jobs/{job_name}.py
-        _upload_job_script_to_platform(script_file, f'{job_name}.py')
+        # upload training script to platform: /ants-dev/code/{user}/{name}.py
+        _upload_file_to_platform(script_file, f'code/{job_dir}.py')
         
         # upload original dataset to platform: /ants-dev/datasets/{user}/{name}/
-        _upload_dataset_to_platform(loader.dataset, job_dir)
+        #_upload_dataset_to_platform(loader.dataset, job_dir)
         
         # upload untrained model to platform: /ants-dev/models/{user}/{name}.keras
-        _upload_model_to_platform(self.model, job_dir)
+        model_file = tempfile.NamedTemporaryFile(suffix='.keras')
+        self.save(model_file.name)
+        _upload_file_to_platform(model_file, f'models/untrained__{job_dir}.keras')
         
         # launch job
-        _launch_training_job_on_platform(job_name, job_dir)
+        #_launch_job_on_platform(job_name, job_dir)
         
-    
+    def save(self, path):
+        if self.framework == 'keras':
+            self.model.save(path)
+            
     @property
     def status(self):
         """
