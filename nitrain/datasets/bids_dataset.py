@@ -12,23 +12,6 @@ import sys
 from .. import utils
 
 
-class SilentFunction(object):
-    def __init__(self,stdout = None, stderr = None):
-        self.devnull = open(os.devnull,'w')
-        self._stdout = stdout or self.devnull or sys.stdout
-        self._stderr = stderr or self.devnull or sys.stderr
-
-    def __enter__(self):
-        self.old_stdout, self.old_stderr = sys.stdout, sys.stderr
-        self.old_stdout.flush(); self.old_stderr.flush()
-        sys.stdout, sys.stderr = self._stdout, self._stderr
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self._stdout.flush(); self._stderr.flush()
-        sys.stdout = self.old_stdout
-        sys.stderr = self.old_stderr
-        self.devnull.close()
-
 class BIDSDataset:
     
     def __init__(self,
@@ -158,7 +141,7 @@ class BIDSDataset:
         
         # make sure files are downloaded
         files = self.x
-        with SilentFunction():
+        with utils.SilentFunction():
             ds = dl.Dataset(path = self.base_dir)
             res = ds.get(files)
         
@@ -192,6 +175,21 @@ class BIDSDataset:
         self.x = self.layout.derivatives['nitrain'].get(return_type='filename', **config)
         self.x = config
         self.x_transforms = None
+
+    
+    def to_platform(self, name, token=None):
+        """
+        Upload dataset to the platform. This requires an API token
+        and therefore an account on the platform.
+        
+        What happens:
+        - create directory at {user}/{name}
+        - loop through x and y
+            - upload each to platform with same relative directory structure
+        - store all the dataset parameters at {user}/{name}/parameters.json
+        """
+        pass
+        
 
     def __getitem__(self, idx):
         files = self.x[idx]

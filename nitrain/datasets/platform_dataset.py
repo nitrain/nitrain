@@ -14,17 +14,16 @@ import ants
 from .. import utils
 
 
-class GoogleCloudDataset:
+class PlatformDataset:
     
     def __init__(self,
-                 bucket, 
-                 base_dir,
+                 name,
                  x,
                  y,
                  x_transforms=None,
                  y_transforms=None,
-                 credentials=None,
-                 fuse=False):
+                 fuse=False,
+                 token=None):
         """
         Initialize a nitrain dataset consisting of local filepaths.
         
@@ -33,14 +32,13 @@ class GoogleCloudDataset:
         
         Example
         -------
-        >>> dataset = GoogleCloudDataset(bucket='ants-dev',
-                                         base_dir='datasets/nick_2/ds000711', 
-                                         x={'pattern': '*/anat/*_T1w.nii.gz', 'exclude': '**run-02*'},
-                                         y={'file': 'participants.tsv', 'column': 'age'},
-                                         credentials='deep-dynamics-415608-4046316ec2f1.json')
+        >>> dataset = PlatformDataset(name='ds000711', 
+                                      x={'pattern': '*/anat/*_T1w.nii.gz', 'exclude': '**run-02*'},
+                                      y={'file': 'participants.tsv', 'column': 'age'})
         """
         x_config = x
         y_config = y
+        bucket = 'ants-dev'
         
         if fuse:
             base_dir = os.path.join('/gcs/', bucket, base_dir)
@@ -157,13 +155,12 @@ class GoogleCloudDataset:
         return len(self.x)
     
     def __copy__(self):
-        return GoogleCloudDataset(
-            bucket = self.bucket,
-            base_dir = self.base_dir,
+        return PlatformDataset(
+            name = self.name,
             x = self.x_config,
             y = self.y_config,
             x_transforms = self.x_transforms,
             y_transforms = self.y_transforms,
-            credentials = self.credentials
+            token = self.token
         )
     

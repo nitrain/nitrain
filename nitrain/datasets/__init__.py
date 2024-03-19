@@ -7,3 +7,4 @@ from .google_cloud_dataset import GoogleCloudDataset
 from .memory_dataset import *
 
 from .utils import fetch_data
+from .utils_platform import upload_dataset_to_platform
