@@ -13,6 +13,10 @@ def fetch_pretrained(name, cache_dir=None):
     convenience functions. The actual model can be accessed via
     the .model property.
     """
+    return _fetch_antspynet_network(name, cache_dir)
+
+def _fetch_antspynet_network(name, cache_dir):
     import antspynet
     weights = antspynet.get_pretrained_network(name, 
                                                antsxnet_cache_directory=cache_dir)
+    return weights

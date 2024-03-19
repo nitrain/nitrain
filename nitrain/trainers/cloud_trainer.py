@@ -1,7 +1,8 @@
 import os
 import textwrap
 
-from ..datasets.utils_platform import _convert_to_platform_dataset
+
+from ..datasets.utils_platform import _convert_to_platform_dataset, _get_user_from_token
 
 class CloudTrainer:
     """
@@ -31,8 +32,8 @@ class CloudTrainer:
             api_token = os.environ.get('NITRAIN_API_TOKEN')
             if api_token is None:
                 raise Exception('No api token given or found. Set `NITRAIN_API_TOKEN` or create an account to get your token.')
-        
-        self.user = 'nick-2'
+
+        self.user = _get_user_from_token(api_token)
         self.model = model
         self.task = task
         self.name = name
@@ -47,7 +48,7 @@ class CloudTrainer:
         
         # imports
         repr_imports = '''
-        from nitrain import datasets, loaders, trainers, transforms as tx
+        from nitrain import datasets, loaders, models, trainers, transforms as tx
         '''
         
         # dataset
@@ -63,22 +64,28 @@ class CloudTrainer:
         
         # model
         repr_model = f'''
-        model = utils.fetch_model_on_platform("{self.user}/{self.name}__model")
+        model = models.load_model("/gcs/ants-dev/models/{self.user}/{self.name}")
         '''
         
-        # - trainer
+        # trainer
         repr_trainer = f'''
-        trainer = ModelTrainer(model=model, task={self.task})
-        trainer.fit(epochs={epochs})
+        trainer = trainers.ModelTrainer(model=model, task="{self.task}")
+        trainer.fit(loader, epochs={epochs})
+        '''
+        
+        # save model
+        repr_save = f'''
+        trainer.save("/gcs/ants-dev/models/{self.user}/{self.name}")
         '''
         
         # write training script to file
-        with open(f'/Users/ni5875cu/Desktop/{self.name}.py', 'w') as f:
+        with open(f'/Users/ni5875cu/Desktop/{self.user}_{self.name}.py', 'w') as f:
             f.write(textwrap.dedent(repr_imports))
             f.write(textwrap.dedent(repr_dataset))
             f.write(textwrap.dedent(repr_loader))
             f.write(textwrap.dedent(repr_model))
             f.write(textwrap.dedent(repr_trainer))
+            f.write(textwrap.dedent(repr_save))
         
         # upload training script to platform
         
@@ -95,3 +102,4 @@ class CloudTrainer:
         Check status of launched training job
         """
         pass
+

@@ -57,8 +57,17 @@ def upload_dataset_to_platform(dataset, name):
     # if BIDS dataset -> write json file because BIDS layout doesnt work on platform ?
     return response
 
-
-def _convert_to_platform_dataset(dataset, name):
+def _get_user_from_token(token=None):
+    if token is None:
+        token = os.environ['NITRAIN_API_TOKEN']
+    ## create the dataset record
+    response = requests.get(f'{api_url}/username/',
+                headers = {'Authorization': f'Bearer {token}'})
+    if response.status_code != 200:
+        raise Exception('Could not infer username from api token. Is it valid?')
+    return json.loads(response.content)
+    
+def _convert_to_platform_dataset(dataset, name, fuse=True):
     """
     Convert any nitrain dataset to a platform dataset that
     can be used in training a model on the platform.
@@ -70,9 +79,9 @@ def _convert_to_platform_dataset(dataset, name):
         y = params['y_config'],
         x_transforms = dataset.x_transforms,
         y_transforms = dataset.y_transforms,
+        fuse = fuse,
         credentials = None
     )
-
 
 def _create_dataset_record(name, parameters, token=None):
     if token is None:

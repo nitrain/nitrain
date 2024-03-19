@@ -51,6 +51,9 @@ class SliceSampler:
             return self.n_batches
         else:
             return 0
+    
+    def __repr__(self):
+        return f'''samplers.SliceSampler(axis={self.axis}, sub_batch_size={self.sub_batch_size}, shuffle={self.shuffle})'''
 
 
 def create_slices(images, values, axis):

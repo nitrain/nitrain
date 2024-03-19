@@ -107,7 +107,9 @@ class RandomSmoothing(BaseTransform):
                                           self.physical_space)
             new_images.append(new_image)
         return new_images if len(new_images) > 1 else new_images[0]
-        
+
+    def __repr__(self):
+        return f'''tx.RandomSmoothing({self.min_std}, {self.max_std}, {self.physical_space})'''
 
 class RandomNoise(BaseTransform):
     """
@@ -131,6 +133,9 @@ class RandomNoise(BaseTransform):
                                                 (0, std))
             new_images.append(new_image)
         return new_images if len(new_images) > 1 else new_images[0]
+    
+    def __repr__(self):
+        return f'''tx.RandomNoise({self.min_std}, {self.max_std})'''
 
 
 class HistogramWarpIntensity(BaseTransform):

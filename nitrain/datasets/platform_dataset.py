@@ -23,6 +23,7 @@ class PlatformDataset:
                  y,
                  x_transforms=None,
                  y_transforms=None,
+                 fuse=False,
                  credentials=None):
         """
         Initialize a nitrain dataset consisting of local filepaths.
@@ -53,6 +54,8 @@ class PlatformDataset:
         self.y = None
         self.x_transforms = x_transforms
         self.y_transforms = y_transforms
+        self.fuse = fuse
+        self.credentials = credentials
         
     def initialize(self):
         pass
@@ -111,4 +114,5 @@ class PlatformDataset:
                     y = {self.y_config},
                     x_transforms = [{tx_repr}],
                     y_transforms = {self.y_transforms},
+                    fuse = {self.fuse},
                     credentials = None)'''

@@ -134,6 +134,9 @@ class RandomFlip(BaseTransform):
             image = image.reflect_image(axis=axis)
             
         return image
+    
+    def __repr__(self):
+        return f'''tx.RandomFlip({self.p}, {self.axis})'''
         
 
 def create_centered_affine_transform(image, matrix):

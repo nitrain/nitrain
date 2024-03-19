@@ -26,7 +26,7 @@ class Resample(BaseTransform):
         return image
 
     def __repr__(self):
-        return f'tx.Resample({self.params}, use_spacing={self.use_spacing}, interpolation="{self.interpolation}")'
+        return f'tx.Resample({self.params}, {self.use_spacing}, "{self.interpolation}")'
 
 class ResampleToTarget(BaseTransform):
     """
