@@ -43,7 +43,10 @@ class FolderDataset:
                                     y={'file':'participants.tsv', 'column':'age'})
         >>> model = nitrain.models.fetch_pretrained('t1-brainage', finetune=True)
         >>> model.fit(dataset)
-        """        
+        """
+        if base_dir.startswith('~'):
+            base_dir = os.path.expanduser(base_dir)
+            
         x_config = x
         y_config = y
         

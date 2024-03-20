@@ -1,11 +1,18 @@
 
-from pathlib import Path
+import os
 import ants
 import numpy as np
 
 def get_nitrain_dir():
-    downloads_path = str(Path.home() / ".nitrain/")
-    return downloads_path    
+    if os.environ.get('NITRAIN_DIR') is not None:
+        nitrain_dir = os.environ['NITRAIN_DIR']
+    else:
+        nitrain_dir = os.path.join(os.path.expanduser('~'), '.nitrain')
+    
+    if not os.path.exists(nitrain_dir):
+        os.mkdir(nitrain_dir)
+        
+    return nitrain_dir    
 
 def files_to_array(files, dtype='float32'):
     # read in the images to a numpy array

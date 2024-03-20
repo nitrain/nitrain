@@ -1,6 +1,7 @@
 import os
 import textwrap
 import tempfile
+import logging
 
 from ..platform import (_upload_dataset_to_platform, 
                         _upload_file_to_platform,
@@ -40,11 +41,13 @@ class CloudTrainer:
         
         self.user = user
         self.model = model
+        self.framework = 'keras' # todo: infer from model
         self.task = task
         self.name = name
         self.resource = resource
         self.token = token
-    
+        
+        
     def fit(self, loader, epochs):
         """
         Launch a training job on the platform.
@@ -72,6 +75,7 @@ class CloudTrainer:
         """
         job_name = f'{self.user}__{self.name}'
         job_dir = f'{self.user}/{self.name}'
+        
         # Generate training script
         
         # imports
@@ -117,15 +121,18 @@ class CloudTrainer:
             f.write(textwrap.dedent(repr_save))
         
         # upload training script to platform: /ants-dev/code/{user}/{name}.py
-        _upload_file_to_platform(script_file, f'code/{job_dir}.py')
+        print('Uploading training script...')
+        _upload_file_to_platform(script_file, 'code', f'{self.name}.py')
         
         # upload original dataset to platform: /ants-dev/datasets/{user}/{name}/
-        #_upload_dataset_to_platform(loader.dataset, job_dir)
+        print('Uploading dataset...')
+        _upload_dataset_to_platform(loader.dataset, self.name)
         
         # upload untrained model to platform: /ants-dev/models/{user}/{name}.keras
+        print('Uploading model...')
         model_file = tempfile.NamedTemporaryFile(suffix='.keras')
         self.save(model_file.name)
-        _upload_file_to_platform(model_file, f'models/untrained__{job_dir}.keras')
+        _upload_file_to_platform(model_file, 'models', f'untrained__{self.name}.keras')
         
         # launch job
         #_launch_job_on_platform(job_name, job_dir)

@@ -28,10 +28,11 @@ def _upload_dataset_to_platform(dataset, name):
         The dataset to be uploaded
         
     name : string
-        What to call the dataset on the platform
+        Relative path to new dataset:
+        datasets/{user}/{name}
     """
-    # create dataset record
-    _create_dataset_record(name, parameters=_config_for_platform_dataset(dataset))
+    # create dataset record in database ... skip this and go directly to engine?
+    response = _create_dataset_record(name, parameters=_config_for_platform_dataset(dataset))
 
     # upload images (x)
     for i in tqdm(range(len(dataset))):
@@ -44,9 +45,10 @@ def _upload_dataset_to_platform(dataset, name):
         ants.image_write(x, tmpfile.name)
         
         # upload to server
-        response = _upload_dataset_file(name,
-                                        file=tmpfile,
-                                        filename=x_filename.replace(dataset.base_dir, ''))
+        filename = os.path.join(name, x_filename.replace(dataset.base_dir, '')[1:])
+        response = _upload_file_to_platform(tmpfile,
+                                            category='datasets',
+                                            filename=filename)
         
         if response.status_code != 201:
             print(f'Could not upload file {x_filename}')
@@ -54,11 +56,9 @@ def _upload_dataset_to_platform(dataset, name):
         tmpfile.close()
 
     # upload participants file (y)
-    response = _upload_dataset_file(name,
-                                    file=open(os.path.join(dataset.base_dir, 
-                                                        dataset.y_config['file']),
-                                                        'rb'),
-                                    filename=dataset.y_config['file'])
+    filename = os.path.join(name, dataset.y_config['file'])
+    with open(os.path.join(dataset.base_dir, dataset.y_config['file']), 'rb') as file:
+        response = _upload_file_to_platform(file=file, category='datasets', filename=filename)
     
     # if BIDS dataset -> write json file because BIDS layout doesnt work on platform ?
     return response
@@ -92,6 +92,7 @@ def _convert_to_platform_dataset(dataset, name, fuse=True):
 def _create_dataset_record(name, parameters, token=None):
     if token is None:
         token = os.environ['NITRAIN_API_TOKEN']
+    
     ## create the dataset record
     response = requests.post(f'{api_url}/datasets/', 
                 json={
@@ -102,6 +103,11 @@ def _create_dataset_record(name, parameters, token=None):
                     'cached': False
                 },
                 headers = {'Authorization': f'Bearer {token}'})
+    
+    # TODO: handle if dataset record already exists
+    if response.status_code != 201:
+        pass
+    
     return response
 
 def _list_dataset_records(token=None):
@@ -129,21 +135,16 @@ def _delete_dataset_record(name, token=None):
                 headers = {'Authorization': f'Bearer {token}'})
     return response
 
-def _upload_dataset_file(name, file, filename, token=None):
-    if token is None:
-        token = os.environ['NITRAIN_API_TOKEN']
-    response = requests.post(f'{api_url}/datasets/{name}/files/', 
-                files={'file': file},
-                data={'relative_path': filename},
-                headers = {'Authorization': f'Bearer {token}'})
-    return response
-
-def _upload_file_to_platform(file, relative_path, token=None):
+def _upload_file_to_platform(file, category, filename, token=None):
+    """
+    Upload a file to platform at /{category}/{user}/{filename} where
+    {user} is inferred on server based on the api token.
+    """
     if token is None:
         token = os.environ['NITRAIN_API_TOKEN']
     response = requests.post(f'{api_url}/files/', 
                 files={'file': file},
-                data={'relative_path': relative_path},
+                data={'category': category, 'filename': filename},
                 headers = {'Authorization': f'Bearer {token}'})
     if response.status_code != 201:
         print(f'Error: {response.status_code}')
