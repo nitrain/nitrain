@@ -132,6 +132,17 @@ def _delete_dataset_record(name, token=None):
                 headers = {'Authorization': f'Bearer {token}'})
     return response
 
+def _upload_job_script_to_platform(file, name, token=None):
+    if token is None:
+        token = os.environ['NITRAIN_API_TOKEN']
+    response = requests.post(f'{api_url}/files/job/', 
+                files={'file': file},
+                data={'name': name},
+                headers = {'Authorization': f'Bearer {token}'})
+    if response.status_code != 201:
+        print(f'Error: {response.status_code}')
+    return response 
+
 def _upload_file_to_platform(file, category, filename, token=None):
     """
     Upload a file to platform at /{category}/{user}/{filename} where

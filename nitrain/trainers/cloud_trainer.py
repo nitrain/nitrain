@@ -5,6 +5,7 @@ import logging
 
 from ..platform import (_upload_dataset_to_platform, 
                         _upload_file_to_platform,
+                        _upload_job_script_to_platform,
                         _convert_to_platform_dataset, 
                         _get_user_from_token)
 
@@ -122,7 +123,7 @@ class CloudTrainer:
         
         # upload training script to platform: /ants-dev/code/{user}/{name}.py
         print('Uploading training script...')
-        _upload_file_to_platform(script_file, 'code', f'{self.name}.py')
+        _upload_job_script_to_platform(script_file, self.name)
         
         # upload original dataset to platform: /ants-dev/datasets/{user}/{name}/
         print('Uploading dataset...')
