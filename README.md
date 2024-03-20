@@ -219,7 +219,16 @@ trainer.fit(loader, epochs=10)
 print(trainer.model)
 ```
 
-Additionally, you can train your model in the cloud using the `CloudTrainer` class. All training takes place on HIPAA-compliant servers.
+If you have signed up for an account at www.nitrain.dev, you can also train your model in the cloud using the `CloudTrainer` class. All training takes place on HIPAA-compliant GPU servers with competitive pricing.
+
+```python
+trainer = trainers.CloudTrainer(model=model, task='regression',
+                                name='brain-age-test6', resource='gpu-small')
+trainer.fit(loader, epochs=10)
+
+# check job status
+print(trainer.status)
+```
 
 <br />
 
