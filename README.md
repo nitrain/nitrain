@@ -223,7 +223,7 @@ If you have signed up for an account at [nitrain.dev](https://www.nitrain.dev) t
 
 ```python
 trainer = trainers.CloudTrainer(model=model, task='regression',
-                                name='brain-age-test6', resource='gpu-small')
+                                name='brain-age', resource='gpu-small')
 trainer.fit(loader, epochs=10)
 
 # check job status
