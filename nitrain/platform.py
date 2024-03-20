@@ -36,24 +36,21 @@ def _upload_dataset_to_platform(dataset, name):
 
     # upload images (x)
     for i in tqdm(range(len(dataset))):
-        # get transformed data
+        # get filename or object
         x_filename = dataset.x[i]
-        x, y = dataset[i]
         
-        # save to tempfile
-        tmpfile = tempfile.NamedTemporaryFile(suffix='.nii.gz')
-        ants.image_write(x, tmpfile.name)
-        
-        # upload to server
-        filename = os.path.join(name, x_filename.replace(dataset.base_dir, '')[1:])
-        response = _upload_file_to_platform(tmpfile,
-                                            category='datasets',
-                                            filename=filename)
+        if not isinstance(x_filename, str):
+            raise Exception('Only file-based datasets are accepted right now.')
+
+        with open(x_filename, 'rb') as tmpfile:
+            filename = os.path.join(name, x_filename.replace(dataset.base_dir, '')[1:])
+            response = _upload_file_to_platform(tmpfile,
+                                                category='datasets',
+                                                filename=filename)
         
         if response.status_code != 201:
             print(f'Could not upload file {x_filename}')
             
-        tmpfile.close()
 
     # upload participants file (y)
     filename = os.path.join(name, dataset.y_config['file'])
