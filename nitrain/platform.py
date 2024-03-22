@@ -12,11 +12,23 @@ api_url = 'https://api.ants.dev'
 def list_platform_datasets():
     return _list_dataset_records()
 
-def _launch_training_job_on_platform(job_name):
+def _launch_job_on_platform(name):
     """
     Send post request to api launching job
     """
-    pass
+    if token is None:
+        token = os.environ['NITRAIN_API_TOKEN']
+    
+    ## create the dataset record
+    response = requests.post(f'{api_url}/jobs/', 
+                json={'name': name},
+                headers = {'Authorization': f'Bearer {token}'})
+    
+    # TODO: handle if dataset record already exists
+    if response.status_code != 201:
+        pass
+    
+    return response
 
 def _upload_dataset_to_platform(dataset, name):
     """

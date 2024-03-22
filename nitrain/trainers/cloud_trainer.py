@@ -6,6 +6,7 @@ import logging
 from ..platform import (_upload_dataset_to_platform, 
                         _upload_file_to_platform,
                         _upload_job_script_to_platform,
+                        _launch_job_on_platform,
                         _convert_to_platform_dataset, 
                         _get_user_from_token)
 
@@ -136,7 +137,7 @@ class CloudTrainer:
         _upload_file_to_platform(model_file, 'models', f'untrained__{self.name}.keras')
         
         # launch job
-        #_launch_job_on_platform(job_name, job_dir)
+        #_launch_job_on_platform(self.name)
         
     def save(self, path):
         if self.framework == 'keras':
