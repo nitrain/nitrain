@@ -140,7 +140,7 @@ class CloudTrainer:
         #_upload_file_to_platform(model_file, 'models', f'untrained__{self.name}.keras')
         
         # launch job
-        #_launch_job_on_platform(self.name)
+        #_launch_job_on_platform(self.name, self.resource)
         
     def save(self, filename):
         if self.framework == 'keras':

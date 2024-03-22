@@ -30,7 +30,7 @@ def _check_job_status_on_platform(name):
     
     return response
 
-def _launch_job_on_platform(name):
+def _launch_job_on_platform(name, resource):
     """
     Send post request to api launching job
     """
@@ -39,7 +39,7 @@ def _launch_job_on_platform(name):
     
     ## create the dataset record
     response = requests.post(f'{api_url}/jobs/', 
-                json={'name': name},
+                json={'name': name, 'resource': resource},
                 headers = {'Authorization': f'Bearer {token}'})
     
     # TODO: handle if dataset record already exists
