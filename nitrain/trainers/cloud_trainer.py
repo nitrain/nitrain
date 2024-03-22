@@ -98,7 +98,7 @@ class CloudTrainer:
         
         # model
         repr_model = f'''
-        model = models.load_model("/gcs/ants-dev/models/untrained__{job_dir}")
+        model = models.load_model("/gcs/ants-dev/models/{self.user}/untrained__{self.name}")
         '''
         
         # trainer
