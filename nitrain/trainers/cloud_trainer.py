@@ -82,7 +82,7 @@ class CloudTrainer:
         
         # imports
         repr_imports = '''
-        from nitrain import datasets, loaders, models, trainers, transforms as tx
+        from nitrain import datasets, loaders, models, samplers, trainers, transforms as tx
         '''
         
         # dataset
