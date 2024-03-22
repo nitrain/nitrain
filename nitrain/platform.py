@@ -5,12 +5,30 @@ import json
 from tqdm import tqdm
 import ants
 
-from .datasets.platform_dataset import PlatformDataset
+from .datasets import PlatformDataset, GoogleCloudDataset
 
 api_url = 'https://api.ants.dev'
 
 def list_platform_datasets():
     return _list_dataset_records()
+
+
+def _check_job_status_on_platform(name):
+    """
+    Check if job is running or completed. If completed,
+    return the model that it produced if possible
+    """
+    if token is None:
+        token = os.environ['NITRAIN_API_TOKEN']
+    
+    ## create the dataset record
+    response = requests.get(f'{api_url}/jobs/{name}/check/',
+                            headers = {'Authorization': f'Bearer {token}'})
+    
+    if response.status_code != 200:
+        pass
+    
+    return response
 
 def _launch_job_on_platform(name):
     """
@@ -88,14 +106,16 @@ def _convert_to_platform_dataset(dataset, name, fuse=True):
     can be used in training a model on the platform.
     """
     params = _config_for_platform_dataset(dataset)
-    return PlatformDataset(
-        name = name,
+    return GoogleCloudDataset(
+        bucket='ants-dev',
+        base_dir=f'datasets/{name}',
         x = params['x_config'],
         y = params['y_config'],
         x_transforms = dataset.x_transforms,
         y_transforms = dataset.y_transforms,
         fuse = fuse,
-        credentials = None
+        credentials = None,
+        lazy = True
     )
 
 def _create_dataset_record(name, parameters, token=None):

@@ -7,6 +7,7 @@ from ..platform import (_upload_dataset_to_platform,
                         _upload_file_to_platform,
                         _upload_job_script_to_platform,
                         _launch_job_on_platform,
+                        _check_job_status_on_platform,
                         _convert_to_platform_dataset, 
                         _get_user_from_token)
 
@@ -75,6 +76,8 @@ class CloudTrainer:
         None. The status of the job can be checked by calling `trainer.status` and the
         fitted model can be eventually retrieved by calling `trainer.model`.
         """
+        # TODO: add timestamp to all files, dirs, names, etc
+        
         job_name = f'{self.user}__{self.name}'
         job_dir = f'{self.user}/{self.name}'
         
@@ -98,7 +101,7 @@ class CloudTrainer:
         
         # model
         repr_model = f'''
-        model = models.load_model("/gcs/ants-dev/models/{self.user}/untrained__{self.name}")
+        model = models.load("/gcs/ants-dev/models/{self.user}/untrained__{self.name}")
         '''
         
         # trainer
@@ -126,27 +129,29 @@ class CloudTrainer:
         print('Uploading training script...')
         _upload_job_script_to_platform(script_file, self.name)
         
-        # upload original dataset to platform: /ants-dev/datasets/{user}/{name}/
-        print('Uploading dataset...')
-        _upload_dataset_to_platform(loader.dataset, self.name)
-        
-        # upload untrained model to platform: /ants-dev/models/{user}/{name}.keras
-        print('Uploading model...')
-        model_file = tempfile.NamedTemporaryFile(suffix='.keras')
-        self.save(model_file.name)
-        _upload_file_to_platform(model_file, 'models', f'untrained__{self.name}.keras')
+        ## upload original dataset to platform: /ants-dev/datasets/{user}/{name}/
+        #print('Uploading dataset...')
+        #_upload_dataset_to_platform(loader.dataset, self.name)
+        #
+        ## upload untrained model to platform: /ants-dev/models/{user}/{name}.keras
+        #print('Uploading model...')
+        #model_file = tempfile.NamedTemporaryFile(suffix='.keras')
+        #self.save(model_file.name)
+        #_upload_file_to_platform(model_file, 'models', f'untrained__{self.name}.keras')
         
         # launch job
         #_launch_job_on_platform(self.name)
         
-    def save(self, path):
+    def save(self, filename):
         if self.framework == 'keras':
-            self.model.save(path)
+            if not filename.endswith('.keras'):
+                filename = filename + '.keras'
+            self.model.save(filename)
             
     @property
     def status(self):
         """
         Check status of launched training job
         """
-        pass
+        return _check_job_status_on_platform(self.name)
 

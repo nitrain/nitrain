@@ -24,7 +24,8 @@ class GoogleCloudDataset:
                  x_transforms=None,
                  y_transforms=None,
                  credentials=None,
-                 fuse=False):
+                 fuse=False,
+                 lazy=False):
         """
         Initialize a nitrain dataset consisting of local filepaths.
         
@@ -33,12 +34,22 @@ class GoogleCloudDataset:
         
         Example
         -------
-        >>> dataset = GoogleCloudDataset(bucket='ants-dev',
-                                         base_dir='datasets/nick_2/ds000711', 
+        >>> dataset = datasets.GoogleCloudDataset(bucket='ants-dev',
+                                         base_dir='datasets/nick-2/my-first-job', 
                                          x={'pattern': '*/anat/*_T1w.nii.gz', 'exclude': '**run-02*'},
-                                         y={'file': 'participants.tsv', 'column': 'age'},
-                                         credentials='deep-dynamics-415608-4046316ec2f1.json')
+                                         y={'file': 'participants.tsv', 'column': 'age'})
         """
+        if lazy:
+            self.bucket = bucket
+            self.base_dir = base_dir
+            self.x_config = x
+            self.y_config = y
+            self.x_transforms = x_transforms
+            self.y_transforms = y_transforms
+            self.credentials = credentials
+            self.fuse = fuse
+            return
+        
         x_config = x
         y_config = y
         
@@ -126,7 +137,8 @@ class GoogleCloudDataset:
         y = self.y[idx]
         
         if self.y_transforms is not None:
-            y = np.array([self.y_transforms(yy) for yy in y])
+            for y_tx in self.y_transforms:
+                y = y_tx(y)
         
         x = []
         for file in files:
@@ -164,6 +176,17 @@ class GoogleCloudDataset:
             y = self.y_config,
             x_transforms = self.x_transforms,
             y_transforms = self.y_transforms,
+            fuse = self.fuse,
             credentials = self.credentials
         )
     
+    def __repr__(self):
+        tx_repr = ', '.join([repr(x_tx) for x_tx in self.x_transforms])
+        return f'''datasets.GoogleCloudDataset(bucket = "{self.bucket}",
+                    base_dir = "{self.base_dir}",
+                    x = {self.x_config},
+                    y = {self.y_config},
+                    x_transforms = [{tx_repr}],
+                    y_transforms = {self.y_transforms},
+                    fuse = {self.fuse},
+                    credentials = None)'''

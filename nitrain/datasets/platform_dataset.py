@@ -1,24 +1,19 @@
 import warnings
 import os
 import glob
-import tempfile
 import pandas as pd
 import numpy as np
 from fnmatch import fnmatch
 from google.cloud import storage
 from google.oauth2 import service_account
-from torch.utils.data import Dataset
-import textwrap
-
+from parse import parse
 import ants
-
-from .. import utils
 
 
 class PlatformDataset:
     
     def __init__(self,
-                 name,
+                 base_dir,
                  x,
                  y,
                  x_transforms=None,
@@ -47,15 +42,61 @@ class PlatformDataset:
                                       x={'filenames': ['sub-001/anat/T1.nii.gz', '...']},
                                       y={'file': 'participants.tsv', 'column': 'age'})
         """
-        self.name = name
-        self.x_config = x
-        self.y_config = y
-        self.x = None
-        self.y = None
+        # convert base_dir (nick-2/first-dataset) to gcs fuse
+        if fuse:
+            base_dir = os.path.join('/gcs/ants-dev/datasets/', base_dir)
+        else:
+            base_dir = os.path.join('datasets/', base_dir)
+            
+        x_config = x
+        y_config = y
+        
+        pattern = x_config['pattern']
+        glob_pattern = pattern.replace('{id}','*')
+        x = sorted(glob.glob(glob_pattern, root_dir=base_dir))
+        if 'exclude' in x_config.keys():
+            x = [file for file in x if not fnmatch(file, x_config['exclude'])]
+        
+        if '{id}' in pattern:
+            x_ids = [parse(pattern.replace('*','{other}'), file).named['id'] for file in x]
+        else:
+            x_ids = [xx.split('/')[0] for xx in x]
+        x = [os.path.join(base_dir, file) for file in x]
+        
+        # GET Y
+        participants_file = os.path.join(base_dir, y_config['file'])
+        participants = pd.read_csv(participants_file, sep='\t')
+        
+        # match x and y ids
+        p_col = participants.columns[0] # assume participant id is first row
+        participants = participants.sort_values(p_col)
+        all_y_ids = participants[p_col].to_numpy()
+        if len(x_ids) != len(all_y_ids):
+            warnings.warn(f'Mismatch between x ids {len(x_ids)} and y ids {len(all_y_ids)} - finding intersection')
+        y_ids = sorted(list(set(x_ids) & set(all_y_ids)))
+        
+        participants = participants[participants[p_col].isin(y_ids)]
+        y = participants[y_config['column']].to_numpy()
+        
+        # remove x values that are not found in y
+        x = [x[idx] for idx in range(len(x)) if x_ids[idx] in y_ids]
+        x_ids = y_ids
+
+
+        if len(x) != len(y):
+            warnings.warn(f'len(x) [{len(x)}] != len(y) [{len(y)}]. Do some participants have multiple runs?')
+        
+        self.base_dir = base_dir
+        self.fuse = fuse
+        self.x_config = x_config
+        self.y_config = y_config
         self.x_transforms = x_transforms
         self.y_transforms = y_transforms
-        self.fuse = fuse
-        self.credentials = credentials
+        self.participants = participants
+        self.x = x
+        self.x_ids = x_ids
+        self.y = y
+        self.y_ids = y_ids
         
     def initialize(self):
         pass
