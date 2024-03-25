@@ -38,13 +38,14 @@ def _launch_job_on_platform(name, resource):
         token = os.environ['NITRAIN_API_TOKEN']
     
     ## create the dataset record
+    # TODO: check jobs model serializer because more info may be need in post request
     response = requests.post(f'{api_url}/jobs/', 
                 json={'name': name, 'resource': resource},
                 headers = {'Authorization': f'Bearer {token}'})
     
     # TODO: handle if dataset record already exists
     if response.status_code != 201:
-        pass
+        print('Error launching job on platform.')
     
     return response
 
