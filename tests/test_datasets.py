@@ -5,6 +5,7 @@ from main import run_tests
 from tempfile import mktemp, mkdtemp
 import shutil
 
+import json
 import pandas as pd
 import numpy as np
 import numpy.testing as nptest
@@ -139,5 +140,57 @@ class TestClass_CSVDataset(unittest.TestCase):
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
 
+class TestClass_BIDSDataset(unittest.TestCase):
+    def setUp(self):
+        # set up directory
+        tmp_dir = mkdtemp()
+        self.tmp_dir = tmp_dir
+        img2d = ants.image_read(ants.get_data('r16'))
+        img3d = ants.image_read(ants.get_data('mni'))
+        
+        for i in range(5):
+            sub_dir = os.path.join(tmp_dir, f'sub-00{i}')
+            os.makedirs(os.path.join(sub_dir, 'anat/'))
+            
+            filepath_2d = os.path.join(sub_dir, f'anat/sub-00{i}_T1w.nii.gz')
+            ants.image_write(img2d, filepath_2d)
+            
+            filepath_3d = os.path.join(sub_dir, f'anat/sub-00{i}_T2w.nii.gz')
+            ants.image_write(img3d, filepath_3d)
+        
+        # write csv file
+        ids = [f'sub-00{i}' for i in range(5)]
+        age = [i + 50 for i in range(5)]
+        df = pd.DataFrame({'sub_id': ids, 'age': age})
+        df.to_csv(os.path.join(tmp_dir, 'participants.tsv'), index=False, sep='\t')
+        
+        description = {'Name': 'Test Dataste', 
+                       'BIDSVersion': 'v1.8.0 (2022-10-29)'}
+        with open (os.path.join(tmp_dir, 'dataset_description.json'), 'w') as outfile:
+            json.dump(description, outfile)
+         
+    def tearDown(self):
+        shutil.rmtree(self.tmp_dir)
+    
+    def test_2d(self):
+        dataset = datasets.BIDSDataset(self.tmp_dir, 
+                                       x={'datatype': 'anat', 'suffix': 'T1w'},
+                                       y={'file':'participants.tsv', 'column':'age'})
+        self.assertTrue(len(dataset.x) == 5)
+        self.assertTrue(len(dataset.y) == 5)
+        
+        x, y = dataset[:2]
+        self.assertTrue(len(x) == 2)
+        
+    def test_3d(self):
+        dataset = datasets.BIDSDataset(self.tmp_dir, 
+                                       x={'datatype': 'anat', 'suffix': 'T2w'},
+                                       y={'file':'participants.tsv', 'column':'age'})
+        self.assertTrue(len(dataset.x) == 5)
+        self.assertTrue(len(dataset.y) == 5)
+        
+        x, y = dataset[:2]
+        self.assertTrue(len(x) == 2)
+        
 if __name__ == '__main__':
     run_tests()
