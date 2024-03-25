@@ -100,36 +100,6 @@ class FolderDataset:
         self.x_ids = x_ids
         self.y = y
         self.y_ids = y_ids
-        
-    def filter(self, expr, inplace=False):
-        """
-        Filter the dataset by column values in the participants file
-        """
-        ds = copy.copy(self)
-        
-        participants = ds.participants.query(expr)
-        
-        p_col = participants.columns[0] # assume participant id is first row
-        p_suffix = 'sub-' # assume participant col starts with 'sub-'
-        query_ids = [id.split('-')[1] for id in participants[p_col]]
-        
-        file_ids = ds.layout.get(return_type='id', target='subject', **ds.x)
-        ids = sorted(list(set(file_ids).intersection(query_ids)))
-
-        # only keep ids that are in the participants file
-        x = ds.layout.get(return_type='filename', subject=ids, **ds.x)
-        
-        # GET Y
-        p_col = participants.columns[0] # assume participant id is first row
-        p_suffix = 'sub-' # assume participant col starts with 'sub-'
-        participants = participants[participants[p_col].isin([p_suffix+id for id in ids])]
-        y = participants[ds.y['column']].to_numpy()
-        
-        # make changes to instance
-        ds.participants = participants
-        ds.x = x
-        ds.y = y
-        return ds
 
     def __getitem__(self, idx):
         files = self.x[idx]
