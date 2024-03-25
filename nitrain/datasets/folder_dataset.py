@@ -136,9 +136,11 @@ class FolderDataset:
     
     def __copy__(self):
         return FolderDataset(
-            path=self.base_dir,
-            x=self.x,
-            y=self.y,
-            x_transforms=self.x_transforms
+            base_dir=self.base_dir,
+            x=self.x_config,
+            y=self.y_config,
+            x_transforms=self.x_transforms,
+            y_transforms=self.y_transforms,
+            datalad=self.datalad
         )
     

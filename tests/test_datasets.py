@@ -82,5 +82,62 @@ class TestClass_FolderDataset(unittest.TestCase):
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
 
+
+class TestClass_CSVDataset(unittest.TestCase):
+    def setUp(self):
+        # set up directory
+        tmp_dir = mkdtemp()
+        self.tmp_dir = tmp_dir
+        img2d = ants.image_read(ants.get_data('r16'))
+        img3d = ants.image_read(ants.get_data('mni'))
+        
+        filenames_2d = []
+        filenames_3d = []
+        for i in range(5):
+            sub_dir = os.path.join(tmp_dir, f'sub_{i}')
+            os.mkdir(sub_dir)
+            filepath_2d = os.path.join(sub_dir, 'img2d.nii.gz')
+            filenames_2d.append(filepath_2d)
+            ants.image_write(img2d, filepath_2d)
+            
+            filepath_3d = os.path.join(sub_dir, 'img3d.nii.gz')
+            filenames_3d.append(filepath_3d)
+            ants.image_write(img3d, filepath_3d)
+        
+        # write csv file
+        ids = [f'sub_{i}' for i in range(5)]
+        age = [i + 50 for i in range(5)]
+        df = pd.DataFrame({'sub_id': ids, 'age': age, 
+                           'filenames_2d': filenames_2d,
+                           'filenames_3d': filenames_3d})
+        df.to_csv(os.path.join(tmp_dir, 'participants.csv'), index=False)
+         
+    def tearDown(self):
+        shutil.rmtree(self.tmp_dir)
+    
+    def test_2d(self):
+        dataset = datasets.CSVDataset(
+            path=os.path.join(self.tmp_dir, 'participants.csv'),
+            x={'images': 'filenames_2d'},
+            y={'column': 'age'}
+        )
+        self.assertTrue(len(dataset.x) == 5)
+        self.assertTrue(len(dataset.y) == 5)
+        
+        x, y = dataset[:2]
+        self.assertTrue(len(x) == 2)
+        
+    def test_3d(self):
+        dataset = datasets.CSVDataset(
+            path=os.path.join(self.tmp_dir, 'participants.csv'),
+            x={'images': 'filenames_3d'},
+            y={'column': 'age'}
+        )
+        self.assertTrue(len(dataset.x) == 5)
+        self.assertTrue(len(dataset.y) == 5)
+        
+        x, y = dataset[:2]
+        self.assertTrue(len(x) == 2)
+
 if __name__ == '__main__':
     run_tests()
