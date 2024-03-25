@@ -67,6 +67,9 @@ class TestClass_FolderDataset(unittest.TestCase):
         self.assertTrue(len(dataset.x) == 5)
         self.assertTrue(len(dataset.y) == 5)
         
+        x, y = dataset[:2]
+        self.assertTrue(len(x) == 2)
+        
     def test_3d(self):
         dataset = datasets.FolderDataset(
             base_dir=self.tmp_dir,
@@ -76,6 +79,8 @@ class TestClass_FolderDataset(unittest.TestCase):
         self.assertTrue(len(dataset.x) == 5)
         self.assertTrue(len(dataset.y) == 5)
         
+        x, y = dataset[:2]
+        self.assertTrue(len(x) == 2)
 
 if __name__ == '__main__':
     run_tests()
