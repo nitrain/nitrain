@@ -65,8 +65,11 @@ class FolderDataset:
         
         # GET Y
         participants_file = os.path.join(base_dir, y_config['file'])
-        participants = pd.read_csv(participants_file, sep='\t')
-        
+        if participants_file.endswith('.tsv'):
+            participants = pd.read_csv(participants_file, sep='\t')
+        elif participants_file.endswith('.csv'):
+            participants = pd.read_csv(participants_file)
+            
         # match x and y ids
         p_col = participants.columns[0] # assume participant id is first row
         participants = participants.sort_values(p_col)
