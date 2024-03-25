@@ -59,7 +59,8 @@ class GoogleCloudDataset:
                 base_dir += '/'
             
             # GET X
-            x = glob.glob(x_config['pattern'], root_dir=base_dir)
+            x = glob.glob(os.path.join(base_dir, x_config['pattern']))
+            x = [os.path.relpath(xx, base_dir) for xx in x]
             if 'exclude' in x_config.keys():
                 x = [file for file in x if not fnmatch(file, x_config['exclude'])]
             x_ids = [xx.split('/')[0] for xx in x]

@@ -52,7 +52,8 @@ class FolderDataset:
         
         pattern = x_config['pattern']
         glob_pattern = pattern.replace('{id}','*')
-        x = sorted(glob.glob(glob_pattern, root_dir=base_dir))
+        x = sorted(glob.glob(os.path.join(base_dir, glob_pattern)))
+        x = [os.path.relpath(xx, base_dir) for xx in x]
         if 'exclude' in x_config.keys():
             x = [file for file in x if not fnmatch(file, x_config['exclude'])]
         
