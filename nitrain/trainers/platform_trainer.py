@@ -11,9 +11,9 @@ from ..platform import (_upload_dataset_to_platform,
                         _convert_to_platform_dataset, 
                         _get_user_from_token)
 
-class CloudTrainer:
+class PlatformTrainer:
     """
-    The CloudTrainer class lets you train deep learning models
+    The PlatformTrainer class lets you train deep learning models
     on GPU resources in the cloud.
     """
     
@@ -28,7 +28,7 @@ class CloudTrainer:
         >>> loader = DatasetLoader(data, batch_size=32)
         >>> model_fn = fetch_architecture('autoencoder')
         >>> model = model_fn((120, 60, 30))
-        >>> trainer = CloudTrainer(model, name='t1-brain-age', resource='gpu-small')
+        >>> trainer = PlatformTrainer(model, name='t1-brain-age', resource='gpu-small')
         >>> job = trainer.fit(loader, epochs=10)
         >>> print(job.status)
         >>> print(job.model)
@@ -56,7 +56,7 @@ class CloudTrainer:
         Launch a training job on the platform.
         
         This function is used in the same was as for `ModelTrainer`, except that
-        calling `fit()` with a `CloudTrainer` will launch a training job on the platform.
+        calling `fit()` with a `PlatformTrainer` will launch a training job on the platform.
         
         If the dataset for the loader passed into this function is not a `PlatformDataset` then the
         dataset will be temporarily uploaded to the cloud for training and then deleted after. To save
