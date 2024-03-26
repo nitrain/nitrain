@@ -130,17 +130,17 @@ class PlatformTrainer:
         _upload_job_script_to_platform(script_file, self.name)
         
         ## upload original dataset to platform: /ants-dev/datasets/{user}/{name}/
-        #print('Uploading dataset...')
-        #_upload_dataset_to_platform(loader.dataset, self.name)
-        #
-        ## upload untrained model to platform: /ants-dev/models/{user}/{name}.keras
-        #print('Uploading model...')
-        #model_file = tempfile.NamedTemporaryFile(suffix='.keras')
-        #self.save(model_file.name)
-        #_upload_file_to_platform(model_file, 'models', f'untrained__{self.name}.keras')
+        print('Uploading dataset...')
+        _upload_dataset_to_platform(loader.dataset, self.name)
+        
+        # upload untrained model to platform: /ants-dev/models/{user}/{name}.keras
+        print('Uploading model...')
+        model_file = tempfile.NamedTemporaryFile(suffix='.keras')
+        self.save(model_file.name)
+        _upload_file_to_platform(model_file, 'models', f'untrained__{self.name}.keras')
         
         # launch job
-        #_launch_job_on_platform(self.name, self.resource)
+        _launch_job_on_platform(self.name, self.resource)
         
     def save(self, filename):
         if self.framework == 'keras':
