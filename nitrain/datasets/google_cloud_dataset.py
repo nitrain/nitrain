@@ -188,9 +188,9 @@ class GoogleCloudDataset:
     
     def __str__(self):
         if self.lazy:
-            return f'<GoogleCloudDataset (lazy) at {self.bucket}/{self.base_dir}>'
+            return f'GoogleCloudDataset (lazy) at {self.bucket}/{self.base_dir}'
         else:
-            return f'<GoogleCloudDataset with {len(self.x)} records at {self.bucket}/{self.base_dir}>'
+            return f'GoogleCloudDataset with {len(self.x)} records at {self.bucket}/{self.base_dir}'
     
     def __repr__(self):
         if self.x_transforms:
