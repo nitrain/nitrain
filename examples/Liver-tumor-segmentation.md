@@ -1,12 +1,10 @@
 # Liver tumor segmentation with nitrain
 
-![png](Liver tumor segmentation_files/image.png)
+![image.png](Liver-tumor-segmentation_files/image.png)
 
-This example shows you how to train a model to perform liver tumor segmentation using nitrain. It is a classic example of medical image segmentation.
+This example shows you how to train a model to perform liver tumor segmentation using nitrain. It is a classic example of medical image segmentation. 
 
 We will create a model with keras and do everything else (data sampling + augmentation, training, explaining results) with nitrain.
-
-![png](Liver-tumor-segmentation_files/image.png)
 
 ## About the data
 
@@ -16,7 +14,8 @@ To run this example, download the dataset ("archive.zip") and unpack it onto you
 
 ## Creating a dataset instance
 
-Since we have the images in a local folder and they are not in any special format, we can use the `FolderDataset` class to load them into memory. We want
+Since we have the images in a local folder and they are not in any special format, we can use the `FolderDataset` class to load them into memory. We want 
+
 
 ```python
 
