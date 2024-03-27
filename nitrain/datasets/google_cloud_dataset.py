@@ -1,4 +1,5 @@
 import warnings
+import re
 import os
 import glob
 import tempfile
@@ -42,12 +43,15 @@ class GoogleCloudDataset:
         if lazy:
             self.bucket = bucket
             self.base_dir = base_dir
+            self.x = None
             self.x_config = x
+            self.y = None
             self.y_config = y
             self.x_transforms = x_transforms
             self.y_transforms = y_transforms
             self.credentials = credentials
             self.fuse = fuse
+            self.lazy = True
             return
         
         x_config = x
@@ -130,6 +134,7 @@ class GoogleCloudDataset:
         self.x_transforms = x_transforms
         self.y_transforms = y_transforms
         self.fuse = fuse
+        self.lazy = False
 
     def __getitem__(self, idx):
         files = self.x[idx]
@@ -181,13 +186,35 @@ class GoogleCloudDataset:
             credentials = self.credentials
         )
     
+    def __str__(self):
+        if self.lazy:
+            return f'<GoogleCloudDataset (lazy) at {self.bucket}/{self.base_dir}>'
+        else:
+            return f'<GoogleCloudDataset with {len(self.x)} records at {self.bucket}/{self.base_dir}>'
+    
     def __repr__(self):
-        tx_repr = ', '.join([repr(x_tx) for x_tx in self.x_transforms])
-        return f'''datasets.GoogleCloudDataset(bucket = "{self.bucket}",
-                    base_dir = "{self.base_dir}",
-                    x = {self.x_config},
-                    y = {self.y_config},
-                    x_transforms = [{tx_repr}],
-                    y_transforms = {self.y_transforms},
-                    fuse = {self.fuse},
-                    credentials = None)'''
+        if self.x_transforms:
+            tx_repr = '[' + ', '.join([repr(x_tx) for x_tx in self.x_transforms]) + ']'
+            x_tx = f'x_transforms = {tx_repr},'
+        else:
+            x_tx = ''
+        
+        if self.y_transforms:
+            tx_repr = '[' + ', '.join([repr(y_tx) for y_tx in self.y_transforms]) + ']'
+            y_tx = f'y_transforms = {tx_repr},'
+        else:
+            y_tx = ''
+            
+        text = f"""GoogleCloudDataset(bucket = '{self.bucket}',
+                   base_dir = '{self.base_dir}',
+                   x = {self.x_config},
+                   y = {self.y_config},
+                   {x_tx}
+                   {y_tx}
+                   fuse = {self.fuse},
+                   credentials = None)"""
+        
+        text = re.sub(r'\n\s*\n', '\n\n', text)
+        text = re.sub('[\n]+', '\n', text) 
+        return text
+

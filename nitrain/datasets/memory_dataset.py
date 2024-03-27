@@ -33,3 +33,10 @@ class MemoryDataset:
 
     def __len__(self):
         return len(self.x)
+    
+    def __str__(self):
+        return f'MemoryDataset with {len(self.x)} records'
+
+    def __repr__(self):
+        return f'<MemoryDataset with {len(self.x)} records>'
+    

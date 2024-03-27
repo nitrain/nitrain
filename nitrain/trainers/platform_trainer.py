@@ -85,7 +85,10 @@ class PlatformTrainer:
         
         # imports
         repr_imports = '''
-        from nitrain import datasets, loaders, models, samplers, trainers, transforms as tx
+        from nitrain import models, samplers, trainers, transforms as tx
+        from nitrain.datasets import GoogleCloudDataset
+        from nitrain.loaders import DatasetLoader
+        frmo nitrain.trainers import ModelTrainer
         '''
         
         # dataset
@@ -106,7 +109,7 @@ class PlatformTrainer:
         
         # trainer
         repr_trainer = f'''
-        trainer = trainers.ModelTrainer(model=model, task="{self.task}")
+        trainer = ModelTrainer(model=model, task="{self.task}")
         trainer.fit(loader, epochs={epochs})
         '''
         

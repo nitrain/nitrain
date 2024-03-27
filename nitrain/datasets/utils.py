@@ -1,7 +1,10 @@
 import os
 import sys
-import datalad.api as dl
 
+import ants
+import numpy as np
+
+from .memory_dataset import MemoryDataset
 from ..utils import get_nitrain_dir
 
 def fetch_data(name, path=None):
@@ -17,6 +20,8 @@ def fetch_data(name, path=None):
         the dataset to download
         Options:
             - ds004711 [OpenNeuroDatasets/ds004711]
+            - example/t1-age
+            - example/t1-t1_mask
             
     Example
     -------
@@ -26,12 +31,34 @@ def fetch_data(name, path=None):
     
     if path is None:
         path = get_nitrain_dir()
+
     
-    save_dir = os.path.join(path, name)
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir, exist_ok=True)
-    ref = dl.clone(source=f'///{name}', path=save_dir)
-    return ref
+    if name.startswith('openneuro'):
+        import datalad.api as dl
+        
+        save_dir = os.path.join(path, name)
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir, exist_ok=True)
+            
+        # load openneuro dataset using datalad
+        res = dl.clone(source=f'///{name}', path=save_dir)
+    
+    elif name.startswith('example'):
+        # create example datasets
+        if name == 'example/t1-age':
+            res = _create_example_t1_age()
+        
+    else:
+        raise ValueError('Dataset name not recognized.')
+
+    return res
+
+
+def _create_example_t1_age():
+    img = ants.image_read(ants.get_data('mni'))
+    res = MemoryDataset(x=[img for _ in range(10)],
+                        y=np.random.normal(60, 20, 10))
+    return res
 
 
 class SilentFunction(object):

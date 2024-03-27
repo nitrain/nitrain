@@ -109,9 +109,9 @@ class DatasetLoader:
     
     def __repr__(self):
         x_tx_repr = ', '.join([repr(x_tx) for x_tx in self.x_transforms])
-        return f'''loaders.DatasetLoader(dataset,
-                               batch_size={self.batch_size},
-                               sampler={repr(self.sampler)},
-                               x_transforms=[{x_tx_repr}])'''
+        return f'''DatasetLoader(dataset,
+                   batch_size={self.batch_size},
+                   sampler={repr(self.sampler)},
+                   x_transforms=[{x_tx_repr}])'''
     
 
