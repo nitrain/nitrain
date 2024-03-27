@@ -1,6 +1,6 @@
 # Liver tumor segmentation with nitrain
 
-![image.png](Liver tumor segmentation_files/image.png)
+![png](Liver tumor segmentation_files/image.png)
 
 This example shows you how to train a model to perform liver tumor segmentation using nitrain. It is a classic example of medical image segmentation.
 
