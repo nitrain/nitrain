@@ -28,18 +28,16 @@ class FolderDataset:
         Arguments
         ---------
         x : dict or list of dicts
-            Info used to grab the correct images from the folder. A list
-            of dicts means you want to return multiple images. This is helpful
-            if you need some other image(s) to help process the primary image - e.g.,
-            you can supply a list of 2-dicts to read in T1w images + the associated
-            mask. Then, you could use `x_transforms` to mask the T1w image and only
-            return the masked T1w image from the dataset.
+        y : dict or list of dicts
+        x_transforms : transform or list of transform
+        y_transforms : transform or list of transform
+        datalad : boolean
 
         
         Example
         -------
         >>> dataset = FolderDataset('ds000711', 
-                                    x={'datatype': 'anat', 'suffix': 'T1w'},
+                                    x={'pattern': '**_T1w.nii.gz'},
                                     y={'file':'participants.tsv', 'column':'age'})
         >>> model = nitrain.models.fetch_pretrained('t1-brainage', finetune=True)
         >>> model.fit(dataset)
@@ -50,42 +48,32 @@ class FolderDataset:
         x_config = x
         y_config = y
         
-        pattern = x_config['pattern']
-        glob_pattern = pattern.replace('{id}','*')
-        x = sorted(glob.glob(os.path.join(base_dir, glob_pattern)))
-        x = [os.path.relpath(xx, base_dir) for xx in x]
-        if 'exclude' in x_config.keys():
-            x = [file for file in x if not fnmatch(file, x_config['exclude'])]
         
-        # TODO: support '{id}/*' but 
-        if '{id}' in pattern:
-            x_ids = [parse(pattern.replace('*','{other}'), file).named['id'] for file in x]
-        else:
-            x_ids = [xx.split('/')[0] for xx in x]
-        x = [os.path.join(base_dir, file) for file in x]
+        # GET X
+        x, x_ids = _get_filepaths_from_pattern_config(x_config, base_dir)
         
         # GET Y
-        participants_file = os.path.join(base_dir, y_config['file'])
-        if participants_file.endswith('.tsv'):
-            participants = pd.read_csv(participants_file, sep='\t')
-        elif participants_file.endswith('.csv'):
-            participants = pd.read_csv(participants_file)
-            
-        # match x and y ids
-        p_col = participants.columns[0] # assume participant id is first row
-        participants = participants.sort_values(p_col)
-        all_y_ids = participants[p_col].to_numpy()
-        if len(x_ids) != len(all_y_ids):
-            warnings.warn(f'Mismatch between x ids {len(x_ids)} and y ids {len(all_y_ids)} - finding intersection')
-        y_ids = sorted(list(set(x_ids) & set(all_y_ids)))
-        
-        participants = participants[participants[p_col].isin(y_ids)]
-        y = participants[y_config['column']].to_numpy()
+        if 'pattern' in y_config.keys():
+            # images
+            y, y_ids = _get_filepaths_from_pattern_config(y_config, base_dir)
+            participants = None
+        elif 'file' in y_config.keys():
+            participants_file = os.path.join(base_dir, y_config['file'])
+            if participants_file.endswith('.tsv'):
+                participants = pd.read_csv(participants_file, sep='\t')
+            elif participants_file.endswith('.csv'):
+                participants = pd.read_csv(participants_file)
+                
+            # TODO: match x and y ids
+            y = participants[y_config['column']].to_numpy()
+        else:
+            raise Exception('The y argument should have a pattern or file key.')
         
         # remove x values that are not found in y
-        x = [x[idx] for idx in range(len(x)) if x_ids[idx] in y_ids]
-        x_ids = y_ids
-
+        if x_ids is not None and y_ids is not None:
+            x = [x[idx] for idx in range(len(x)) if x_ids[idx] in y_ids]
+        
+        ids = x_ids
 
         if len(x) != len(y):
             warnings.warn(f'len(x) [{len(x)}] != len(y) [{len(y)}]. Do some participants have multiple runs?')
@@ -96,11 +84,12 @@ class FolderDataset:
         self.y_config = y_config
         self.x_transforms = x_transforms
         self.y_transforms = y_transforms
+        
         self.participants = participants
+        
         self.x = x
-        self.x_ids = x_ids
         self.y = y
-        self.y_ids = y_ids
+        self.ids = ids
 
     def __getitem__(self, idx):
         files = self.x[idx]
@@ -145,3 +134,20 @@ class FolderDataset:
             datalad=self.datalad
         )
     
+
+def _get_filepaths_from_pattern_config(config, base_dir):
+    pattern = config['pattern']
+    glob_pattern = pattern.replace('{id}','*')
+    x = sorted(glob.glob(os.path.join(base_dir, glob_pattern)))
+    x = [os.path.relpath(xx, base_dir) for xx in x]
+    if 'exclude' in config.keys():
+        x = [file for file in x if not fnmatch(file, config['exclude'])]
+
+    if '{id}' in pattern:
+        x_ids = [parse(pattern.replace('*','{other}'), file).named['id'] for file in x]
+    else:
+        x_ids = None
+        
+    x = [os.path.join(base_dir, file) for file in x]
+    
+    return x, x_ids

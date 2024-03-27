@@ -71,6 +71,19 @@ class TestClass_FolderDataset(unittest.TestCase):
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
         
+
+    def test_2d_image_to_image(self):
+        dataset = datasets.FolderDataset(
+            base_dir=self.tmp_dir,
+            x={'pattern': '*/img2d.nii.gz'},
+            y={'pattern': '*/img2d.nii.gz'}
+        )
+        self.assertTrue(len(dataset.x) == 5)
+        self.assertTrue(len(dataset.y) == 5)
+        
+        x, y = dataset[:2]
+        self.assertTrue(len(x) == 2)
+        
     def test_3d(self):
         dataset = datasets.FolderDataset(
             base_dir=self.tmp_dir,
