@@ -32,8 +32,7 @@ class TestClass_BaseSampler(unittest.TestCase):
         self.assertTrue(len(x_batch)==3)
         
         self.assertTrue(len(y_batch)==3)
-        # no shuffle
-        self.assertTrue(y_batch==[0,1,2])
+        nptest.assert_array_equal(y_batch, np.array([0,1,2]))
 
 class TestClass_PatchSampler(unittest.TestCase):
     def setUp(self):
