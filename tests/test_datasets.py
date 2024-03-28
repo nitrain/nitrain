@@ -36,6 +36,24 @@ class TestClass_MemoryDataset(unittest.TestCase):
         
         dataset = datasets.MemoryDataset(x, y)
         self.assertTrue(len(dataset.x) == 10)
+        
+    def test_from_array(self):
+        dataset = datasets.MemoryDataset(
+            np.random.normal(20,10,(5,50,50)),
+            np.random.normal(20,10,5)
+        )
+        x, y = dataset[0]
+        self.assertTrue(x.shape == (50,50))
+        self.assertTrue(isinstance(y, float))
+
+    def test_from_array_image_to_Image(self):
+        dataset = datasets.MemoryDataset(
+            np.random.normal(20,10,(5,50,50)),
+            np.random.normal(20,10,(5,50,50)),
+        )
+        x, y = dataset[0]
+        self.assertTrue(x.shape == (50,50))
+        self.assertTrue(y.shape == (50,50))
 
 
 class TestClass_FolderDataset(unittest.TestCase):

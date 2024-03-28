@@ -40,10 +40,14 @@ class ArrayConfig:
         x_config = ArrayConfig(x)
         """
         self.array = array
-        # arrays must be converted to images
-        array_list = np.split(array, array.shape[0])
-        ns = array.shape[1:]
-        self.values = [ants.from_numpy(tmp.reshape(*ns)) for tmp in array_list]
+        
+        if array.ndim > 2:
+            # arrays must be converted to images
+            array_list = np.split(array, array.shape[0])
+            ns = array.shape[1:]
+            self.values = [ants.from_numpy(tmp.reshape(*ns)) for tmp in array_list]
+        else:
+            self.values = array
         
     def __getitem__(self, idx):
         return self.values[idx]
@@ -145,6 +149,9 @@ def _infer_config(x, base_dir=None):
         elif isinstance(x[0], dict):
             configs = [_infer_config(config, base_dir=base_dir) for config in x]
             return ComposeConfig(configs)
+        # list that is meant to be an array
+        else:
+            return ArrayConfig(np.array(x))
         
     elif isinstance(x, dict):
         if 'pattern' in x.keys():

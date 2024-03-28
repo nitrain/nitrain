@@ -8,15 +8,26 @@ import datalad.api as dl
 import numpy as np
 import pandas as pd
 
+from .base_dataset import BaseDataset
+from .configs import _infer_config
 
-from .. import utils
-
-
-class MemoryDataset:
+class MemoryDataset(BaseDataset):
     
     def __init__(self, x, y, x_transforms=None, y_transforms=None, co_transforms=None):
-        self.x = x
-        self.y = y
+        """
+        Examples
+        --------
+        import numpy as np
+        from nitrain.datasets import MemoryDataset
+        dataset = MemoryDataset(
+            np.random.normal(20,10,(5,50,50)),
+            np.random.normal(20,10,5)
+        )
+        x, y = dataset[0]
+        """
+        
+        x_config = _infer_config(x)
+        y_config = _infer_config(y)
         
         if x_transforms is not None:
             if not isinstance(x_transforms, list):
@@ -29,16 +40,15 @@ class MemoryDataset:
         if co_transforms is not None:
             if not isinstance(co_transforms, list):
                 co_transforms = [co_transforms]          
-                
+
         self.x_transforms = x_transforms
         self.y_transforms = y_transforms
         self.co_transforms = co_transforms
-        
-    def filter(self, expr):
-        raise NotImplementedError('Not implemented yet')
 
-    def precompute(self):
-        raise NotImplementedError('Not implemented yet')
+        self.x_config = x_config
+        self.y_config = y_config
+        self.x = x_config.values
+        self.y = y_config.values
     
     def __getitem__(self, idx):
         images = self.x[idx]
@@ -63,9 +73,6 @@ class MemoryDataset:
             x = x[0]
 
         return x, y
-
-    def __len__(self):
-        return len(self.x)
     
     def __str__(self):
         return f'MemoryDataset with {len(self.x)} records'

@@ -2,9 +2,10 @@ import warnings
 import os
 import re
 
+from .base_dataset import BaseDataset
 from .configs import _infer_config, _align_configs
 
-class FolderDataset:
+class FolderDataset(BaseDataset):
     
     def __init__(self,
                  base_dir, 
@@ -54,41 +55,6 @@ class FolderDataset:
         self.y_config = y_config
         self.x = x_config.values
         self.y = y_config.values
-        
-
-    def __getitem__(self, idx):
-        if isinstance(idx, slice):
-            idx = list(range(idx.stop)[idx])
-            is_slice = True
-        else:
-            idx = [idx]
-            is_slice = False
-            
-        x_items = []
-        y_items = []
-        for i in idx:
-            x_raw = self.x_config[i]
-            y_raw = self.y_config[i]
-            
-            if self.x_transforms:
-                for x_tx in self.x_transforms:
-                    x_raw = x_tx(x_raw)
-                        
-            if self.y_transforms:
-                for y_tx in self.y_transforms:
-                    y_raw = y_tx(y_raw)
-            
-            x_items.append(x_raw)
-            y_items.append(y_raw)
-        
-        if not is_slice:
-            x_items = x_items[0]
-            y_items = y_items[0]
-
-        return x_items, y_items
-    
-    def __len__(self):
-        return len(self.x)
 
     def __str__(self):
         return f'FolderDataset with {len(self.x)} records'
