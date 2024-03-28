@@ -30,6 +30,9 @@ class TestClass_MemoryDataset(unittest.TestCase):
         dataset = datasets.MemoryDataset(x, y)
         self.assertTrue(len(dataset.x) == 10)
         
+        # test repr
+        r = dataset.__repr__()
+        
     def test_3d(self):
         x = [self.img3d for _ in range(10)]
         y = list(range(10))
@@ -89,6 +92,9 @@ class TestClass_FolderDataset(unittest.TestCase):
         
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
+        
+        # test repr
+        r = dataset.__repr__()
         
     def test_double_image_input(self):
         dataset = datasets.FolderDataset(
@@ -173,6 +179,9 @@ class TestClass_CSVDataset(unittest.TestCase):
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
         
+        # test repr
+        r = dataset.__repr__()
+        
     def test_3d(self):
         dataset = datasets.CSVDataset(
             path=os.path.join(self.tmp_dir, 'participants.csv'),
@@ -226,6 +235,9 @@ class TestClass_BIDSDataset(unittest.TestCase):
         
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
+        
+        # test repr
+        r = dataset.__repr__()
         
     def test_3d(self):
         dataset = datasets.BIDSDataset(self.tmp_dir, 
