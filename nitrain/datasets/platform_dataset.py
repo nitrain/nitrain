@@ -151,7 +151,7 @@ class PlatformDataset:
     
     def __repr__(self):
         tx_repr = ', '.join([repr(x_tx) for x_tx in self.x_transforms])
-        return f'''datasets.PlatformDataset(name = "{self.name}",
+        return f'''PlatformDataset(name = "{self.name}",
                     x = {self.x_config},
                     y = {self.y_config},
                     x_transforms = [{tx_repr}],

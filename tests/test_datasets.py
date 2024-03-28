@@ -12,6 +12,7 @@ import numpy.testing as nptest
 
 import ants
 from nitrain import datasets
+from nitrain.datasets.configs import _infer_config
 
 
 class TestClass_MemoryDataset(unittest.TestCase):
@@ -204,6 +205,6 @@ class TestClass_BIDSDataset(unittest.TestCase):
         
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
-        
+
 if __name__ == '__main__':
     run_tests()

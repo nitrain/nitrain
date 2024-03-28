@@ -1,17 +1,8 @@
 import warnings
-from parse import parse
-import copy
 import os
-import json
-import ants
-import datalad.api as dl
-import numpy as np
-import pandas as pd
-import glob
-from fnmatch import fnmatch
+import re
 
-from .. import utils
-
+from .configs import _infer_config, _align_configs
 
 class FolderDataset:
     
@@ -20,134 +11,120 @@ class FolderDataset:
                  x,
                  y,
                  x_transforms=None,
-                 y_transforms=None,
-                 datalad=False):
+                 y_transforms=None):
         """
         Initialize a nitrain dataset consisting of local filepaths.
         
         Arguments
         ---------
+        base_dir : string
         x : dict or list of dicts
         y : dict or list of dicts
-        x_transforms : transform or list of transform
-        y_transforms : transform or list of transform
-        datalad : boolean
+        x_transforms : transform or list of transforms
+        y_transforms : transform or list of transforms
 
-        
         Example
         -------
-        >>> dataset = FolderDataset('ds000711', 
-                                    x={'pattern': '**_T1w.nii.gz'},
-                                    y={'file':'participants.tsv', 'column':'age'})
-        >>> model = nitrain.models.fetch_pretrained('t1-brainage', finetune=True)
-        >>> model.fit(dataset)
+        >>> from nitrain.datasets import FolderDataset
+        >>> dataset = FolderDataset('~/Desktop/openneuro/ds004711', 
+                                    x={'pattern': '{id}/anat/*T1w.nii.gz', 
+                                        'exclude': '**run-02*'},
+                                    y={'file':'participants.tsv', 'column':'age', 
+                                       'id': 'participant_id'})
         """
         if base_dir.startswith('~'):
             base_dir = os.path.expanduser(base_dir)
-            
-        x_config = x
-        y_config = y
         
+        x_config = _infer_config(x, base_dir)
+        y_config = _infer_config(y, base_dir)
         
-        # GET X
-        x, x_ids = _get_filepaths_from_pattern_config(x_config, base_dir)
-        
-        # GET Y
-        if 'pattern' in y_config.keys():
-            # images
-            y, y_ids = _get_filepaths_from_pattern_config(y_config, base_dir)
-            participants = None
-        elif 'file' in y_config.keys():
-            participants_file = os.path.join(base_dir, y_config['file'])
-            if participants_file.endswith('.tsv'):
-                participants = pd.read_csv(participants_file, sep='\t')
-            elif participants_file.endswith('.csv'):
-                participants = pd.read_csv(participants_file)
-                
-            # TODO: match x and y ids
-            y = participants[y_config['column']].to_numpy()
-        else:
-            raise Exception('The y argument should have a pattern or file key.')
-        
-        # remove x values that are not found in y
-        if x_ids is not None and y_ids is not None:
-            x = [x[idx] for idx in range(len(x)) if x_ids[idx] in y_ids]
-        
-        ids = x_ids
-
-        if len(x) != len(y):
-            warnings.warn(f'len(x) [{len(x)}] != len(y) [{len(y)}]. Do some participants have multiple runs?')
+        if len(x_config.values) != len(y_config.values):
+            warnings.warn(f'Found that len(x) [{len(x_config.values)}] != len(y) [{len(y_config.values)}]. Attempting to match ids.')
+            x_config, y_config = _align_configs(x_config, y_config)
         
         self.base_dir = base_dir
-        self.datalad = datalad
-        self.x_config = x_config
-        self.y_config = y_config
         self.x_transforms = x_transforms
         self.y_transforms = y_transforms
+
+        self._x_arg = x
+        self._y_arg = y
+        self.x_config = x_config
+        self.y_config = y_config
+        self.x = x_config.values
+        self.y = y_config.values
         
-        self.participants = participants
-        
-        self.x = x
-        self.y = y
-        self.ids = ids
 
     def __getitem__(self, idx):
-        files = self.x[idx]
-        if not isinstance(idx, slice):
-            files = [files]
-        y = self.y[idx]
-        
-        if self.y_transforms is not None:
-            for y_tx in self.y_transforms:
-                y = y_tx(y)
-        
-        # make sure files are downloaded
-        if self.datalad:
-            ds = dl.Dataset(path = self.base_dir)
-            res = ds.get(files)
-        
-        x = []
-        for file in files:
-            img = ants.image_read(file)
-        
+        if isinstance(idx, slice):
+            idx = list(range(idx.stop)[idx])
+            is_slice = True
+        else:
+            idx = [idx]
+            is_slice = False
+            
+        x_items = []
+        y_items = []
+        for i in idx:
+            x_raw = self.x_config[i]
+            y_raw = self.y_config[i]
+            
             if self.x_transforms:
                 for x_tx in self.x_transforms:
-                    img = x_tx(img)
+                    x_raw = x_tx(x_raw)
+                        
+            if self.y_transforms:
+                for y_tx in self.y_transforms:
+                    y_raw = y_tx(y_raw)
             
-            x.append(img)
+            x_items.append(x_raw)
+            y_items.append(y_raw)
         
-        if not isinstance(idx, slice):
-            x = x[0]
+        if not is_slice:
+            x_items = x_items[0]
+            y_items = y_items[0]
 
-        return x, y
+        return x_items, y_items
     
     def __len__(self):
         return len(self.x)
-    
+
+    def __str__(self):
+        return f'FolderDataset with {len(self.x)} records'
+
+    def __repr__(self):
+        if self.x_transforms:
+            tx_repr = '[' + ', '.join([repr(x_tx) for x_tx in self.x_transforms]) + ']'
+            x_tx = f'x_transforms = {tx_repr},'
+        else:
+            x_tx = ''
+        
+        if self.y_transforms:
+            tx_repr = '[' + ', '.join([repr(y_tx) for y_tx in self.y_transforms]) + ']'
+            y_tx = f'y_transforms = {tx_repr},'
+        else:
+            y_tx = ''
+        
+        if self.x_transforms is not None or self.y_transforms is not None:
+            text = f"""FolderDataset(base_dir = '{self.base_dir}',
+                    x = {self._x_arg},
+                    y = {self._y_arg},
+                    {x_tx}
+                    {y_tx})"""
+        else:
+            text = f"""FolderDataset(base_dir = '{self.base_dir}',
+                    x = {self._x_arg},
+                    y = {self._y_arg})"""   
+        
+        text = re.sub(r'\n\s*\n', '\n\n', text)
+        text = re.sub('[\n]+', '\n', text) 
+        return text
+                    
     def __copy__(self):
         return FolderDataset(
             base_dir=self.base_dir,
             x=self.x_config,
             y=self.y_config,
             x_transforms=self.x_transforms,
-            y_transforms=self.y_transforms,
-            datalad=self.datalad
+            y_transforms=self.y_transforms
         )
     
-
-def _get_filepaths_from_pattern_config(config, base_dir):
-    pattern = config['pattern']
-    glob_pattern = pattern.replace('{id}','*')
-    x = sorted(glob.glob(os.path.join(base_dir, glob_pattern)))
-    x = [os.path.relpath(xx, base_dir) for xx in x]
-    if 'exclude' in config.keys():
-        x = [file for file in x if not fnmatch(file, config['exclude'])]
-
-    if '{id}' in pattern:
-        x_ids = [parse(pattern.replace('*','{other}'), file).named['id'] for file in x]
-    else:
-        x_ids = None
-        
-    x = [os.path.join(base_dir, file) for file in x]
-    
-    return x, x_ids
