@@ -44,7 +44,7 @@ $PYCMD test_transforms.py $@
 
 if [[ $COVERAGE -eq 1 ]]; then
     coverage combine
-    coverage html
+    coverage xml
 fi
 
 
