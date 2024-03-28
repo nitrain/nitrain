@@ -11,6 +11,14 @@ import ants
 class ComposeConfig:
     def __init__(self, configs):
         self.configs = configs
+        values = [config.values for config in self.configs]
+        self.values = list(zip(*values))
+        
+        # TODO: align ids for composed configs
+        if self.configs[0].ids is not None:
+            self.ids = self.configs[0].ids
+        else:
+            self.ids = None
 
     def __getitem__(self, idx):
         return [config[idx] for config in self.configs]
@@ -122,7 +130,7 @@ def _infer_config(x, base_dir=None):
     >>> array = np.random.normal(40,10,(10,50,50,50))
     >>> x = _infer_config(array)
     >>> x = _infer_config([ants.image_read(ants.get_data('r16')) for _ in range(10)])
-    >>> x = _infer_config([{'pattern': '**/*.nii.gz'}, {'pattern': '{id}/anat/*.nii.gz'}], base_dir) 
+    >>> x = _infer_config([{'pattern': '{id}/anat/*.nii.gz'}, {'pattern': '{id}/anat/*.nii.gz'}], base_dir) 
     >>> x = _infer_config({'pattern': '{id}/anat/*.nii.gz'}, base_dir) 
     >>> x = _infer_config({'pattern': '*/anat/*.nii.gz'}, base_dir)
     >>> x = _infer_config({'pattern': '**/*T1w*'}, base_dir) 

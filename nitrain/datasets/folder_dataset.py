@@ -27,8 +27,10 @@ class FolderDataset:
         -------
         >>> from nitrain.datasets import FolderDataset
         >>> dataset = FolderDataset('~/Desktop/openneuro/ds004711', 
-                                    x={'pattern': '{id}/anat/*T1w.nii.gz', 
+                                    x=[{'pattern': '{id}/anat/*T1w.nii.gz', 
                                         'exclude': '**run-02*'},
+                                        {'pattern': '{id}/anat/*T1w.nii.gz', 
+                                        'exclude': '**run-02*'}],
                                     y={'file':'participants.tsv', 'column':'age', 
                                        'id': 'participant_id'})
         """
