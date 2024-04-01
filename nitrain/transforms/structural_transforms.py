@@ -25,7 +25,7 @@ class Resample(BaseTransform):
         image = ants.resample_image(image, self.params, not self.use_spacing, interpolation_value)
         
         if co_image is not None:
-            co_image = ants.resample_image(image, self.params, not self.use_spacing, interpolation_value)
+            co_image = ants.resample_image(co_image, self.params, not self.use_spacing, interpolation_value)
             return image, co_image
         
         return image
@@ -65,9 +65,14 @@ class Reorient(BaseTransform):
     def __init__(self, orientation='RAS'):
         self.orientation = orientation
     
-    def __call__(self, image):
+    def __call__(self, image, co_image=None):
         image = ants.reorient_image2(image, self.orientation)
         
+        if co_image is not None:
+            co_image = ants.reorient_image2(co_image, self.orientation)
+            return image, co_image
+
+        return image
 
 class Slice(BaseTransform):
     """
