@@ -20,9 +20,14 @@ class Resample(BaseTransform):
         self.interpolation = interpolation
         
     
-    def __call__(self, image):
+    def __call__(self, image, co_image=None):
         interpolation_value = 0 if self.interpolation != 'nearest_neighbor' else 1 
         image = ants.resample_image(image, self.params, not self.use_spacing, interpolation_value)
+        
+        if co_image is not None:
+            co_image = ants.resample_image(image, self.params, not self.use_spacing, interpolation_value)
+            return image, co_image
+        
         return image
 
     def __repr__(self):

@@ -50,30 +50,6 @@ class MemoryDataset(BaseDataset):
         self.x = x_config.values
         self.y = y_config.values
     
-    def __getitem__(self, idx):
-        images = self.x[idx]
-        if not isinstance(idx, slice):
-            images = [images]
-        y = self.y[idx]
-        
-        if self.y_transforms is not None:
-            for y_tx in self.y_transforms:
-                y = y_tx(y)
-        
-        x = []
-        for image in images:
-        
-            if self.x_transforms:
-                for x_tx in self.x_transforms:
-                    image = x_tx(image)
-            
-            x.append(image)
-        
-        if not isinstance(idx, slice):
-            x = x[0]
-
-        return x, y
-    
     def __str__(self):
         return f'MemoryDataset with {len(self.x)} records'
 

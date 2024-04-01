@@ -12,7 +12,8 @@ class FolderDataset(BaseDataset):
                  x,
                  y,
                  x_transforms=None,
-                 y_transforms=None):
+                 y_transforms=None,
+                 co_transforms=None):
         """
         Initialize a nitrain dataset consisting of local filepaths.
         
@@ -23,6 +24,7 @@ class FolderDataset(BaseDataset):
         y : dict or list of dicts
         x_transforms : transform or list of transforms
         y_transforms : transform or list of transforms
+        co_transforms : transform or list of transforms
 
         Example
         -------
@@ -48,6 +50,7 @@ class FolderDataset(BaseDataset):
         self.base_dir = base_dir
         self.x_transforms = x_transforms
         self.y_transforms = y_transforms
+        self.co_transforms = co_transforms
 
         self._x_arg = x
         self._y_arg = y
@@ -71,13 +74,20 @@ class FolderDataset(BaseDataset):
             y_tx = f'y_transforms = {tx_repr},'
         else:
             y_tx = ''
-        
-        if self.x_transforms is not None or self.y_transforms is not None:
+
+        if self.co_transforms:
+            tx_repr = '[' + ', '.join([repr(co_tx) for co_tx in self.co_transforms]) + ']'
+            co_tx = f'co_transforms = {tx_repr},'
+        else:
+            co_tx = ''
+            
+        if self.x_transforms is not None or self.y_transforms is not None or self.co_transforms is not None:
             text = f"""FolderDataset(base_dir = '{self.base_dir}',
                     x = {self._x_arg},
                     y = {self._y_arg},
                     {x_tx}
-                    {y_tx})"""
+                    {y_tx}
+                    {co_tx})"""
         else:
             text = f"""FolderDataset(base_dir = '{self.base_dir}',
                     x = {self._x_arg},
@@ -93,6 +103,7 @@ class FolderDataset(BaseDataset):
             x=self.x_config,
             y=self.y_config,
             x_transforms=self.x_transforms,
-            y_transforms=self.y_transforms
+            y_transforms=self.y_transforms,
+            co_transforms=self.co_transforms
         )
     

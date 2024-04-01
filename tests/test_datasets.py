@@ -11,7 +11,7 @@ import numpy as np
 import numpy.testing as nptest
 
 import ants
-from nitrain import datasets
+from nitrain import datasets, transforms as tx
 from nitrain.datasets.configs import _infer_config
 
 
@@ -32,6 +32,29 @@ class TestClass_MemoryDataset(unittest.TestCase):
         
         # test repr
         r = dataset.__repr__()
+
+    def test_2d_and_x_transforms(self):
+        x = [self.img2d for _ in range(10)]
+        y = list(range(10))
+        
+        dataset = datasets.MemoryDataset(x, y,
+                                         x_transforms=[tx.Resample((69,69))])
+        self.assertTrue(len(dataset.x) == 10)
+        
+        x, y = dataset[0]
+        self.assertTrue(x.shape==(69,69))
+        
+    def test_2d_image_to_image_and_x_transforms(self):
+        x = [self.img2d for _ in range(10)]
+        y = [self.img2d for _ in range(10)]
+        
+        dataset = datasets.MemoryDataset(x, y,
+                                         co_transforms=[tx.Resample((69,69))])
+        self.assertTrue(len(dataset.x) == 10)
+        
+        x, y = dataset[0]
+        self.assertTrue(x.shape==(69,69))
+        self.assertTrue(y.shape==(69,69))
         
     def test_3d(self):
         x = [self.img3d for _ in range(10)]
@@ -121,6 +144,38 @@ class TestClass_FolderDataset(unittest.TestCase):
         
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
+
+    def test_2d_image_to_image_and_x_transforms(self):
+        dataset = datasets.FolderDataset(
+            base_dir=self.tmp_dir,
+            x={'pattern': '*/img2d.nii.gz'},
+            y={'pattern': '*/img2d.nii.gz'},
+            x_transforms=[tx.Resample((69,69))]
+        )
+        self.assertTrue(len(dataset.x) == 5)
+        self.assertTrue(len(dataset.y) == 5)
+        
+        x, y = dataset[:2]
+        self.assertTrue(len(x) == 2)
+        
+        self.assertTrue(x[0].shape==(69,69))
+        self.assertTrue(y[0].shape!=(69,69))
+        
+    def test_2d_image_to_image_and_co_transforms(self):
+        dataset = datasets.FolderDataset(
+            base_dir=self.tmp_dir,
+            x={'pattern': '*/img2d.nii.gz'},
+            y={'pattern': '*/img2d.nii.gz'},
+            co_transforms=[tx.Resample((69,69))]
+        )
+        self.assertTrue(len(dataset.x) == 5)
+        self.assertTrue(len(dataset.y) == 5)
+        
+        x, y = dataset[:2]
+        self.assertTrue(len(x) == 2)
+        
+        self.assertTrue(x[0].shape==(69,69))
+        self.assertTrue(y[0].shape==(69,69))
         
     def test_3d(self):
         dataset = datasets.FolderDataset(

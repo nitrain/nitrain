@@ -30,6 +30,10 @@ class BaseDataset:
                 for y_tx in self.y_transforms:
                     y_raw = y_tx(y_raw)
             
+            if self.co_transforms:
+                for co_tx in self.co_transforms:
+                    x_raw, y_raw = co_tx(x_raw, y_raw)
+            
             x_items.append(x_raw)
             y_items.append(y_raw)
         
