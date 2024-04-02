@@ -8,7 +8,7 @@ import numpy as np
 import numpy.testing as nptest
 
 import ants
-from nitrain import datasets, loaders
+from nitrain import datasets, loaders, samplers
 
 
 class TestClass_DatasetLoader(unittest.TestCase):
@@ -62,6 +62,17 @@ class TestClass_DatasetLoader(unittest.TestCase):
         self.assertTrue(x_batch.shape == (4, 256, 256, 1))
         self.assertTrue(y_batch.shape == (4, 256, 256, 1))
     
+    def test_image_to_image_with_slice_sampler(self):
+        img = ants.image_read(ants.get_data('mni'))
+        x = [img for _ in range(10)]
+        dataset = datasets.MemoryDataset(x, x)
+        loader = loaders.DatasetLoader(dataset,
+                                       batch_size=4,
+                                       sampler=samplers.SliceSampler(sub_batch_size=12))
+
+        x_batch, y_batch = next(iter(loader))
+        self.assertTrue(x_batch.shape == (12, 218, 182, 1))
+        self.assertTrue(y_batch.shape == (12, 218, 182, 1))
     
 if __name__ == '__main__':
     run_tests()

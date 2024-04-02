@@ -84,9 +84,9 @@ class Slice(BaseTransform):
     
     def __call__(self, image):
         if self.idx is None:
-            new_image = [image.slice_image(self.axis, idx) for idx in range(image.shape[self.axis])]
+            new_image = [image.slice_image(self.axis, idx, 1) for idx in range(image.shape[self.axis])]
         else:
-            new_image = image.slice_image(self.axis, self.idx)
+            new_image = image.slice_image(self.axis, self.idx, 1)
         return new_image
 
 

@@ -29,7 +29,10 @@ class SliceSampler:
         if self.shuffle:
             indices = random.sample(range(len(self.y)), len(self.y))
             self.x = [self.x[i] for i in indices]
-            self.y = self.y[indices]
+            if 'ANTsImage' in str(type(self.y[0])):
+                self.y = [self.y[i] for i in indices]
+            else:
+                self.y = self.y[indices]
             
         return self
 
@@ -56,13 +59,24 @@ class SliceSampler:
         return f'''samplers.SliceSampler(axis={self.axis}, sub_batch_size={self.sub_batch_size}, shuffle={self.shuffle})'''
 
 
+
 def create_slices(images, values, axis):
-    # TODO: support image-to-image
-    slices = []
-    new_values = []
-    for image, value in zip(images, values):
-        for i in range(image.shape[axis]):
-            slices.append(image.slice_image(axis, i))
-            new_values.append(value)
-            
-    return slices, np.array(new_values)
+    
+    if 'ANTsImage' in str(type(values[0])):
+        slices = []
+        co_slices = []
+        for image, co_image in zip(images, values):
+            for i in range(image.shape[axis]):
+                slices.append(image.slice_image(axis, i, 1))
+                co_slices.append(co_image.slice_image(axis, i, 1))
+                
+        return slices, co_slices
+    else:
+        slices = []
+        new_values = []
+        for image, value in zip(images, values):
+            for i in range(image.shape[axis]):
+                slices.append(image.slice_image(axis, i, 1))
+                new_values.append(value)
+                
+        return slices, np.array(new_values)
