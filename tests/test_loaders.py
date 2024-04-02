@@ -61,6 +61,19 @@ class TestClass_DatasetLoader(unittest.TestCase):
         x_batch, y_batch = next(iter(loader))
         self.assertTrue(x_batch.shape == (4, 256, 256, 1))
         self.assertTrue(y_batch.shape == (4, 256, 256, 1))
+
+    def test_multi_image_to_image(self):
+        img = ants.image_read(ants.get_data('r16'))
+        dataset = datasets.MemoryDataset([[img, img] for _ in range(10)], 
+                                         [img for _ in range(10)])
+        loader = loaders.DatasetLoader(dataset,
+                                       batch_size=4)
+
+        x_batch, y_batch = next(iter(loader))
+        self.assertTrue(len(x_batch) == 2)
+        self.assertTrue(x_batch[0].shape == (4, 256, 256, 1))
+        self.assertTrue(x_batch[1].shape == (4, 256, 256, 1))
+        self.assertTrue(y_batch.shape == (4, 256, 256, 1))
     
     def test_image_to_image_with_slice_sampler(self):
         img = ants.image_read(ants.get_data('mni'))

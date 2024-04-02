@@ -27,6 +27,7 @@ class ComposeConfig:
 class ImageConfig:
     def __init__(self, images):
         self.values = images
+        self.ids = None
 
     def __getitem__(self, idx):
         return self.values[idx]
@@ -149,7 +150,15 @@ def _infer_config(x, base_dir=None):
         elif isinstance(x[0], dict):
             configs = [_infer_config(config, base_dir=base_dir) for config in x]
             return ComposeConfig(configs)
-        # list that is meant to be an array
+        # list that is meant to be an array or multiple-images
+        elif isinstance(x[0], list):
+            if isinstance(x[0][0], ants.ANTsImage):
+                configs = []
+                for i in range(len(x[0])):
+                    configs.append(ImageConfig([xx[i] for xx in x]))
+                return ComposeConfig(configs)
+            else:
+                return ArrayConfig(np.array(x))    
         else:
             return ArrayConfig(np.array(x))
         
