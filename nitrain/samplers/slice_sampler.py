@@ -57,6 +57,7 @@ class SliceSampler:
 
 
 def create_slices(images, values, axis):
+    # TODO: support image-to-image
     slices = []
     new_values = []
     for image, value in zip(images, values):

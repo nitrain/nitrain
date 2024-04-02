@@ -1,7 +1,7 @@
 
 
 
-class CloudTrainer:
+class GoogleCloudTrainer:
     """
     Launch a nitrain training job in the cloud using your own
     Google Cloud or AWS account. It is recommended to use this

@@ -1,7 +1,6 @@
 
 from inspect import getmembers, isfunction
 
-
 def fetch_architecture(name, dim=None):
     """
     Fetch an architecture function based on its name and input image 
