@@ -14,7 +14,7 @@ class ModelTrainer:
     >>> loader = DatasetLoader(data, batch_size=32)
     >>> model_fn = fetch_architecture('autoencoder')
     >>> model = model_fn((120, 60, 30))
-    >>> trainer = ModelTrainer(model, task='image_to_image')
+    >>> trainer = ModelTrainer(model, task='regression')
     >>> trainer.fit(loader, epochs=10)
     """
     
@@ -31,14 +31,14 @@ class ModelTrainer:
         Arguments
         ---------
         task: string
-            options: regression, classification, image_to_image
+            options: regression, classification
             
-        # callbacks
-        # regularizers
-        # initializers
-        # constraints
-        # metrics
-        # losses
+        ## callbacks
+        ## regularizers
+        ## initializers
+        ## constraints
+        ## metrics
+        ## losses
         """
         self.model = model
         if task == 'regression':
@@ -47,7 +47,7 @@ class ModelTrainer:
             metrics = ['mse'] if metrics is None else metrics
         elif task == 'classification':
             optimizer = 'adam' if optimizer is None else optimizer
-            if model.output_shape[1] == 1:
+            if model.output_shape[-1] == 1:
                 loss = 'categorical_crossentropy' if loss is None else loss
             else:
                 loss = 'binary_crossentropy' if loss is None else loss
