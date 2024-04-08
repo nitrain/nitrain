@@ -31,6 +31,7 @@ class DatasetLoader:
         self.x_transforms = x_transforms
         self.y_transforms = y_transforms
         self.co_transforms = co_transforms
+        self.shuffle = shuffle
         
         if sampler is None:
             sampler = samplers.BaseSampler(sub_batch_size=batch_size)
@@ -101,6 +102,7 @@ class DatasetLoader:
                 
                 if self.expand_dims is not None:
                     if isinstance(x_batch[0], list):
+                        print('got multiple inputs')
                         x_batch_return = []
                         for i in range(len(x_batch[0])):
                             tmp_x_batch = np.array([np.expand_dims(xx[i].numpy(), self.expand_dims) for xx in x_batch])
