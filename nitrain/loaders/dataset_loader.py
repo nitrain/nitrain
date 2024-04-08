@@ -7,7 +7,7 @@ class DatasetLoader:
     
     def __init__(self, 
                  dataset, 
-                 batch_size, 
+                 images_per_batch, 
                  x_transforms=None, 
                  y_transforms=None, 
                  co_transforms=None,
@@ -26,7 +26,7 @@ class DatasetLoader:
 
         """
         self.dataset = dataset
-        self.batch_size = batch_size
+        self.images_per_batch = images_per_batch
         self.expand_dims = expand_dims
         self.x_transforms = x_transforms
         self.y_transforms = y_transforms
@@ -34,7 +34,7 @@ class DatasetLoader:
         self.shuffle = shuffle
         
         if sampler is None:
-            sampler = samplers.BaseSampler(sub_batch_size=batch_size)
+            sampler = samplers.BaseSampler(batch_size=images_per_batch)
         self.sampler = sampler
         
     def to_keras(self, output_signature=None):
@@ -48,24 +48,24 @@ class DatasetLoader:
  
         # generate a training batch to infer the output signature
         if output_signature is None:
-            tmp_batch_size = self.batch_size
-            self.batch_size = 1
+            tmp_batch_size = self.images_per_batch
+            self.images_per_batch = 1
             x_batch, y_batch = next(iter(self))
-            self.batch_size = tmp_batch_size
+            self.images_per_batch = tmp_batch_size
             x_spec = tf.type_spec_from_value(x_batch[0,:])
             y_spec = tf.type_spec_from_value(y_batch[0])
         
         generator = tf.data.Dataset.from_generator(
             lambda: batch_generator(),
             output_signature=(x_spec, y_spec)
-        ).batch(self.sampler.sub_batch_size)
+        ).batch(self.sampler.batch_size)
         
         return generator
                 
     def __iter__(self):
-        batch_size = self.batch_size
+        images_per_batch = self.images_per_batch
         dataset = self.dataset
-        n_image_batches = math.ceil(len(dataset) / batch_size)
+        n_image_batches = math.ceil(len(dataset) / images_per_batch)
         
         original_indices = np.arange(len(dataset))
         if self.shuffle:
@@ -74,7 +74,7 @@ class DatasetLoader:
         image_batch_idx = 0
         while image_batch_idx < n_image_batches:
             
-            data_indices = slice(image_batch_idx*batch_size, min((image_batch_idx+1)*batch_size, len(dataset)))
+            data_indices = slice(image_batch_idx*images_per_batch, min((image_batch_idx+1)*images_per_batch, len(dataset)))
             x, y = dataset[data_indices]
             
             image_batch_idx += 1
@@ -97,7 +97,7 @@ class DatasetLoader:
             sampled_batch = self.sampler(x, y)
             
             # a normal sampler will just return the entire (shuffled, if specified) batch once
-            # a slice sampler will return shuffled slices with batch size = sampler.batch_size
+            # a slice sampler will return shuffled slices with batch size = sampler.images_per_batch
             for x_batch, y_batch in sampled_batch:
                 
                 if self.expand_dims is not None:
@@ -120,12 +120,12 @@ class DatasetLoader:
                 yield x_batch, y_batch
                 
     def __len__(self):
-        return math.ceil((len(self.dataset) / self.batch_size) * len(self.sampler))
+        return math.ceil((len(self.dataset) / self.images_per_batch) * len(self.sampler))
     
     def __repr__(self):
         x_tx_repr = ', '.join([repr(x_tx) for x_tx in self.x_transforms])
         return f'''DatasetLoader(dataset,
-                   batch_size={self.batch_size},
+                   images_per_batch={self.images_per_batch},
                    sampler={repr(self.sampler)},
                    x_transforms=[{x_tx_repr}])'''
     

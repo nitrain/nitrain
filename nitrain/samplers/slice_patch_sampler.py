@@ -9,7 +9,7 @@ class SlicePatchSampler:
     """
     Sampler that returns 2D patches from 3D images.
     """
-    def __init__(self, patch_size, stride, axis, sub_batch_size, shuffle=False):
+    def __init__(self, patch_size, stride, axis, batch_size, shuffle=False):
         
         if isinstance(patch_size, int):
             patch_size = [patch_size, patch_size]
@@ -20,7 +20,7 @@ class SlicePatchSampler:
         self.patch_size = patch_size
         self.stride = stride
         self.axis = axis
-        self.sub_batch_size = sub_batch_size
+        self.batch_size = batch_size
         self.shuffle = shuffle
     
     def __call__(self, x, y):
@@ -31,7 +31,7 @@ class SlicePatchSampler:
         
         self.x = x
         self.y = y
-        self.n_batches = math.ceil(len(x) / self.sub_batch_size)
+        self.n_batches = math.ceil(len(x) / self.batch_size)
                 
         return self
 
@@ -53,7 +53,7 @@ class SlicePatchSampler:
 
     def __next__(self):
         if self.idx < self.n_batches:
-            data_indices = slice(self.idx*self.sub_batch_size, min((self.idx+1)*self.sub_batch_size, len(self.x)))
+            data_indices = slice(self.idx*self.batch_size, min((self.idx+1)*self.batch_size, len(self.x)))
             self.idx += 1
             x = self.x[data_indices]
             y = self.y[data_indices]
@@ -67,4 +67,4 @@ class SlicePatchSampler:
         """
         if not self.x:
             return 0
-        return math.ceil(len(self.x) / self.sub_batch_size)
+        return math.ceil(len(self.x) / self.batch_size)

@@ -10,8 +10,8 @@ class BaseSampler:
     --------
     
     """
-    def __init__(self, sub_batch_size, shuffle=False):
-        self.sub_batch_size = sub_batch_size
+    def __init__(self, batch_size, shuffle=False):
+        self.batch_size = batch_size
         self.shuffle = shuffle
     
     def __call__(self, x, y):

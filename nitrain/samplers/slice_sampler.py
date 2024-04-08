@@ -7,15 +7,15 @@ class SliceSampler:
     """
     Sampler that returns batches of 2D slices from 3D images.
     """
-    def __init__(self, sub_batch_size, axis=0, shuffle=False):
-        self.sub_batch_size = sub_batch_size
+    def __init__(self, batch_size, axis=0, shuffle=False):
+        self.batch_size = batch_size
         self.axis = axis
         self.shuffle = shuffle
     
     def __call__(self, x, y):
         # create slices of all images
         self.x, self.y = create_slices(x, y, self.axis)
-        self.n_batches = math.ceil(len(self.x) / self.sub_batch_size)
+        self.n_batches = math.ceil(len(self.x) / self.batch_size)
                 
         return self
 
@@ -38,7 +38,7 @@ class SliceSampler:
 
     def __next__(self):
         if self.idx < self.n_batches:
-            data_indices = slice(self.idx*self.sub_batch_size, min((self.idx+1)*self.sub_batch_size, len(self.x)))
+            data_indices = slice(self.idx*self.batch_size, min((self.idx+1)*self.batch_size, len(self.x)))
             self.idx += 1
             x = self.x[data_indices]
             y = self.y[data_indices]
@@ -56,7 +56,7 @@ class SliceSampler:
             return 0
     
     def __repr__(self):
-        return f'''samplers.SliceSampler(axis={self.axis}, sub_batch_size={self.sub_batch_size}, shuffle={self.shuffle})'''
+        return f'''samplers.SliceSampler(axis={self.axis}, batch_size={self.batch_size}, shuffle={self.shuffle})'''
 
 
 
