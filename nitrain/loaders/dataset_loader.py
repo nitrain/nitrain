@@ -66,7 +66,9 @@ class DatasetLoader:
         dataset = self.dataset
         n_image_batches = math.ceil(len(dataset) / batch_size)
         
-        # TODO: shuffle image indices before batch loop
+        original_indices = np.arange(len(dataset))
+        if self.shuffle:
+            np.random.shuffle(original_indices)
         
         image_batch_idx = 0
         while image_batch_idx < n_image_batches:
