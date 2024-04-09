@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "nitrain"
-version = "0.2.1"
-description = "Neuroimaging-native tools for deep learning"
+version = "0.2.2"
+description = "High-level framework for training medical imaging AI models"
 authors = ["ncullen93 <nicholas.cullen@med.lu.se>"]
 license = "MIT"
 readme = "README.md"
