@@ -34,19 +34,19 @@ class TestClass_DatasetLoader(unittest.TestCase):
         pass
     
     def test_2d(self):
-        loader = loaders.DatasetLoader(self.dataset_2d, batch_size=4)
+        loader = loaders.DatasetLoader(self.dataset_2d, images_per_batch=4)
         x_batch, y_batch = next(iter(loader))
         self.assertTrue(x_batch.shape == (4, 256, 256, 1))
     
     def test_to_keras(self):
-        loader = loaders.DatasetLoader(self.dataset_2d, batch_size=4)
+        loader = loaders.DatasetLoader(self.dataset_2d, images_per_batch=4)
         keras_loader = loader.to_keras()
         x_batch, y_batch = next(iter(keras_loader))
         self.assertTrue(x_batch.shape == (4, 256, 256, 1))
         
     def test_3d(self):
         loader = loaders.DatasetLoader(self.dataset_3d,
-                                       batch_size=4)
+                                       images_per_batch=4)
 
         x_batch, y_batch = next(iter(loader))
         self.assertTrue(x_batch.shape == (4, 182, 218, 182, 1))
@@ -56,7 +56,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
         x = [img for _ in range(10)]
         dataset = datasets.MemoryDataset(x, x)
         loader = loaders.DatasetLoader(dataset,
-                                       batch_size=4)
+                                       images_per_batch=4)
 
         x_batch, y_batch = next(iter(loader))
         self.assertTrue(x_batch.shape == (4, 256, 256, 1))
@@ -67,7 +67,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
         dataset = datasets.MemoryDataset([[img, img] for _ in range(10)], 
                                          [img for _ in range(10)])
         loader = loaders.DatasetLoader(dataset,
-                                       batch_size=4)
+                                       images_per_batch=4)
 
         x_batch, y_batch = next(iter(loader))
         self.assertTrue(len(x_batch) == 2)
@@ -80,8 +80,8 @@ class TestClass_DatasetLoader(unittest.TestCase):
         x = [img for _ in range(10)]
         dataset = datasets.MemoryDataset(x, x)
         loader = loaders.DatasetLoader(dataset,
-                                       batch_size=4,
-                                       sampler=samplers.SliceSampler(sub_batch_size=12))
+                                       images_per_batch=4,
+                                       sampler=samplers.SliceSampler(batch_size=12))
 
         x_batch, y_batch = next(iter(loader))
         self.assertTrue(x_batch.shape == (12, 218, 182, 1))

@@ -24,7 +24,7 @@ class TestClass_BaseSampler(unittest.TestCase):
     
     def test_standard(self):
         x_raw, y_raw = self.dataset[:3]
-        sampler = samplers.BaseSampler(sub_batch_size=3)
+        sampler = samplers.BaseSampler(batch_size=3)
         
         sampled_batch = sampler(x_raw, y_raw)
         
@@ -48,7 +48,7 @@ class TestClass_PatchSampler(unittest.TestCase):
         x_raw, y_raw = self.dataset[:3]
         sampler = samplers.PatchSampler(patch_size=(24,24),
                                         stride=(24,24),
-                                        sub_batch_size=4)
+                                        batch_size=4)
         
         sampled_batch = sampler(x_raw, y_raw)
         
@@ -75,7 +75,7 @@ class TestClass_SlicePatchSampler(unittest.TestCase):
         sampler = samplers.SlicePatchSampler(patch_size=(32,32), 
                                              stride=(32,32), 
                                              axis=2, 
-                                             sub_batch_size=4)
+                                             batch_size=4)
         
         sampled_batch = sampler(x_raw, y_raw)
         
@@ -100,7 +100,7 @@ class TestClass_SliceSampler(unittest.TestCase):
     
     def test_standard(self):
         x_raw, y_raw = self.dataset[:3]
-        sampler = samplers.SliceSampler(sub_batch_size=12, axis=2)
+        sampler = samplers.SliceSampler(batch_size=12, axis=2)
         
         sampled_batch = sampler(x_raw, y_raw)
         
@@ -124,7 +124,7 @@ class TestClass_BlockSampler(unittest.TestCase):
     
     def test_standard(self):
         x_raw, y_raw = self.dataset[:3]
-        sampler = samplers.BlockSampler((30,30,30), stride=(30,30,30), sub_batch_size=12)
+        sampler = samplers.BlockSampler((30,30,30), stride=(30,30,30), batch_size=12)
         sampled_batch = sampler(x_raw, y_raw)
         
         x_batch, y_batch = next(iter(sampled_batch))
