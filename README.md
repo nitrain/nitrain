@@ -47,9 +47,9 @@ dataset = datasets.FolderDataset(base_dir='ds004711',
 
 # create loader with random transforms
 loader = loaders.DatasetLoader(dataset,
-                               batch_size=4,
+                               images_per_batch=4,
                                shuffle=True,
-                               sampler=samplers.SliceSampler(sub_batch_size=32, axis=2)
+                               sampler=samplers.SliceSampler(batch_size=32, axis=2)
                                x_transforms=[tx.RandomNoise(sd=0.2)])
 
 # create model from architecture
@@ -113,7 +113,7 @@ To prepare your images for batch generation during training, you pass the datase
 from nitrain import loaders, samplers
 
 loader = loaders.DatasetLoader(dataset,
-                               batch_size=32,
+                               images_per_batch=32,
                                x_transforms=[tx.RandomSmoothing(0, 1)])
 
 # loop through all images in batches for one epoch
@@ -134,9 +134,9 @@ For instance, samplers let you serve batches of 2D slices from 3D images, or 3D 
 ```python
 from nitrain import loaders, samplers, transforms as tx
 loader = loaders.DatasetLoader(dataset,
-                               batch_size=4,
+                               images_per_batch=4,
                                x_transforms=[tx.RandomSmoothing(0, 1)],
-                               sampler=samplers.SliceSampler(sub_batch_size=24, axis=2))
+                               sampler=samplers.SliceSampler(batch_size=24, axis=2))
 ```
 
 What happens is that we start with the ~190 images from the dataset, but 4 images will be read in from file at a time. Then, all possible 2D slices will be created from those 4 images and served in shuffled batches of 24 from the loader. Once all "sub-batches" (sets of 24 slices from the 4 images) have been served, the loader will move on to the next 4 images and serve slices from those images. One epoch is completed when all slices from all images have been served.
