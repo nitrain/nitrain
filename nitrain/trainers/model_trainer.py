@@ -52,6 +52,8 @@ class ModelTrainer:
             else:
                 loss = 'binary_crossentropy' if loss is None else loss
             metrics = ['accuracy'] if metrics is None else metrics
+        else:
+            raise ValueError('The only valid tasks are `regression` and `classification`.')
         
         self.task = task
         self.optimizer = optimizer
