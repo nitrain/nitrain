@@ -6,27 +6,7 @@
 
 Nitrain (formerly <i>torchsample</i>) provides tools for sampling and augmenting medical images, training models on medical imaging datasets, and visualizing model results in a medical imaging context. It supports using pytorch, keras, and tensorflow.
 
-You can also train models HIPAA-compliantly in the cloud using nitrain. You are encouraged to make your fitted models available to the community via nitrain, or you can easily use other's pretrained models for fine-tuning or standard image processing.
-
-<br />
-
-## Installation
-
-The latest release of nitrain can be installed from pypi:
-
-```
-pip install nitrain
-```
-
-Or you can install the latest development version directly from github:
-
-```
-python -m pip install git+github.com/ncullen93/nitrain.git
-```
-
-### Dependencies
-
-The nitrain package uses the `antspy` package to efficiently read and transform medical images. It relies on the `antspynet` package to create some architectures. Additionally, you can use keras (tf.keras or keras3), tensorflow, or pytorch as backend - with support for only importing the framework you are using.
+To learn how to use nitrain or to view complete examples of training medical imaging AI models using nitrain, visit the [tutorials repo](github.com/nitrain/tutorials). If you want to more generally learn about medical imaging AI, check out the book [Becoming a medical imaging AI expert with Python](book.nitrain.dev).
 
 <br />
 
@@ -72,6 +52,26 @@ models.register_model(trainer.model, 'nick/t1-brain-age')
 ```
 
 A more in-depth introduction can be found in the [tutorials](github.com/ncullen93/nitrain) and if you can also check out the [examples](github.com/ncullen93/nitrain) for self-contained notebooks showing how to perform common deep learning tasks.
+
+<br />
+
+## Installation
+
+The latest release of nitrain can be installed from pypi:
+
+```
+pip install nitrain
+```
+
+Or you can install the latest development version directly from github:
+
+```
+python -m pip install git+github.com/ncullen93/nitrain.git
+```
+
+### Dependencies
+
+The nitrain package uses the `antspy` package to efficiently read and transform medical images. It relies on the `antspynet` package to create some architectures. Additionally, you can use keras (tf.keras or keras3), tensorflow, or pytorch as backend - with support for only importing the framework you are using.
 
 <br />
 
