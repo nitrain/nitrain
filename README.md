@@ -59,7 +59,7 @@ model = arch_fn(input_image_size=(64,64,1),
                 mode='regression')
 
 # create trainer and fit model
-trainer = trainers.ModelTrainer(model,
+trainer = trainers.LocalTrainer(model,
                                 loss='mse',
                                 optimizer='adam',
                                 lr=1e-3,
@@ -209,10 +209,10 @@ autoencoder_model = autoencoder_fn((784, 500, 500, 2000, 10))
 
 After you have created a model from a nitrain architecture, fetched a pretrained model, or created a model yourself in your framework of choice, then it's time to actually train the model on the dataset / loader that you've created.
 
-Although you are free to train models on loaders using standard pytorch, keras, or tensorflow workflows, we also provide the `ModelTrainer` class to make training even easier. This class provides sensible defaults for key training parameters based on your task.
+Although you are free to train models on loaders using standard pytorch, keras, or tensorflow workflows, we also provide the `LocalTrainer` class to make training even easier. This class provides sensible defaults for key training parameters based on your task.
 
 ```python
-trainer = trainers.ModelTrainer(model=vgg_model, task='regression')
+trainer = trainers.LocalTrainer(model=vgg_model, task='regression')
 trainer.fit(loader, epochs=10)
 
 # access fitted model

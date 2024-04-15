@@ -11,7 +11,7 @@ import ants
 from nitrain import datasets, loaders, models, trainers
 
 
-class TestClass_ModelTrainer(unittest.TestCase):
+class TestClass_LocalTrainer(unittest.TestCase):
     def setUp(self):
         img = ants.image_read(ants.get_data('r16')).resample_image((4,4))
         x = [img for _ in range(6)]
@@ -29,7 +29,7 @@ class TestClass_ModelTrainer(unittest.TestCase):
         pass
     
     def test_trainer(self):
-        trainer = trainers.ModelTrainer(self.model, task='regression')
+        trainer = trainers.LocalTrainer(self.model, task='regression')
         trainer.fit(self.loader, epochs=2)
         
         trainer.evaluate(self.loader)

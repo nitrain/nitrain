@@ -55,7 +55,7 @@ class PlatformTrainer:
         """
         Launch a training job on the platform.
         
-        This function is used in the same was as for `ModelTrainer`, except that
+        This function is used in the same was as for `LocalTrainer`, except that
         calling `fit()` with a `PlatformTrainer` will launch a training job on the platform.
         
         If the dataset for the loader passed into this function is not a `PlatformDataset` then the
@@ -88,7 +88,7 @@ class PlatformTrainer:
         from nitrain import models, samplers, trainers, transforms as tx
         from nitrain.datasets import GoogleCloudDataset
         from nitrain.loaders import DatasetLoader
-        frmo nitrain.trainers import ModelTrainer
+        frmo nitrain.trainers import LocalTrainer
         '''
         
         # dataset
@@ -109,7 +109,7 @@ class PlatformTrainer:
         
         # trainer
         repr_trainer = f'''
-        trainer = ModelTrainer(model=model, task="{self.task}")
+        trainer = LocalTrainer(model=model, task="{self.task}")
         trainer.fit(loader, epochs={epochs})
         '''
         

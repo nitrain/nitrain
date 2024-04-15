@@ -26,7 +26,7 @@ class OcclusionExplainer:
         --------
         >>> model = models.fetch_pretrained('nick/t1-brain-age')
         >>> image = ants.image_read(ants.get_data('mni'))
-        >>> trainer = ModelTrainer(model)
+        >>> trainer = LocalTrainer(model)
         >>> trainer.fit(loader)
         >>> explainer = explainers.OcclusionExplainer(trainer.model)
         >>> explainer.fit(image)

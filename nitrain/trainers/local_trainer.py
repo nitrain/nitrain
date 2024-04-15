@@ -1,9 +1,9 @@
 
 
 
-class ModelTrainer:
+class LocalTrainer:
     """
-    The ModelTrainer class provides high-level functionality to train
+    The LocalTrainer class provides high-level functionality to train
     deep learning models on dataset loaders. It wraps the most popular
     frameworks under a common interface.
     
@@ -14,7 +14,7 @@ class ModelTrainer:
     >>> loader = DatasetLoader(data, batch_size=32)
     >>> model_fn = fetch_architecture('autoencoder')
     >>> model = model_fn((120, 60, 30))
-    >>> trainer = ModelTrainer(model, task='regression')
+    >>> trainer = LocalTrainer(model, task='regression')
     >>> trainer.fit(loader, epochs=10)
     """
     
