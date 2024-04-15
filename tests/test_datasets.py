@@ -330,5 +330,9 @@ class TestClass_GoogleCloudDataset(unittest.TestCase):
         self.assertEqual(len(dataset.x), 187)
         self.assertEqual(len(dataset.y), 187)
         
+        x, y = dataset[0]
+        self.assertEqual(x.shape, (256, 256, 192))
+        
+        
 if __name__ == '__main__':
     run_tests()
