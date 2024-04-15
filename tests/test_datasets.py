@@ -320,8 +320,16 @@ class TestClass_GoogleCloudDataset(unittest.TestCase):
         
     def tearDown(self):
         pass
-    
-    def test_example(self):
+
+    def test_gcp_lazy(self):
+        dataset = datasets.GoogleCloudDataset(bucket='ants-dev',
+                                              base_dir='datasets/nick-2/ds004711', 
+                                              x={'pattern': '*/anat/*_T1w.nii.gz', 'exclude': '**run-02*'},
+                                              y={'file': 'participants.tsv', 'column': 'age'},
+                                              lazy=True)
+        self.assertIsNone(dataset.x)
+        
+    def test_gcp(self):
         dataset = datasets.GoogleCloudDataset(bucket='ants-dev',
                                               base_dir='datasets/nick-2/ds004711', 
                                               x={'pattern': '*/anat/*_T1w.nii.gz', 'exclude': '**run-02*'},
