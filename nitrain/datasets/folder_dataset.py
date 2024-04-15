@@ -4,6 +4,7 @@ import re
 
 from .base_dataset import BaseDataset
 from .configs import _infer_config, _align_configs
+from .. import platform
 
 class FolderDataset(BaseDataset):
     
@@ -58,6 +59,46 @@ class FolderDataset(BaseDataset):
         self.y_config = y_config
         self.x = x_config.values
         self.y = y_config.values
+    
+    def to_platform(self, name, token=None):
+        """
+        Upload a FolderDataset to the nitrain.dev platform.
+        
+        This will upload all data from the folder dataset configuration onto
+        the nitrain.dev platform. It will be visible at nitrain.dev/datasets. An
+        uploaded dataset can then be accessed in the future using the PlatformDataset
+        class.
+        
+        This function is called automatically when you fit a PlatformTrainer on a 
+        FolderDataset. In that case, however, the dataset will be deleted after
+        training is done if you do not specify it to be cached.
+        
+        Note that you must have an account at nitrain.dev and also set the
+        `NITRAIN_API_KEY` environemnt variable here to use this function. 
+        
+        Arguments
+        ---------
+        name : string
+            The name of the dataset on the platform.
+        
+        Examples
+        --------
+        >>> from nitrain.datasets import FolderDataset
+        >>> dataset = FolderDataset('~/Desktop/ds-mini/',
+        ...                        x={'pattern':'{id}/anat/*.nii.gz'},
+        ...                        y={'file':'participants.tsv', 'id': 'participant_id', 'column': 'age'})
+        >>> dataset.to_platform('ds-mini')
+        """
+        if token is None:
+            token = os.environ.get('NITRAIN_API_TOKEN')
+            if token is None:
+                raise Exception('No api token given or found. Set `NITRAIN_API_TOKEN` or create an account to get your token.')
+
+        # this will raise exception if token is not valid
+        user = platform._get_user_from_token(token)
+        path = f'{user}/{name}'
+        print(f'Uploading dataset to {path}')
+        #platform_dataset = platform._convert_to_platform_dataset(self, path)
 
     def __str__(self):
         return f'FolderDataset with {len(self.x)} records'

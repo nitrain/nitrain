@@ -5,7 +5,7 @@ import json
 from tqdm import tqdm
 import ants
 
-from .datasets import PlatformDataset, GoogleCloudDataset
+from . import datasets
 
 api_url = 'https://api.ants.dev'
 
@@ -107,7 +107,7 @@ def _convert_to_platform_dataset(dataset, name, fuse=True):
     can be used in training a model on the platform.
     """
     params = _config_for_platform_dataset(dataset)
-    return GoogleCloudDataset(
+    return datasets.GoogleCloudDataset(
         bucket='ants-dev',
         base_dir=f'datasets/{name}',
         x = params['x_config'],

@@ -35,8 +35,9 @@ class GoogleCloudDataset:
         
         Example
         -------
-        >>> dataset = datasets.GoogleCloudDataset(bucket='ants-dev',
-                                         base_dir='datasets/nick-2/my-first-job', 
+        >>> from nitrain.datasets import GoogleCloudDataset
+        >>> dataset = GoogleCloudDataset(bucket='ants-dev',
+                                         base_dir='datasets/nick-2/ds004711', 
                                          x={'pattern': '*/anat/*_T1w.nii.gz', 'exclude': '**run-02*'},
                                          y={'file': 'participants.tsv', 'column': 'age'})
         """
@@ -80,8 +81,7 @@ class GoogleCloudDataset:
         else:
             if isinstance(credentials, str):
                 credentials = service_account.Credentials.from_service_account_file(credentials)
-            if credentials is not None:
-                storage_client = storage.Client(credentials=credentials)
+            storage_client = storage.Client(credentials=credentials)
             bucket_client = storage_client.bucket(bucket)
         
             # GET X

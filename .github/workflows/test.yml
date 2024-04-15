@@ -17,6 +17,9 @@ jobs:
       matrix:
         python-version: ["3.9", "3.11"]
 
+    env:
+      GCP64: ${{ secrets.GCP64 }}
+
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}

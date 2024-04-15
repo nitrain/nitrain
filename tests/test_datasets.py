@@ -2,9 +2,10 @@ import os
 import unittest
 from main import run_tests
 
-from tempfile import mktemp, mkdtemp
+from tempfile import mktemp, mkdtemp, NamedTemporaryFile
 import shutil
 
+import base64
 import json
 import pandas as pd
 import numpy as np
@@ -304,5 +305,30 @@ class TestClass_BIDSDataset(unittest.TestCase):
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
 
+class TestClass_GoogleCloudDataset(unittest.TestCase):
+    # NOTE: GCP credentials are required for this test
+    
+    def setUp(self):
+        base64_string = os.environ.get('GCP64')
+        decodedBytes = base64.b64decode(base64_string)
+        decodedStr = decodedBytes.decode("ascii") 
+        object = json.loads(decodedStr)
+        file = NamedTemporaryFile(suffix='.json')
+        with open(file.name, 'w') as f:
+            json.dump(object, f)
+        self.credentials = file
+        
+    def tearDown(self):
+        pass
+    
+    def test_example(self):
+        dataset = datasets.GoogleCloudDataset(bucket='ants-dev',
+                                              base_dir='datasets/nick-2/ds004711', 
+                                              x={'pattern': '*/anat/*_T1w.nii.gz', 'exclude': '**run-02*'},
+                                              y={'file': 'participants.tsv', 'column': 'age'},
+                                              credentials=self.credentials.name)
+        self.assertEqual(len(dataset.x), 187)
+        self.assertEqual(len(dataset.y), 187)
+        
 if __name__ == '__main__':
     run_tests()

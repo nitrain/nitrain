@@ -10,6 +10,10 @@ name: codecov
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    env:
+      GCP64: ${{ secrets.GCP64 }}
+
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v5
