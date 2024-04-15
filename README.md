@@ -1,6 +1,6 @@
 # Nitrain - a framework for medical imaging-native AI
 
-[![Coverage Status](https://coveralls.io/repos/github/ncullen93/nitrain/badge.svg?branch=main)](https://coveralls.io/github/ncullen93/nitrain?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/nitrain/nitrain/badge.svg?branch=main)](https://coveralls.io/github/nitrain/nitrain?branch=main)
 [![Build](https://github.com/ncullen93/nitrain/actions/workflows/test.yml/badge.svg)](https://github.com/ncullen93/nitrain/actions/workflows/test.yml)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/nitrain)
 

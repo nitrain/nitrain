@@ -341,6 +341,21 @@ class TestClass_GoogleCloudDataset(unittest.TestCase):
         x, y = dataset[0]
         self.assertEqual(x.shape, (256, 256, 192))
         
+
+class TestClass_PlatformDataset(unittest.TestCase):
+    # NOTE: nitrain.dev api key is required for this test
+    
+    def setUp(self):
+        pass
+    
+    def tearDown(self):
+        pass
+    
+    def test_example(self):
+        pass
+        #dataset = datasets.PlatformDataset(name='ds004711',
+        #                                   x={'pattern': '*/anat/*_T1w.nii.gz', 'exclude': '**run-02*'},
+        #                                   y={'file': 'participants.tsv', 'column': 'age'})
         
 if __name__ == '__main__':
     run_tests()

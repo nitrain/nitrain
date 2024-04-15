@@ -9,17 +9,18 @@ from google.oauth2 import service_account
 from parse import parse
 import ants
 
+from .. import platform
 
 class PlatformDataset:
     
     def __init__(self,
-                 base_dir,
+                 name,
                  x,
                  y,
                  x_transforms=None,
                  y_transforms=None,
                  fuse=False,
-                 credentials=None):
+                 token=None):
         """
         Initialize a nitrain dataset consisting of local filepaths.
         
@@ -35,6 +36,7 @@ class PlatformDataset:
             
         Example
         -------
+        >>> from nitrain.datasets import PlatformDataset
         >>> dataset = PlatformDataset(name='ds000711', 
                                       x={'pattern': '*/anat/*_T1w.nii.gz', 'exclude': '**run-02*'},
                                       y={'file': 'participants.tsv', 'column': 'age'})
@@ -43,6 +45,15 @@ class PlatformDataset:
                                       y={'file': 'participants.tsv', 'column': 'age'})
         """
         # convert base_dir (nick-2/first-dataset) to gcs fuse
+        if token is None:
+            token = os.environ.get('NITRAIN_API_TOKEN')
+            if token is None:
+                raise Exception('No api token given or found. Set `NITRAIN_API_TOKEN` or create an account to get your token.')
+
+        # this will raise exception if token is not valid
+        user = platform._get_user_from_token(token)
+        base_dir = f'{user}/{name}'
+        
         if fuse:
             base_dir = os.path.join('/gcs/ants-dev/datasets/', base_dir)
         else:
@@ -83,7 +94,6 @@ class PlatformDataset:
         x = [x[idx] for idx in range(len(x)) if x_ids[idx] in y_ids]
         x_ids = y_ids
 
-
         if len(x) != len(y):
             warnings.warn(f'len(x) [{len(x)}] != len(y) [{len(y)}]. Do some participants have multiple runs?')
         
@@ -98,9 +108,6 @@ class PlatformDataset:
         self.x_ids = x_ids
         self.y = y
         self.y_ids = y_ids
-        
-    def initialize(self):
-        pass
 
     def __getitem__(self, idx):
         files = self.x[idx]
@@ -145,8 +152,7 @@ class PlatformDataset:
             x = self.x_config,
             y = self.y_config,
             x_transforms = self.x_transforms,
-            y_transforms = self.y_transforms,
-            credentials = self.credentials
+            y_transforms = self.y_transforms
         )
     
     def __repr__(self):
@@ -156,5 +162,4 @@ class PlatformDataset:
                     y = {self.y_config},
                     x_transforms = [{tx_repr}],
                     y_transforms = {self.y_transforms},
-                    fuse = {self.fuse},
-                    credentials = None)'''
+                    fuse = {self.fuse})'''
