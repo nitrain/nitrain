@@ -64,9 +64,9 @@ class LocalTrainer:
         self.framework = framework
         
         if framework == 'keras':
-            self.model.compile(optimizer='adam',
-                               loss='mse',
-                               metrics=['mse'])
+            self.model.compile(optimizer=optimizer,
+                               loss=loss,
+                               metrics=metrics)
         
     def fit(self, loader, epochs, **kwargs):
         if self.framework == 'keras':
