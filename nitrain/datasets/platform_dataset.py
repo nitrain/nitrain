@@ -17,9 +17,7 @@ class PlatformDataset:
                  name,
                  x,
                  y,
-                 x_transforms=None,
-                 y_transforms=None,
-                 co_transforms=None,
+                 transforms=None,
                  token=None):
         """
         Initialize a dataset stored on the nitrain.dev platform. 
@@ -67,9 +65,7 @@ class PlatformDataset:
         self.name = name
         self.x = x
         self.y = y
-        self.x_transforms = x_transforms
-        self.y_transforms = y_transforms
-        self.co_transforms = co_transforms
+        self.transforms = transforms
         self.token = token
 
     def to_local(self, folder=None):

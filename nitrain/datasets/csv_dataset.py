@@ -19,8 +19,7 @@ class CSVDataset:
                  path, 
                  x,
                  y,
-                 x_transforms=None,
-                 y_transforms=None):
+                 transforms=None):
         """
         Initialize a nitrain dataset consisting of local filepaths.
         
@@ -60,36 +59,10 @@ class CSVDataset:
         self.path = path
         self.x_config = x_config
         self.y_config = y_config
-        self.x_transforms = x_transforms
-        self.y_transforms = y_transforms
+        self.transforms = transforms
         self.participants = participants
         self.x = x
         self.y = y
-
-    def __getitem__(self, idx):
-        files = self.x[idx]
-        if not isinstance(idx, slice):
-            files = [files]
-        y = self.y[idx]
-        
-        if self.y_transforms is not None:
-            for y_tx in self.y_transforms:
-                y = y_tx(y)
-        
-        x = []
-        for file in files:
-            img = ants.image_read(file)
-        
-            if self.x_transforms:
-                for x_tx in self.x_transforms:
-                    img = x_tx(img)
-            
-            x.append(img)
-        
-        if not isinstance(idx, slice):
-            x = x[0]
-
-        return x, y
     
     def __len__(self):
         return len(self.x)

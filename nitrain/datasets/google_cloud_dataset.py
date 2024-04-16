@@ -22,8 +22,7 @@ class GoogleCloudDataset:
                  base_dir,
                  x,
                  y,
-                 x_transforms=None,
-                 y_transforms=None,
+                 transforms=None,
                  credentials=None,
                  fuse=False,
                  lazy=False):
@@ -48,8 +47,7 @@ class GoogleCloudDataset:
             self.x_config = x
             self.y = None
             self.y_config = y
-            self.x_transforms = x_transforms
-            self.y_transforms = y_transforms
+            self.transforms = transforms
             self.credentials = credentials
             self.fuse = fuse
             self.lazy = True
@@ -131,8 +129,7 @@ class GoogleCloudDataset:
         self.y_config = y_config
         self.x = x
         self.y = y
-        self.x_transforms = x_transforms
-        self.y_transforms = y_transforms
+        self.transforms = transforms
         self.fuse = fuse
         self.lazy = False
 

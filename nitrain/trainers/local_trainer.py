@@ -93,6 +93,9 @@ class LocalTrainer:
     def save(self, path):
         if self.framework == 'keras':
             self.model.save(path)
+    
+    def __str__(self):
+        return f'LocalTrainer with loss: {self.loss}, optimizer: {self.optimizer}'
 
 
 def infer_framework(model):

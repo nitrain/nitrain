@@ -22,18 +22,21 @@ class BaseDataset:
             x_raw = self.x_config[i]
             y_raw = self.y_config[i]
             
-            if self.x_transforms:
-                for x_tx in self.x_transforms:
-                    x_raw = x_tx(x_raw)
-                        
-            if self.y_transforms:
-                for y_tx in self.y_transforms:
-                    y_raw = y_tx(y_raw)
-            
-            if self.co_transforms:
-                for co_tx in self.co_transforms:
-                    x_raw, y_raw = co_tx(x_raw, y_raw)
-            
+            if self.transforms:
+                for tx_name, tx_list in self.transforms:
+                    if tx_name == 'x':
+                        for tx_fn in tx_list:
+                            x_raw = tx_fn(x_raw)
+                    elif tx_name == 'y':
+                        for tx_fn in tx_list:
+                            y_raw = tx_fn(y_raw)
+                    elif tx_name == 'co':
+                        for tx_fn in tx_list:
+                            x_raw, y_raw = tx_fn(x_raw, y_raw)
+                    else:
+                        # TODO: match to name in config
+                        pass
+                            
             x_items.append(x_raw)
             y_items.append(y_raw)
         

@@ -1,6 +1,7 @@
 import warnings
 import copy
 import os
+import re
 import json
 import ants
 import bids
@@ -9,7 +10,7 @@ import numpy as np
 import pandas as pd
 import sys
 
-from .. import utils
+from .readers import infer_reader
 
 class BIDSDataset:
     
@@ -17,8 +18,7 @@ class BIDSDataset:
                  base_dir, 
                  x,
                  y,
-                 x_transforms=None,
-                 y_transforms=None,
+                 transforms=None,
                  datalad=False,
                  layout=None):
         """
@@ -37,11 +37,9 @@ class BIDSDataset:
         
         Example
         -------
-        >>> dataset = FolderDataset('ds000711', 
+        >>> dataset = BIDSDataset('ds000711', 
                                     x={'datatype': 'anat', 'suffix': 'T1w'},
                                     y={'file':'participants.tsv', 'column':'age'})
-        >>> model = nitrain.models.fetch_pretrained('t1-brainage', finetune=True)
-        >>> model.fit(dataset)
         """
         
         if layout is None:
@@ -50,80 +48,50 @@ class BIDSDataset:
             else:
                 layout = bids.BIDSLayout(base_dir, derivatives=False)
         
-        x_config = x
-        y_config = y
+        x_reader = infer_reader(x, base_dir)
+        y_reader = infer_reader(y, base_dir)
         
-        # GET X
-        ids = layout.get(return_type='id', target='subject', **x_config)
-        x = layout.get(return_type='filename', **x_config)
-        if len(x) == 0:
-            raise Exception('No images found matching the specified x.')
-            
-            
-        participants_file = layout.get(suffix='participants', extension='tsv')[0]
-        participants = pd.read_csv(participants_file, sep='\t')
-        p_col = participants.columns[0] # assume participant id is first row
-        p_suffix = 'sub-' # assume participant col starts with 'sub-'
-        participants = participants[participants[p_col].isin([p_suffix+id for id in ids])]
-        y = participants[y_config['column']].to_numpy()
-
-        if len(x) != len(y):
-            warnings.warn(f'len(x) [{len(x)}] != len(y) [{len(y)}]. Do some participants have multiple runs?')
+        self.x_reader = x_reader
+        self.y_config = y_reader
+        self.x = x_reader.values
+        self.y = y_reader.values
         
         self.base_dir = base_dir
-        self.x_config = x_config
-        self.y_config = y_config
-        self.x_transforms = x_transforms
-        self.y_transforms = y_transforms
+        self.transforms = transforms
         self.layout = layout
-        self.participants = participants
-        self.x = x
-        self.y = y
         self.datalad = datalad
-
-    def __getitem__(self, idx):
-        files = self.x[idx]
-        if not isinstance(idx, slice):
-            files = [files]
-        y = self.y[idx]
-        
-        if self.y_transforms is not None:
-            for y_tx in self.y_transforms:
-                y = y_tx(y)
-        
-        # make sure files are downloaded
-        if self.datalad:
-            ds = dl.Dataset(path = self.base_dir)
-            res = ds.get(files)
-        
-        x = []
-        for file in files:
-            img = ants.image_read(file)
-        
-            if self.x_transforms:
-                for x_tx in self.x_transforms:
-                    img = x_tx(img)
-            
-            x.append(img)
-        
-        if not isinstance(idx, slice):
-            x = x[0]
-
-        return x, y
     
     def __len__(self):
         return len(self.x)
     
+    def __str__(self):
+        return f'FolderDataset with {len(self.x)} records'
+
     def __repr__(self):
-        pass
+        # TODO: implement transforms __repr__
+        if self.transforms:
+            tx_str = 'transforms=transforms'
+            
+        if self.transforms is not None:
+            text = f"""FolderDataset(base_dir = '{self.base_dir}',
+                    x = {self._x_arg},
+                    y = {self._y_arg},
+                    {tx_str})"""
+        else:
+            text = f"""FolderDataset(base_dir = '{self.base_dir}',
+                    x = {self._x_arg},
+                    y = {self._y_arg})"""   
+        
+        text = re.sub(r'\n\s*\n', '\n\n', text)
+        text = re.sub('[\n]+', '\n', text)
+        return text
     
     def __copy__(self):
         return BIDSDataset(
             base_dir=self.base_dir,
             x=self.x,
             y=self.y,
-            x_transforms=self.x_transforms,
-            y_transforms=self.y_transforms,
+            transforms=self.transforms,
             datalad=self.datalad,
             layout=self.layout
         )

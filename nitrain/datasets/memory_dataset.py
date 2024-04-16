@@ -9,11 +9,11 @@ import numpy as np
 import pandas as pd
 
 from .base_dataset import BaseDataset
-from .configs import _infer_config
+from .readers import infer_reader
 
 class MemoryDataset(BaseDataset):
     
-    def __init__(self, x, y, x_transforms=None, y_transforms=None, co_transforms=None):
+    def __init__(self, x, y, transforms=None):
         """
         Examples
         --------
@@ -26,29 +26,15 @@ class MemoryDataset(BaseDataset):
         x, y = dataset[0]
         """
         
-        x_config = _infer_config(x)
-        y_config = _infer_config(y)
+        x_reader = infer_reader(x)
+        y_reader = infer_reader(y)
+
+        self.x_reader = x_reader
+        self.y_reader = y_reader
+        self.x = x_reader.values
+        self.y = y_reader.values
         
-        if x_transforms is not None:
-            if not isinstance(x_transforms, list):
-                x_transforms = [x_transforms]
-
-        if y_transforms is not None:
-            if not isinstance(y_transforms, list):
-                y_transforms = [y_transforms]
-
-        if co_transforms is not None:
-            if not isinstance(co_transforms, list):
-                co_transforms = [co_transforms]          
-
-        self.x_transforms = x_transforms
-        self.y_transforms = y_transforms
-        self.co_transforms = co_transforms
-
-        self.x_config = x_config
-        self.y_config = y_config
-        self.x = x_config.values
-        self.y = y_config.values
+        self.transforms = transforms
     
     def __str__(self):
         return f'MemoryDataset with {len(self.x)} records'

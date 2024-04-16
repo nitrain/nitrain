@@ -8,23 +8,23 @@ import pandas as pd
 import numpy as np
 import ants
 
-class ComposeConfig:
-    def __init__(self, configs):
-        self.configs = configs
-        values = [config.values for config in self.configs]
+class ComposeReader:
+    def __init__(self, readers):
+        self.readers = readers
+        values = [reader.values for reader in self.readers]
         self.values = list(zip(*values))
         
-        # TODO: align ids for composed configs
-        if self.configs[0].ids is not None:
-            self.ids = self.configs[0].ids
+        # TODO: align ids for composed readers
+        if self.readers[0].ids is not None:
+            self.ids = self.readers[0].ids
         else:
             self.ids = None
 
     def __getitem__(self, idx):
-        return [config[idx] for config in self.configs]
+        return [reader[idx] for reader in self.readers]
 
 # list of ants images
-class ImageConfig:
+class ImageReader:
     def __init__(self, images):
         self.values = images
         self.ids = None
@@ -34,11 +34,11 @@ class ImageConfig:
 
 
 # numpy array that must be converted to images
-class ArrayConfig:
+class ArrayReader:
     def __init__(self, array):
         """
         x = np.random.normal(40,10,(10,50,50,50))
-        x_config = ArrayConfig(x)
+        x_config = ArrayReader(x)
         """
         self.array = array
         
@@ -54,7 +54,7 @@ class ArrayConfig:
         return self.values[idx]
 
 # one image from file
-class PatternConfig:
+class PatternReader:
     def __init__(self, base_dir, pattern, exclude=None, datalad=False):
         if not base_dir.endswith('/'):
             base_dir += '/'
@@ -93,7 +93,13 @@ class PatternConfig:
             
         return ants.image_read(self.values[idx])
     
-class ColumnConfig:
+class BIDSReader:
+    def __init__(self, base_dir, layout=None):
+        pass
+    def __getitem__(self, idx):
+        pass
+    
+class ColumnReader:
     def __init__(self, base_dir, file, column, id=None):
         filepath = os.path.join(base_dir, file)
         
@@ -121,67 +127,115 @@ class ColumnConfig:
     def __getitem__(self, idx):
         return self.values[idx]
     
-class GoogleCloudConfig:
+class GoogleCloudReader:
     def __init__(self, bucket, base_dir, pattern, exclude=None, fuse=False, lazy=False):
         pass
+    def __getitem__(self, idx):
+        file = self.files[idx]
+        
+        if self.fuse:
+            local_filepath = file
+        else:
+            local_filepath = os.path.join(self.tmp_dir.name, file)
+            if not os.path.exists(local_filepath):
+                os.makedirs('/'.join(local_filepath.split('/')[:-1]), exist_ok=True)
+                file_blob = self.bucket_client.blob(file)
+                file_blob.download_to_filename(local_filepath)
+    
+class PlatformReader:
+    def __init__(self, bucket, base_dir, pattern, exclude=None, fuse=False, lazy=False):
+        pass
+    def __getitem__(self):
+        pass
 
-def _infer_config(x, base_dir=None):
+def infer_config(x, base_dir=None):
     """
-    Infer config from user-supplied values
+    Infer reader from user-supplied values.
+    
+    A reader is a possible value to the `x` and `y` arguments of any nitrain dataset class. The
+    possible values include the following:
+    
+    - numpy array (ArrayReader)
+    - list of ants images (ImageReader)
+    - dict containing glob patterns to read images from file (PatternReader)
+    - dict containing BIDS entities to read images from file in BIDS folder (BIDSReader)
+    - dict containing info to read columns from csv files (ColumnReader)
+    - dict containing info to read images from file in google cloud storage (GoogleCloudReader)
+    - dict containing info to read images from file hosted on nitrain.dev (PlatformReader)
+    - list with a combination of any of the above readers (ComposeReader)
+    
+    Note that when a reader is created, it is actually checked for validity -- i.e., that data
+    can be served from it. For example, creating a reader to read images from files that do not
+    exist will raise an exception.
     
     Examples
     --------
     >>> base_dir = os.path.expanduser('~/Desktop/openneuro/ds004711')
     >>> array = np.random.normal(40,10,(10,50,50,50))
-    >>> x = _infer_config(array)
-    >>> x = _infer_config([ants.image_read(ants.get_data('r16')) for _ in range(10)])
-    >>> x = _infer_config([{'pattern': '{id}/anat/*.nii.gz'}, {'pattern': '{id}/anat/*.nii.gz'}], base_dir) 
-    >>> x = _infer_config({'pattern': '{id}/anat/*.nii.gz'}, base_dir) 
-    >>> x = _infer_config({'pattern': '*/anat/*.nii.gz'}, base_dir)
-    >>> x = _infer_config({'pattern': '**/*T1w*'}, base_dir) 
-    >>> x = _infer_config({'file': 'participants.tsv', 'column': 'age', 'id': 'participant_id'}, base_dir) 
-    >>> x = _infer_config({'file': 'participants.tsv', 'column': 't1', 'image': True}, base_dir) 
+    >>> x = infer_config(array)
+    >>> x = infer_config([ants.image_read(ants.get_data('r16')) for _ in range(10)])
+    >>> x = infer_config([{'pattern': '{id}/anat/*.nii.gz'}, {'pattern': '{id}/anat/*.nii.gz'}], base_dir) 
+    >>> x = infer_config({'pattern': '{id}/anat/*.nii.gz'}, base_dir) 
+    >>> x = infer_config({'pattern': '*/anat/*.nii.gz'}, base_dir)
+    >>> x = infer_config({'pattern': '**/*T1w*'}, base_dir) 
+    >>> x = infer_config({'file': 'participants.tsv', 'column': 'age', 'id': 'participant_id'}, base_dir) 
+    >>> x = infer_config({'file': 'participants.tsv', 'column': 't1', 'image': True}, base_dir) 
     """
+    reader = None
     if isinstance(x, list):
         # list of ants images
         if isinstance(x[0], ants.ANTsImage):
-            return ImageConfig(x)
-        # list of multiple ()potentially mixed) configs
+            return ImageReader(x)
+        # list of multiple ()potentially mixed) readers
         elif isinstance(x[0], dict):
-            configs = [_infer_config(config, base_dir=base_dir) for config in x]
-            return ComposeConfig(configs)
+            readers = [infer_config(reader, base_dir=base_dir) for reader in x]
+            return ComposeReader(readers)
         # list that is meant to be an array or multiple-images
         elif isinstance(x[0], list):
             if isinstance(x[0][0], ants.ANTsImage):
-                configs = []
+                readers = []
                 for i in range(len(x[0])):
-                    configs.append(ImageConfig([xx[i] for xx in x]))
-                return ComposeConfig(configs)
+                    readers.append(ImageReader([xx[i] for xx in x]))
+                return ComposeReader(readers)
             else:
-                return ArrayConfig(np.array(x))    
+                return ArrayReader(np.array(x))    
         else:
-            return ArrayConfig(np.array(x))
+            return ArrayReader(np.array(x))
         
     elif isinstance(x, dict):
+        # options:
+        # - PatternReader
+        # - ColumnReader
+        # - GoogleCloudReader
+        # - PlatformReader
         if 'pattern' in x.keys():
-            return PatternConfig(base_dir=base_dir, **x)
+            return PatternReader(base_dir=base_dir, **x)
         if 'file' in x.keys():
-            return ColumnConfig(base_dir=base_dir, **x)
+            return ColumnReader(base_dir=base_dir, **x)
+
+        # TODO: how to check for BIDSReader
+        if 'dataytype' in x.keys():
+            return BIDSReader(base_dir=base_dir, **x)
         
     elif isinstance(x, np.ndarray):
-        return ArrayConfig(x)
+        return ArrayReader(x)
+    
+    if reader is None:
+        raise Exception(f'Could not infer a configuration from given value: {x}')
+    
+    return reader
 
 
-def _align_configs(x, y):
+def align_readers(x, y):
     """
-    Align configs based on ID or something other pattern.
+    Align readers based on ID or something other pattern.
     """
     if x.ids is None:
         raise Exception('`x` is missing ids. Specify `{id}` somewhere in the pattern.')
     if y.ids is None:
-        if isinstance(y, PatternConfig):
+        if isinstance(y, PatternReader):
             raise Exception('`y` is missing ids. Specify `{id}` somewhere in the pattern.')
-        elif isinstance(y, ColumnConfig):
+        elif isinstance(y, ColumnReader):
             raise Exception('`y` is missing ids. Specify "id": "COL_NAME" in the file dict.')
     
     x_ids = x.ids
@@ -190,7 +244,7 @@ def _align_configs(x, y):
     # match ids
     matched_ids = sorted(list(set(x_ids) & set(y_ids)))
     if len(matched_ids) == 0:
-        raise Exception('No matches found between `x` ids and `y` ids. Double check your config.')
+        raise Exception('No matches found between `x` ids and `y` ids. Double check your reader.')
     
     # take only matched ids in x
     keep_idx = [i for i in range(len(x.ids)) if x.ids[i] in matched_ids]

@@ -3,7 +3,7 @@ import os
 import re
 
 from .base_dataset import BaseDataset
-from .configs import _infer_config, _align_configs
+from .readers import infer_reader, align_readers
 from .. import platform
 
 class FolderDataset(BaseDataset):
@@ -12,9 +12,7 @@ class FolderDataset(BaseDataset):
                  base_dir, 
                  x,
                  y,
-                 x_transforms=None,
-                 y_transforms=None,
-                 co_transforms=None):
+                 transforms=None):
         """
         Initialize a nitrain dataset consisting of local filepaths.
         
@@ -23,42 +21,51 @@ class FolderDataset(BaseDataset):
         base_dir : string
         x : dict or list of dicts
         y : dict or list of dicts
-        x_transforms : transform or list of transforms
-        y_transforms : transform or list of transforms
-        co_transforms : transform or list of transforms
+        transforms : list of dicts
 
         Example
         -------
-        >>> from nitrain.datasets import FolderDataset
+        >>> from nitrain.datasets import FolderDataset, readers
+        >>> from nitrain import transforms as tx
         >>> dataset = FolderDataset('~/Desktop/openneuro/ds004711', 
-                                    x=[{'pattern': '{id}/anat/*T1w.nii.gz', 
+                                    inputs={'pattern': '{id}/anat/*T1w.nii.gz', 
                                         'exclude': '**run-02*'},
-                                        {'pattern': '{id}/anat/*T1w.nii.gz', 
-                                        'exclude': '**run-02*'}],
-                                    y={'file':'participants.tsv', 'column':'age', 
+                                    outputs={'file':'participants.tsv', 'column':'age', 
                                        'id': 'participant_id'})
+        >>> dataset = FolderDataset('~/Desktop/openneuro/ds004711', 
+                        inputs={
+                            'input1': readers.PatternReader(
+                                'pattern': '{id}/anat/*T1w.nii.gz', 
+                                'exclude': '**run-02*')
+                            },
+                            'input2': readers.PatternReader(
+                                'pattern': '{id}/anat/*T1w.nii.gz', 
+                                'exclude': '**run-02*')
+                            },
+                        },
+                        outputs = readers.ColumnReader('file':'participants.tsv', 
+                                'column':'age', 
+                                'id': 'participant_id'),
+                        transforms=[
+                            {'input2': tx.Resample((128,128,128))}
+                            {['input1','input2']: tx.RangeNormalize(0,1)}
+                        ]
+            )
         """
         if base_dir.startswith('~'):
             base_dir = os.path.expanduser(base_dir)
         
-        x_config = _infer_config(x, base_dir)
-        y_config = _infer_config(y, base_dir)
-        
-        if len(x_config.values) != len(y_config.values):
-            warnings.warn(f'Found that len(x) [{len(x_config.values)}] != len(y) [{len(y_config.values)}]. Attempting to match ids.')
-            x_config, y_config = _align_configs(x_config, y_config)
-        
-        self.base_dir = base_dir
-        self.x_transforms = x_transforms
-        self.y_transforms = y_transforms
-        self.co_transforms = co_transforms
+        x_reader = infer_reader(x, base_dir)
+        y_reader = infer_reader(y, base_dir)
+        x_reader, y_reader = align_readers(x_reader, y_reader)
 
-        self._x_arg = x
-        self._y_arg = y
-        self.x_config = x_config
-        self.y_config = y_config
-        self.x = x_config.values
-        self.y = y_config.values
+        self.x_reader = x_reader
+        self.y_reader = y_reader
+        self.x = x_reader.values
+        self.y = y_reader.values
+   
+        self.base_dir = base_dir
+        self.transforms = transforms
     
     def to_platform(self, name, token=None):
         """
@@ -104,31 +111,15 @@ class FolderDataset(BaseDataset):
         return f'FolderDataset with {len(self.x)} records'
 
     def __repr__(self):
-        if self.x_transforms:
-            tx_repr = '[' + ', '.join([repr(x_tx) for x_tx in self.x_transforms]) + ']'
-            x_tx = f'x_transforms = {tx_repr},'
-        else:
-            x_tx = ''
-        
-        if self.y_transforms:
-            tx_repr = '[' + ', '.join([repr(y_tx) for y_tx in self.y_transforms]) + ']'
-            y_tx = f'y_transforms = {tx_repr},'
-        else:
-            y_tx = ''
-
-        if self.co_transforms:
-            tx_repr = '[' + ', '.join([repr(co_tx) for co_tx in self.co_transforms]) + ']'
-            co_tx = f'co_transforms = {tx_repr},'
-        else:
-            co_tx = ''
+        # TODO: implement transforms __repr__
+        if self.transforms:
+            tx_str = 'transforms=transforms'
             
-        if self.x_transforms is not None or self.y_transforms is not None or self.co_transforms is not None:
+        if self.transforms is not None:
             text = f"""FolderDataset(base_dir = '{self.base_dir}',
                     x = {self._x_arg},
                     y = {self._y_arg},
-                    {x_tx}
-                    {y_tx}
-                    {co_tx})"""
+                    {tx_str})"""
         else:
             text = f"""FolderDataset(base_dir = '{self.base_dir}',
                     x = {self._x_arg},
@@ -143,8 +134,6 @@ class FolderDataset(BaseDataset):
             base_dir=self.base_dir,
             x=self.x_config,
             y=self.y_config,
-            x_transforms=self.x_transforms,
-            y_transforms=self.y_transforms,
-            co_transforms=self.co_transforms
+            transforms=self.transforms
         )
     

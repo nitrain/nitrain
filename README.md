@@ -16,14 +16,16 @@ Here is a canonical example of using nitrain to fit a brain-age model. If you wa
 
 ```python
 from nitrain import datasets, loaders, models, trainers, transforms as tx
+from nitrain.datasets.readers import PatternReader, ColumnReader
 
 # create dataset from folder of images + participants file
 dataset = datasets.FolderDataset(base_dir='ds004711',
-                                 x={'pattern': 'sub-*/anat/*_T1w.nii.gz'},
-                                 y={'file': 'participants.tsv',
-                                         'column': 'age'},
-                                 x_transforms=[tx.Resize((64,64,64)),
-                                               tx.NormalizeIntensity(0,1)])
+                                 inputs=PatternReader('sub-*/anat/*_T1w.nii.gz'),
+                                 outputs=ColumnReader('participants.tsv', 'age'),
+                                 transforms={
+                                        'inputs': [tx.Resize((64,64,64)),
+                                        tx.NormalizeIntensity(0,1)],
+                                 })
 
 # create loader with random transforms
 loader = loaders.DatasetLoader(dataset,

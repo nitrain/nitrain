@@ -4,6 +4,39 @@ import random
 from .base_transform import BaseTransform
 
 
+class SplitLabels(BaseTransform):
+    """
+    This transform takes a discrete valued (e.g., segmentation) image
+    with no channels (e.g., shape: [128, 128]) and creates separate
+    channels for each label. 
+    
+    For instance, a binary image with 2 classes with shape (128,128) would 
+    be turned into an image of shape (128, 128, 2).
+    
+    Examples
+    --------
+    >>> import ants
+    >>> from nitrain import transforms as tx
+    >>> img = ants.image_read(ants.get_data('r16'))
+    >>> img = img > img.mean()
+    >>> my_tx = tx.SplitLabels()
+    >>> img_split = my_tx(img)
+    """
+    def __init__(self):
+        pass
+    
+    def __call__(self, image, co_image=None):
+        # get labels
+        labels = image.unique()
+        
+        # split labels into different images
+        image_list = [image == label_value for label_value in labels]
+        
+        # merge channels
+        image_merged = ants.merge_channels(image_list)
+        
+        return image_merged
+
 class Resample(BaseTransform):
     """
     img = ants.image_read(ants.get_ants_data('mni'))
@@ -19,7 +52,6 @@ class Resample(BaseTransform):
         self.use_spacing = use_spacing
         self.interpolation = interpolation
         
-    
     def __call__(self, image, co_image=None):
         interpolation_value = 0 if self.interpolation != 'nearest_neighbor' else 1 
         image = ants.resample_image(image, self.params, not self.use_spacing, interpolation_value)
