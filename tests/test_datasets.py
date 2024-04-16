@@ -13,7 +13,7 @@ import numpy.testing as nptest
 
 import ants
 from nitrain import datasets, transforms as tx
-from nitrain.datasets.readers import infer_reader
+from nitrain.readers.utils import infer_reader
 
 
 class TestClass_BIDSDataset(unittest.TestCase):

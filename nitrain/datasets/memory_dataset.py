@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from .base_dataset import BaseDataset
-from .readers import infer_reader
+from ..readers.utils import infer_reader
 
 class MemoryDataset(BaseDataset):
     

@@ -8,147 +8,7 @@ import pandas as pd
 import numpy as np
 import ants
 
-class ComposeReader:
-    def __init__(self, readers):
-        self.readers = readers
-        values = [reader.values for reader in self.readers]
-        self.values = list(zip(*values))
-        
-        # TODO: align ids for composed readers
-        if self.readers[0].ids is not None:
-            self.ids = self.readers[0].ids
-        else:
-            self.ids = None
-
-    def __getitem__(self, idx):
-        return [reader[idx] for reader in self.readers]
-
-# list of ants images
-class ImageReader:
-    def __init__(self, images):
-        self.values = images
-        self.ids = None
-
-    def __getitem__(self, idx):
-        return self.values[idx]
-
-
-# numpy array that must be converted to images
-class ArrayReader:
-    def __init__(self, array):
-        """
-        x = np.random.normal(40,10,(10,50,50,50))
-        x_config = ArrayReader(x)
-        """
-        self.array = array
-        
-        if array.ndim > 2:
-            # arrays must be converted to images
-            array_list = np.split(array, array.shape[0])
-            ns = array.shape[1:]
-            self.values = [ants.from_numpy(tmp.reshape(*ns)) for tmp in array_list]
-        else:
-            self.values = array
-        
-    def __getitem__(self, idx):
-        return self.values[idx]
-
-# one image from file
-class PatternReader:
-    def __init__(self, base_dir, pattern, exclude=None, datalad=False):
-        if not base_dir.endswith('/'):
-            base_dir += '/'
-            
-        glob_pattern = pattern.replace('{id}','*')
-        glob_pattern = os.path.join(base_dir, glob_pattern)
-        x = sorted(glob.glob(glob_pattern, recursive=True))
-        x = [os.path.relpath(xx, base_dir) for xx in x]
-        
-        if exclude:
-            x = [file for file in x if not fnmatch(file, exclude)]
-
-        if '{id}' in pattern:
-            ids = [parse(pattern.replace('*','{other}'), file).named['id'] for file in x]
-        else:
-            ids = None
-            
-        x = [os.path.join(base_dir, file) for file in x]
-        
-        if len(x) == 0:
-            raise Exception(f'No filepaths found that match {glob_pattern}')
-
-        self.base_dir = base_dir
-        self.pattern = glob_pattern
-        self.exclude = exclude
-        self.datalad = datalad
-        self.values = x
-        self.ids = ids
-        
-    def __getitem__(self, idx):
-        filename = self.values[idx]
-        
-        if self.datalad:
-            ds = dl.Dataset(path = self.base_dir)
-            res = ds.get(filename)
-            
-        return ants.image_read(self.values[idx])
-    
-class BIDSReader:
-    def __init__(self, base_dir, layout=None):
-        pass
-    def __getitem__(self, idx):
-        pass
-    
-class ColumnReader:
-    def __init__(self, base_dir, file, column, id=None):
-        filepath = os.path.join(base_dir, file)
-        
-        if not os.path.exists(filepath):
-            raise Exception(f'No file found at {filepath}')
-        
-        if filepath.endswith('.tsv'):
-            participants = pd.read_csv(filepath, sep='\t')
-        elif filepath.endswith('.csv'):
-            participants = pd.read_csv(filepath)
-            
-        values = participants[column].to_numpy()
-        
-        if id is not None:
-            ids = list(participants[id].to_numpy())
-        else:
-            ids = None
-        
-        self.base_dir = base_dir
-        self.values = values
-        self.ids = ids
-        self.file = filepath
-        self.column = column
-
-    def __getitem__(self, idx):
-        return self.values[idx]
-    
-class GoogleCloudReader:
-    def __init__(self, bucket, base_dir, pattern, exclude=None, fuse=False, lazy=False):
-        pass
-    def __getitem__(self, idx):
-        file = self.files[idx]
-        
-        if self.fuse:
-            local_filepath = file
-        else:
-            local_filepath = os.path.join(self.tmp_dir.name, file)
-            if not os.path.exists(local_filepath):
-                os.makedirs('/'.join(local_filepath.split('/')[:-1]), exist_ok=True)
-                file_blob = self.bucket_client.blob(file)
-                file_blob.download_to_filename(local_filepath)
-    
-class PlatformReader:
-    def __init__(self, bucket, base_dir, pattern, exclude=None, fuse=False, lazy=False):
-        pass
-    def __getitem__(self):
-        pass
-
-def infer_config(x, base_dir=None):
+def infer_reader(x, base_dir=None):
     """
     Infer reader from user-supplied values.
     
@@ -188,7 +48,7 @@ def infer_config(x, base_dir=None):
             return ImageReader(x)
         # list of multiple ()potentially mixed) readers
         elif isinstance(x[0], dict):
-            readers = [infer_config(reader, base_dir=base_dir) for reader in x]
+            readers = [infer_reader(reader, base_dir=base_dir) for reader in x]
             return ComposeReader(readers)
         # list that is meant to be an array or multiple-images
         elif isinstance(x[0], list):

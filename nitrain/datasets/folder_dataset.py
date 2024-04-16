@@ -3,7 +3,7 @@ import os
 import re
 
 from .base_dataset import BaseDataset
-from .readers import infer_reader, align_readers
+from ..readers.utils import infer_reader, align_readers
 from .. import platform
 
 class FolderDataset(BaseDataset):

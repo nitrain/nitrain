@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import sys
 
-from .readers import infer_reader
+from ..readers.utils import infer_reader
 
 class BIDSDataset:
     
