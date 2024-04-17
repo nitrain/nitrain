@@ -1,11 +1,16 @@
 
 
-class BaseDataset:
+class Dataset:
+    
+    def __init__(self, inputs, outputs, transforms):
+        self.inputs = inputs
+        self.outputs = outputs
+        self.transforms = transforms
 
     def filter(self, expr):
         raise NotImplementedError('Not implemented')
-
-    def precompute(self):
+    
+    def prefetch(self):
         raise NotImplementedError('Not implemented')
     
     def __getitem__(self, idx):
@@ -47,4 +52,10 @@ class BaseDataset:
         return x_items, y_items
     
     def __len__(self):
-        return len(self.x)
+        raise NotImplementedError('Not implemented')
+    
+    def __str__(self):
+        raise NotImplementedError('Not implemented')
+    
+    def __repr__(self):
+        raise NotImplementedError('Not implemented')

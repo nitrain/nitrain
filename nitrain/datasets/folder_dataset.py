@@ -2,7 +2,7 @@ import warnings
 import os
 import re
 
-from .base_dataset import BaseDataset
+from .dataset import BaseDataset
 from ..readers.utils import infer_reader, align_readers
 from .. import platform
 
