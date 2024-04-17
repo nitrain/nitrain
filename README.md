@@ -19,19 +19,19 @@ import nitrain
 from nitrain.readers import PatternReader, ColumnReader
 
 # create dataset from folder of images + participants file
-dataset = nitrain.Dataset(inputs = PatternReader('sub-*/anat/*_T1w.nii.gz'),
-                          outputs = ColumnReader('participants.tsv', 'age'),
-                          transforms = {
+dataset = nitrain.Dataset(inputs=PatternReader('sub-*/anat/*_T1w.nii.gz'),
+                          outputs=ColumnReader('participants.tsv', 'age'),
+                          transforms={
                               'inputs': [tx.Resize((64,64,64)), tx.NormalizeIntensity(0,1)],
                           },
-                          base_dir = '~/desktop/ds004711/')
+                          base_dir='~/desktop/ds004711/')
 
 # create loader with random transforms
 loader = nitrain.Loader(dataset,
-                        images_per_batch = 4,
-                        shuffle = True,
-                        sampler = nitrain.SliceSampler(batch_size = 32, axis = 2)
-                        transforms = {
+                        images_per_batch=4,
+                        shuffle=True,
+                        sampler=nitrain.SliceSampler(batch_size = 32, axis = 2)
+                        transforms={
                                 'inputs': tx.RandomNoise(sd=0.2)
                         })
 
