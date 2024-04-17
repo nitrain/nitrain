@@ -31,7 +31,6 @@ class TestClass_Dataset(unittest.TestCase):
         self.assertEqual(len(dataset), 5)
         
         x, y = dataset[0]
-        self.assertE == 2)
         
         # test repr
         r = dataset.__repr__()
