@@ -87,7 +87,6 @@ def _upload_dataset_to_platform(dataset, name):
     with open(os.path.join(dataset.base_dir, dataset.y_config['file']), 'rb') as file:
         response = _upload_file_to_platform(file=file, category='datasets', filename=filename)
     
-    # if BIDS dataset -> write json file because BIDS layout doesnt work on platform ?
     return response
 
 def _get_user_from_token(token=None):
@@ -192,11 +191,7 @@ def _upload_file_to_platform(file, category, filename, token=None):
 
 def _config_for_platform_dataset(dataset):
     """Get the x + y config that is appropriate for a PlatformDataset"""
-    if type(dataset).__name__ == 'BIDSDataset':
-        # BIDS entities not
-        parameters = {'x_config': {'filenames': dataset.x},
-                      'y_config': dataset.y_config}
-    elif type(dataset).__name__ == 'FolderDataset':
+    if type(dataset).__name__ == 'FolderDataset':
         parameters = {'x_config': dataset.x_config,
                       'y_config': dataset.y_config}
     return parameters

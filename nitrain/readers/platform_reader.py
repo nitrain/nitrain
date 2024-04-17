@@ -3,7 +3,6 @@ import os
 from parse import parse
 from fnmatch import fnmatch
 
-import datalad.api as dl
 import pandas as pd
 import numpy as np
 

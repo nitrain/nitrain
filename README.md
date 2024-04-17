@@ -90,7 +90,7 @@ The 10-minute overview presented below will take you through the key components 
 
 ### Datasets and Loaders
 
-Datasets help you read in your images from wherever they are stored -- in a local folder with BIDS or datalad, in memory, on a cloud service. You can flexibly specify the inputs and outputs using glob patterns, BIDS entities, etc. Transforms can also be passed to your datasets as a sort of preprocessing pipeline that will be applied whenever the dataset is accessed.
+Datasets help you read in your images from wherever they are stored -- in a local folder, in memory, on a cloud service. You can flexibly specify the inputs and outputs using glob patterns, etc. Transforms can also be passed to your datasets as a sort of preprocessing pipeline that will be applied whenever the dataset is accessed.
 
 ```python
 from nitrain import datasets, transforms as tx

@@ -13,6 +13,14 @@ class Dataset:
         ...     outputs = readers.ColumnReader()
         ... )
         >>> dataset = datasets.Dataset(
+        ...     inputs = [img1, img2, img3, img4],
+        ...     outputs = readers.ColumnReader()
+        ... )
+        >>> dataset = datasets.Dataset(
+        ...     inputs = np.random.randn(10, 128, 128),
+        ...     outputs = readers.ColumnReader()
+        ... )
+        >>> dataset = datasets.Dataset(
         ...     inputs = [
         ...         readers.PatternReader(),
         ...         readers.PatternReader(),

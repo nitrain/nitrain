@@ -3,7 +3,6 @@ import os
 from parse import parse
 from fnmatch import fnmatch
 
-import datalad.api as dl
 import pandas as pd
 import numpy as np
 import ntimage as nt
@@ -13,8 +12,13 @@ import ntimage as nt
 class ArrayReader:
     def __init__(self, array):
         """
-        x = np.random.normal(40,10,(10,50,50,50))
-        x_config = ArrayReader(x)
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from nitrain.readers import ArrayReader
+        >>> arr = np.random.normal(40,10,(10,50,50,50))
+        >>> reader = ArrayReader(arr)
+        >>> img = reader[1]
         """
         self.array = array
         

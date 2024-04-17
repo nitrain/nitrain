@@ -3,7 +3,6 @@ import os
 from parse import parse
 from fnmatch import fnmatch
 
-import datalad.api as dl
 import pandas as pd
 import numpy as np
 import ntimage as nt
@@ -18,7 +17,6 @@ def infer_reader(x, base_dir=None):
     - numpy array (ArrayReader)
     - list of ntimages (ImageReader)
     - dict containing glob patterns to read images from file (PatternReader)
-    - dict containing BIDS entities to read images from file in BIDS folder (BIDSReader)
     - dict containing info to read columns from csv files (ColumnReader)
     - dict containing info to read images from file in google cloud storage (GoogleCloudReader)
     - dict containing info to read images from file hosted on nitrain.dev (PlatformReader)
@@ -72,10 +70,6 @@ def infer_reader(x, base_dir=None):
             return PatternReader(base_dir=base_dir, **x)
         if 'file' in x.keys():
             return ColumnReader(base_dir=base_dir, **x)
-
-        # TODO: how to check for BIDSReader
-        if 'dataytype' in x.keys():
-            return BIDSReader(base_dir=base_dir, **x)
         
     elif isinstance(x, np.ndarray):
         return ArrayReader(x)

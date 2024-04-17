@@ -1,23 +1,33 @@
-import glob
 import os
-from parse import parse
-from fnmatch import fnmatch
-
-import datalad.api as dl
 import pandas as pd
-import numpy as np
+import ntimage as nt
+
 
 class ColumnReader:
-    def __init__(self, base_dir, file, column, id=None):
-        filepath = os.path.join(base_dir, file)
+    def __init__(self, file, column, is_image=False, base_dir=None, id=None):
+        """
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from tempfile import NamedTemporaryFile
+        >>> import pandas as pd
+        >>> from nitrain.readers import ColumnReader
+        >>> df = pd.DataFrame.from_dict({'x':[1,2,3], 'y':['a','b','c']})
+        >>> file = NamedTemporaryFile(suffix='.csv')
+        >>> df.to_csv(file.name)
+        >>> reader = ColumnReader(file.name, 'x')
+        >>> value = reader[1] # 'b'
+        """
+        if base_dir is not None:
+            file = os.path.join(base_dir, file)
         
-        if not os.path.exists(filepath):
-            raise Exception(f'No file found at {filepath}')
+        if not os.path.exists(file):
+            raise Exception(f'No file found at {file}')
         
-        if filepath.endswith('.tsv'):
-            participants = pd.read_csv(filepath, sep='\t')
-        elif filepath.endswith('.csv'):
-            participants = pd.read_csv(filepath)
+        if file.endswith('.tsv'):
+            participants = pd.read_csv(file, sep='\t')
+        elif file.endswith('.csv'):
+            participants = pd.read_csv(file)
             
         values = participants[column].to_numpy()
         
@@ -26,12 +36,15 @@ class ColumnReader:
         else:
             ids = None
         
-        self.base_dir = base_dir
         self.values = values
         self.ids = ids
-        self.file = filepath
+        self.file = file
         self.column = column
+        self.is_image = is_image
 
     def __getitem__(self, idx):
-        return self.values[idx]
+        value = self.values[idx]
+        if self.is_image:
+            value = nt.load(value)
+        return value
     
