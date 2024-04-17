@@ -28,10 +28,12 @@ dataset = nitrain.Dataset(inputs = PatternReader('sub-*/anat/*_T1w.nii.gz'),
 
 # create loader with random transforms
 loader = nitrain.Loader(dataset,
-                        images_per_batch=4,
-                        shuffle=True,
-                        sampler=nitrain.SliceSampler(batch_size=32, axis=2)
-                        x_transforms=[tx.RandomNoise(sd=0.2)])
+                        images_per_batch = 4,
+                        shuffle = True,
+                        sampler = nitrain.SliceSampler(batch_size = 32, axis = 2)
+                        transforms = {
+                                'inputs': tx.RandomNoise(sd=0.2)
+                        })
 
 # create model from architecture
 arch_fn = nitrain.fetch_architecture('alexnet', dim=2)
