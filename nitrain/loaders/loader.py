@@ -3,7 +3,7 @@ import numpy as np
 
 from .. import samplers
 
-class DatasetLoader:
+class Loader:
     
     def __init__(self, 
                  dataset, 
