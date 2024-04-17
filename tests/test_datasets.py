@@ -29,10 +29,10 @@ class TestClass_BIDSDataset(unittest.TestCase):
             os.makedirs(os.path.join(sub_dir, 'anat/'))
             
             filepath_2d = os.path.join(sub_dir, f'anat/sub-00{i}_T1w.nii.gz')
-            ants.image_write(img2d, filepath_2d)
+            nt.save(img2d, filepath_2d)
             
             filepath_3d = os.path.join(sub_dir, f'anat/sub-00{i}_T2w.nii.gz')
-            ants.image_write(img3d, filepath_3d)
+            nt.save(img3d, filepath_3d)
         
         # write csv file
         ids = [f'sub-00{i}' for i in range(5)]
@@ -87,11 +87,11 @@ class TestClass_CSVDataset(unittest.TestCase):
             os.mkdir(sub_dir)
             filepath_2d = os.path.join(sub_dir, 'img2d.nii.gz')
             filenames_2d.append(filepath_2d)
-            ants.image_write(img2d, filepath_2d)
+            nt.save(img2d, filepath_2d)
             
             filepath_3d = os.path.join(sub_dir, 'img3d.nii.gz')
             filenames_3d.append(filepath_3d)
-            ants.image_write(img3d, filepath_3d)
+            nt.save(img3d, filepath_3d)
         
         # write csv file
         ids = [f'sub_{i}' for i in range(5)]
@@ -142,8 +142,8 @@ class TestClass_FolderDataset(unittest.TestCase):
         for i in range(5):
             sub_dir = os.path.join(tmp_dir, f'sub_{i}')
             os.mkdir(sub_dir)
-            ants.image_write(img2d, os.path.join(sub_dir, 'img2d.nii.gz'))
-            ants.image_write(img3d, os.path.join(sub_dir, 'img3d.nii.gz'))
+            nt.save(img2d, os.path.join(sub_dir, 'img2d.nii.gz'))
+            nt.save(img3d, os.path.join(sub_dir, 'img3d.nii.gz'))
         
         # write csv file
         ids = [f'sub_{i}' for i in range(5)]

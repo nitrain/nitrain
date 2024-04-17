@@ -37,11 +37,11 @@ class RandomTranslate(BaseTransform):
         image_dim = x.dimension
         
         # create transform
-        ants_tx = ants.create_ants_transform(precision="float", 
-                                             dimension=image_dim, 
-                                             transform_type="AffineTransform")
+        my_tx = nt.empty_transform(precision="float", 
+                                      dimension=image_dim, 
+                                      transform_type="AffineTransform")
         if self.reference is not None:
-            ants_tx.set_fixed_parameters(self.reference_com)
+            my_tx.set_fixed_parameters(self.reference_com)
         
         # sample translation value
         min_value = self.min_value
@@ -62,13 +62,13 @@ class RandomTranslate(BaseTransform):
                                   [0, 1, 0, tx_values[1]], 
                                   [0, 0, 1, tx_values[2]]])
             
-        ants_tx.set_parameters(tx_matrix)
+        my_tx.set_parameters(tx_matrix)
         if y is None:
-            return ants_tx.apply_to_image(x, reference=self.reference)
+            return my_tx.apply_to_image(x, reference=self.reference)
         else:
             return (
-                ants_tx.apply_to_image(x, reference=self.reference),
-                ants_tx.apply_to_image(y, reference=self.reference),
+                my_tx.apply_to_image(x, reference=self.reference),
+                my_tx.apply_to_image(y, reference=self.reference),
             )
         
 
@@ -140,7 +140,7 @@ class RandomFlip(BaseTransform):
         
 
 def create_centered_affine_transform(image, matrix):
-    transform = ants.create_ants_transform(
+    transform = nt.empty_transform(
         transform_type="AffineTransform", 
         precision='float', 
         matrix=matrix,

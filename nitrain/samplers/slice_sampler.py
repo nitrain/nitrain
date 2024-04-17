@@ -29,7 +29,7 @@ class SliceSampler:
         if self.shuffle:
             indices = random.sample(range(len(self.y)), len(self.y))
             self.x = [self.x[i] for i in indices]
-            if 'ANTsImage' in str(type(self.y[0])):
+            if 'NTImage' in str(type(self.y[0])):
                 self.y = [self.y[i] for i in indices]
             else:
                 self.y = self.y[indices]
@@ -62,7 +62,7 @@ class SliceSampler:
 
 def create_slices(images, values, axis):
     
-    if 'ANTsImage' in str(type(values[0])):
+    if 'NTImage' in str(type(values[0])):
         slices = []
         co_slices = []
         for image, co_image in zip(images, values):

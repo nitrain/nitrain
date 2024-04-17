@@ -22,7 +22,7 @@ class ArrayReader:
             # arrays must be converted to images
             array_list = np.split(array, array.shape[0])
             ns = array.shape[1:]
-            self.values = [ants.from_numpy(tmp.reshape(*ns)) for tmp in array_list]
+            self.values = [nt.from_numpy(tmp.reshape(*ns)) for tmp in array_list]
         else:
             self.values = array
         

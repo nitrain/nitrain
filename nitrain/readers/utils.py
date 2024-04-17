@@ -16,7 +16,7 @@ def infer_reader(x, base_dir=None):
     possible values include the following:
     
     - numpy array (ArrayReader)
-    - list of ants images (ImageReader)
+    - list of ntimages (ImageReader)
     - dict containing glob patterns to read images from file (PatternReader)
     - dict containing BIDS entities to read images from file in BIDS folder (BIDSReader)
     - dict containing info to read columns from csv files (ColumnReader)
@@ -43,8 +43,8 @@ def infer_reader(x, base_dir=None):
     """
     reader = None
     if isinstance(x, list):
-        # list of ants images
-        if isinstance(x[0], ants.ANTsImage):
+        # list of ntimages
+        if isinstance(x[0], nt.NTImage):
             return ImageReader(x)
         # list of multiple ()potentially mixed) readers
         elif isinstance(x[0], dict):
@@ -52,7 +52,7 @@ def infer_reader(x, base_dir=None):
             return ComposeReader(readers)
         # list that is meant to be an array or multiple-images
         elif isinstance(x[0], list):
-            if isinstance(x[0][0], ants.ANTsImage):
+            if isinstance(x[0][0], nt.NTImage):
                 readers = []
                 for i in range(len(x[0])):
                     readers.append(ImageReader([xx[i] for xx in x]))

@@ -33,13 +33,13 @@ class SplitLabels(BaseTransform):
         image_list = [image == label_value for label_value in labels]
         
         # merge channels
-        image_merged = ants.merge_channels(image_list)
+        image_merged = nt.merge(image_list)
         
         return image_merged
 
 class Resample(BaseTransform):
     """
-    img = nt.load(ants.get_ants_data('mni'))
+    img = nt.load(nt.example_data('mni'))
     # resample voxel directly (fine if image has even dimensions.. not here though)
     my_tx = ResampleImage((60,60,60))
     img2 = my_tx(img)
@@ -54,10 +54,10 @@ class Resample(BaseTransform):
         
     def __call__(self, image, co_image=None):
         interpolation_value = 0 if self.interpolation != 'nearest_neighbor' else 1 
-        image = ants.resample_image(image, self.params, not self.use_spacing, interpolation_value)
+        image = nt.resample(image, self.params, not self.use_spacing, interpolation_value)
         
         if co_image is not None:
-            co_image = ants.resample_image(co_image, self.params, not self.use_spacing, interpolation_value)
+            co_image = nt.resample(co_image, self.params, not self.use_spacing, interpolation_value)
             return image, co_image
         
         return image
@@ -67,7 +67,7 @@ class Resample(BaseTransform):
 
 class ResampleToTarget(BaseTransform):
     """
-    img = nt.load(ants.get_ants_data('mni'))
+    img = nt.load(nt.example_data('mni'))
     img2 = img.clone().resample_image((4,4,4))
     my_tx = ResampleImageToTarget(img2)
     img3 = my_tx(img)
@@ -77,7 +77,7 @@ class ResampleToTarget(BaseTransform):
         self.interpolation = 0 if interpolation != 'nearest_neighbor' else 1 
     
     def __call__(self, image):
-        image = ants.resample_image_to_target(image, self.target, self.interpolation)
+        image = nt.resample(image, self.target, self.interpolation)
         return image
 
 
@@ -98,10 +98,10 @@ class Reorient(BaseTransform):
         self.orientation = orientation
     
     def __call__(self, image, co_image=None):
-        image = ants.reorient_image2(image, self.orientation)
+        image = nt.reorient(image, self.orientation)
         
         if co_image is not None:
-            co_image = ants.reorient_image2(co_image, self.orientation)
+            co_image = nt.reorient(co_image, self.orientation)
             return image, co_image
 
         return image

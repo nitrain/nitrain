@@ -8,7 +8,7 @@ from .base_transform import BaseTransform
 
 class ToFile(BaseTransform):
     """
-    Saves an image to file using `ants.plot`. 
+    Saves an image to file using `nt.plot`. 
     
     Useful as a pass-through ransform when wanting to observe 
     how augmentation affects the data.
@@ -20,9 +20,9 @@ class ToFile(BaseTransform):
     def __call__(self, image):
         filename = ''.join(random.choice(string.ascii_lowercase) for i in range(10))
         if self.ortho:
-            ants.plot_ortho(image, filename=os.path.join(self.base_dir, filename+'.png'))
+            nt.plot_ortho(image, filename=os.path.join(self.base_dir, filename+'.png'))
         else:
-            ants.plot(image, filename=os.path.join(self.base_dir, filename+'.png'))
+            nt.plot(image, filename=os.path.join(self.base_dir, filename+'.png'))
         return image
 
 

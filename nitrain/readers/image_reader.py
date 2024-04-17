@@ -7,7 +7,7 @@ import datalad.api as dl
 import pandas as pd
 import numpy as np
 
-# list of ants images
+# list of ntimage images
 class ImageReader:
     def __init__(self, images):
         self.values = images

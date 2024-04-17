@@ -143,65 +143,6 @@ class TestClass_IntensityTransforms(unittest.TestCase):
         my_tx = tx.HistogramWarpIntensity()
         img_tx = my_tx(self.img3d)
 
-
-class TestClass_AntsTransforms(unittest.TestCase):
-    def setUp(self):
-        self.img2d = nt.load(nt.example_data('r16'))
-        self.template2d = nt.load(nt.example_data('r64'))
-        self.img3d = nt.load(nt.example_data('mni'))
-        self.template3d = nt.load(nt.example_data('ch2'))
-
-    def tearDown(self):
-        pass
-    
-    def test_ApplyAntsTransform(self):
-        atx = ants.new_ants_transform(dimension=2)
-        atx.set_parameters((0.9,0,
-                            0,1.1,
-                            10,11))
-    
-        my_tx = tx.ApplyAntsTransform(atx)
-        img_tx = my_tx(self.img2d)
-        
-        atx = ants.new_ants_transform(dimension=3)
-        atx.set_parameters((0.9,0,0,
-                            0,1.1,0,
-                            0,0,1.2,
-                            10,11,3))
-
-        my_tx = tx.ApplyAntsTransform(atx)
-        img_tx = my_tx(self.img3d)
-    
-    def test_BrainExtraction(self):
-        my_tx = tx.BrainExtraction()
-        img_tx = my_tx(self.img2d)
-
-        my_tx = tx.BrainExtraction()
-        img_tx = my_tx(self.img3d)
-    
-    def test_DisplacementField(self):
-        my_tx = tx.DisplacementField()
-        img_tx = my_tx(self.img2d)
-
-        my_tx = tx.DisplacementField()
-        img_tx = my_tx(self.img3d)
-    
-    def test_BiasField(self):
-        my_tx = tx.BiasField()
-        img_tx = my_tx(self.img2d)
-
-        my_tx = tx.BiasField()
-        img_tx = my_tx(self.img3d)
-    
-    def test_AlignWithTemplate(self):
-        
-        my_tx = tx.AlignWithTemplate(self.template2d)
-        img_tx = my_tx(self.img2d)
-
-        my_tx = tx.AlignWithTemplate(self.template3d)
-        img_tx = my_tx(self.img3d)
-
-
 class TestClass_SpatialTransforms(unittest.TestCase):
     def setUp(self):
         self.img2d = nt.load(nt.example_data('r16'))

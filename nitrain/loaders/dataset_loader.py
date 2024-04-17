@@ -110,11 +110,11 @@ class DatasetLoader:
                         x_batch = x_batch_return
                     else:
                         x_batch = np.array([np.expand_dims(xx.numpy(), self.expand_dims) for xx in x_batch])
-                    if 'ANTsImage' in str(type(y[0])):
+                    if 'NTImage' in str(type(y[0])):
                         y_batch = np.array([np.expand_dims(yy.numpy(), self.expand_dims) for yy in y_batch])
                 else:
                     x_batch = np.array([xx.numpy() for xx in x_batch])
-                    if 'ANTsImage' in str(type(y[0])):
+                    if 'NTImage' in str(type(y[0])):
                         y_batch = np.array([yy.numpy() for yy in y_batch])
                 
                 yield x_batch, y_batch

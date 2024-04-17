@@ -60,7 +60,7 @@ class RangeNormalize(BaseTransform):
 class Smoothing(BaseTransform):
     """
     import ntimage as nt
-    img = nt.load(ants.get_ants_data('r16'))
+    img = nt.load(nt.example_data('r16'))
     img2 = nt.smooth(img, 2, True)
     img3 = nt.smooth(img, 2, False)
     """
@@ -83,9 +83,7 @@ class Smoothing(BaseTransform):
     def __call__(self, *images):
         new_images = []
         for image in images:
-            new_image = ants.smooth_image(image, 
-                                          self.std,
-                                          self.physical_space)
+            new_image = nt.smooth(image, self.std, self.physical_space)
             new_images.append(new_image)
         return new_images if len(new_images) > 1 else new_images[0]
 
@@ -102,9 +100,7 @@ class RandomSmoothing(BaseTransform):
         
         new_images = []
         for image in images:
-            new_image = ants.smooth_image(image, 
-                                          std,
-                                          self.physical_space)
+            new_image = nt.smooth(image, std, self.physical_space)
             new_images.append(new_image)
         return new_images if len(new_images) > 1 else new_images[0]
 
@@ -128,9 +124,7 @@ class RandomNoise(BaseTransform):
         std = random.uniform(self.min_std, self.max_std)
         new_images = []
         for image in images:
-            new_image = ants.add_noise_to_image(image,
-                                                'additivegaussian',
-                                                (0, std))
+            new_image = nt.add_noise(image, 'additivegaussian', (0, std))
             new_images.append(new_image)
         return new_images if len(new_images) > 1 else new_images[0]
     

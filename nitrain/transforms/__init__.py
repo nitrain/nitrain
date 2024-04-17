@@ -1,11 +1,8 @@
 """
-The point of these transforms is that they take in an ANTsImage
-and they ALWAYS return an ANTsImage.
-
-Inspiration from https://github.com/ntustison/ANTsXNetTraining/
+The point of these transforms is that they take in an ntimage
+and they ALWAYS return an ntimage.
 """
 
-from .ants_transforms import *
 from .base_transform import *
 from .intensity_transforms import *
 from .spatial_transforms import *

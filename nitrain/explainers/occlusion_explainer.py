@@ -30,7 +30,7 @@ class OcclusionExplainer:
         >>> trainer.fit(loader)
         >>> explainer = explainers.OcclusionExplainer(trainer.model)
         >>> explainer.fit(image)
-        >>> ants.plot(image, overlay=explainer.result_image)
+        >>> nt.plot(image, overlay=explainer.result_image)
         """
         self.model = model
         

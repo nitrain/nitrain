@@ -35,7 +35,7 @@ class BaseSampler:
             if self.shuffle:
                 indices = random.sample(range(len(y)), len(y))
                 x = [x[i] for i in indices]
-                if 'ANTsImage' in str(type(y[0])):
+                if 'NTImage' in str(type(y[0])):
                     y = [y[i] for i in indices]
                 else:
                     y = y[indices]
