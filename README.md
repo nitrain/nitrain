@@ -1,4 +1,4 @@
-# Nitrain - a framework for medical imaging-native AI
+# Nitrain - an open-source framework for medical imaging AI
 
 [![Coverage Status](https://coveralls.io/repos/github/nitrain/nitrain/badge.svg?branch=main)](https://coveralls.io/github/nitrain/nitrain?branch=main)
 [![Build](https://github.com/ncullen93/nitrain/actions/workflows/test.yml/badge.svg)](https://github.com/ncullen93/nitrain/actions/workflows/test.yml)
