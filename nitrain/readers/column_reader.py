@@ -4,7 +4,7 @@ import ntimage as nt
 
 
 class ColumnReader:
-    def __init__(self, file, column, is_image=False, base_dir=None, id=None):
+    def __init__(self, file, column, is_image=False):
         """
         Examples
         --------
@@ -18,6 +18,15 @@ class ColumnReader:
         >>> reader = ColumnReader(file.name, 'x')
         >>> value = reader[1] # 'b'
         """
+        self.file = file
+        self.column = column
+        self.is_image = is_image
+    
+    def map_values(self, base_dir=None):
+        file = self.file
+        column = self.column
+        is_image = self.is_image
+
         if base_dir is not None:
             file = os.path.join(base_dir, file)
         
@@ -47,4 +56,3 @@ class ColumnReader:
         if self.is_image:
             value = nt.load(value)
         return value
-    

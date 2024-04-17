@@ -8,13 +8,21 @@ import numpy as np
 import ntimage as nt
 
 class PatternReader:
-    def __init__(self, pattern, base_dir=None, exclude=None):
+    def __init__(self, pattern, exclude=None):
         """
         >>> import ntimage as nt
         >>> from nitrain.readers import PatternReader
-        >>> reader = PatternReader('~/Desktop/kaggle-liver-ct/volumes/*.nii')
+        >>> reader = PatternReader('volumes/*.nii')
+        >>> reader.map_values(base_dir='~/Desktop/kaggle-liver-ct/')
         >>> img = reader[1]
         """
+        self.pattern = pattern
+        self.exclude = exclude
+    
+    def map_values(self, base_dir=None):
+        pattern = self.pattern
+        exclude = self.exclude
+        
         pattern = os.path.expanduser(pattern)
         glob_pattern = pattern.replace('{id}','*')
         
@@ -42,14 +50,11 @@ class PatternReader:
         if len(x) == 0:
             raise Exception(f'No filepaths found that match {glob_pattern}')
 
-        self.base_dir = base_dir
-        self.pattern = glob_pattern
-        self.exclude = exclude
         self.values = x
         self.ids = ids
         
     def __getitem__(self, idx):
-        filename = self.values[idx]
-            
+        if not self.values:
+            raise Exception('You must call `map_values()` before indexing a reader.')
         return nt.load(self.values[idx])
     

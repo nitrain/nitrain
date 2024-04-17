@@ -46,6 +46,11 @@ class GoogleCloudDataset:
         ...     }
         ... )
         """
+        self.bucket = bucket
+        self.base_dir = base_dir
+        self.credentials = credentials
+        self.fuse = fuse
+        
         self.inputs = inputs
         self.outputs = outputs
         self.transforms = transforms

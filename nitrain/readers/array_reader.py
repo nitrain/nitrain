@@ -21,7 +21,9 @@ class ArrayReader:
         >>> img = reader[1]
         """
         self.array = array
-        
+    
+    def map_values(self):
+        array = self.array
         if array.ndim > 2:
             # arrays must be converted to images
             array_list = np.split(array, array.shape[0])

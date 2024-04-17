@@ -9,8 +9,9 @@ class Dataset:
         Examples
         --------
         >>> dataset = datasets.Dataset(
-        ...     inputs = readers.PatternReader(),
-        ...     outputs = readers.ColumnReader()
+        ...     inputs = readers.PatternReader('~/desktop/ds004711/sub-*/anat/*_T1w.nii.gz'),
+        ...     outputs = readers.ColumnReader('~/desktop/ds004711/participants.tsv', 'age'),
+        ...     
         ... )
         >>> dataset = datasets.Dataset(
         ...     inputs = [img1, img2, img3, img4],
@@ -75,8 +76,8 @@ class Dataset:
         x_items = []
         y_items = []
         for i in idx:
-            x_raw = self.inputs(i)
-            y_raw = self.outputs(i)
+            x_raw = self.inputs[idx]
+            y_raw = self.outputs[idx]
             
             if self.transforms:
                 for tx_name, tx_list in self.transforms:
