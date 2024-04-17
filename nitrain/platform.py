@@ -3,7 +3,6 @@ import os
 import tempfile
 import json
 from tqdm import tqdm
-import ants
 
 from . import datasets
 

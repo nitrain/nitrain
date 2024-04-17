@@ -1,4 +1,4 @@
-import ants
+import ntimage as nt
 
 import random
 import numpy as np
@@ -8,8 +8,8 @@ from .base_transform import BaseTransform
 
 class StandardNormalize(BaseTransform):
     """
-    import ants
-    img = ants.image_read(ants.get_ants_data('r16'))
+    import ntimage as nt
+    img = nt.load(nt.example_data('r16'))
     img2 = (img - img.mean()) / img.std()
     
     from nitrain import transforms as tx
@@ -30,8 +30,8 @@ class StandardNormalize(BaseTransform):
 
 class Threshold(BaseTransform):
     """
-    import ants
-    img = ants.image_read(ants.get_ants_data('r16'))
+    import ntimage as nt
+    img = nt.load(nt.example_data('r16'))
     """
     def __init__(self, threshold):
         self.threshold = threshold
@@ -59,10 +59,10 @@ class RangeNormalize(BaseTransform):
 
 class Smoothing(BaseTransform):
     """
-    import ants
-    img = ants.image_read(ants.get_ants_data('r16'))
-    img2 = ants.smooth_image(img, 2, True)
-    img3 = ants.smooth_image(img, 2, False)
+    import ntimage as nt
+    img = nt.load(ants.get_ants_data('r16'))
+    img2 = nt.smooth(img, 2, True)
+    img3 = nt.smooth(img, 2, False)
     """
     
     def __init__(self, std, physical_space=True):
@@ -115,10 +115,10 @@ class RandomNoise(BaseTransform):
     """
     Apply random additive gaussian noise to an image.
     
-    import ants
-    img = ants.image_read(ants.get_ants_data('r16'))
-    img2 = ants.add_noise_to_image(img, 'additivegaussian', (0, 16))
-    ants.plot((img2 - img))
+    import ntimage as nt
+    img = nt.load(nt.example_data('r16'))
+    img2 = nt.add_noise(img, 'additivegaussian', (0, 16))
+    nt.plot((img2 - img))
     """
     def __init__(self, min_std, max_std):
         self.min_std = min_std

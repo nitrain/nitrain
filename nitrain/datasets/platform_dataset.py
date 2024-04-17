@@ -1,100 +1,104 @@
-import warnings
-import os
-import glob
-import pandas as pd
-import numpy as np
-from fnmatch import fnmatch
-from google.cloud import storage
-from google.oauth2 import service_account
-from parse import parse
-import ants
 
-from .. import platform
 
 class PlatformDataset:
     
-    def __init__(self,
-                 name,
-                 x,
-                 y,
-                 transforms=None,
-                 token=None):
+    def __init__(self, name, inputs, outputs, transforms=None, token=None):
         """
-        Initialize a dataset stored on the nitrain.dev platform. 
+        Create a nitrain dataset from images stored on google cloud.
         
-        You cannot access dataset records from a PlatformDataset like you
-        would any other dataset. This class is "lazy" in the sense that
-        records are only read in locally once you pass the dataset to a 
-        LocalTrainer or call the `.to_local()` method to download it. 
-        
-        The PlatformDataset is most useful if you are using the PlatformTrainer to
-        train a model with the nitrain.dev platform. 
-        
-        Arguments
-        ---------
-        x : dict or list of dicts
-            The config dict to specify how input files should be found. This generally
-            takes one of two forms:
-            - pattern-based: {'pattern': '*/anat/*_T1w.nii.gz'}
-            - filename-based: {'filenames': ['sub-001/anat/sub-001_T1w.nii.gz', '...']}
-            If the input to the model is multiple images, then x should be a list of configs:
-            e.g., [{'pattern': '*/anat/*_T1w.nii.gz'}, {'pattern': '*/anat/*_T2w.nii.gz'}] 
-            
-        Example
-        -------
-        >>> from nitrain.datasets import PlatformDataset
-        >>> dataset = PlatformDataset(name='ds000711', 
-                                      x={'pattern': '*/anat/*_T1w.nii.gz', 'exclude': '**run-02*'},
-                                      y={'file': 'participants.tsv', 'column': 'age'})
-        >>> dataset = PlatformDataset(name='ds000711', 
-                                      x={'filenames': ['sub-001/anat/T1.nii.gz', '...']},
-                                      y={'file': 'participants.tsv', 'column': 'age'})
+        Examples
+        --------
+        >>> dataset = datasets.PlatformDataset(
+        ...     inputs = readers.PatternReader(),
+        ...     outputs = readers.ColumnReader()
+        ... )
+        >>> dataset = datasets.PlatformDataset(
+        ...     inputs = [
+        ...         readers.PatternReader(),
+        ...         readers.PatternReader(),
+        ...     ]
+        ...     outputs = readers.ColumnReader()
+        ... )
+        >>> dataset = datasets.PlatformDataset(
+        ...     inputs = {
+        ...         't1': readers.PatternReader(),
+        ...         't2': readers.PatternReader(),
+        ...     }
+        ...     outputs = readers.ColumnReader()
+        ... )
+        >>> dataset = datasets.PlatformDataset(
+        ...     inputs = readers.PatternReader(),
+        ...     outputs = readers.ColumnReader(),
+        ...     transforms = {
+        ...         'inputs': tx.RangeNormalize(0,1),
+        ...         ['inputs','outputs']: [
+        ...             tx.Resample((128,128,128)),
+        ...             tx.Reorient('RPI')
+        ...         ]
+        ...     }
+        ... )
+        >>> dataset = datasets.PlatformDataset(
+        ...     inputs = {'anat': readers.PatternReader()},
+        ...     outputs = {'seg': readers.ColumnReader()},
+        ...     transforms = {
+        ...         'anat': tx.RangeNormalize(0,1),
+        ...         ['anat','seg']: tx.Resample((128,128,128))
+        ...     }
+        ... )
         """
-        # convert base_dir (nick-2/first-dataset) to gcs fuse
-        if token is None:
-            token = os.environ.get('NITRAIN_API_TOKEN')
-            if token is None:
-                raise Exception('No api token given or found. Set `NITRAIN_API_TOKEN` or create an account to get your token.')
-
-        # this will raise exception if token is not valid
-        user = platform._get_user_from_token(token)
-        base_dir = f'{user}/{name}'
-        
-        # TODO: check if dataset record exists
-        
-        self.name = name
-        self.x = x
-        self.y = y
+        self.inputs = inputs
+        self.outputs = outputs
         self.transforms = transforms
-        self.token = token
 
-    def to_local(self, folder=None):
-        """
-        Download a PlatformDataset to local file storage.
-        
-        This function will download only the records specified with the
-        x and y config. It will return the same dataset as a FolderDataset
-        class that can be used locally.
-        
-        Arguments
-        ---------
-        folder : string
-            If specified, the dataset will be downloaded to this folder. Otherwise,
-            it will be downloaded to the nitrain home directory (~/.nitrain)
-            
-        Returns
-        -------
-        """
-        raise NotImplementedError('Not implemented yet.')
-        
+    def filter(self, expr):
+        raise NotImplementedError('Not implemented')
+    
+    def prefetch(self):
+        raise NotImplementedError('Not implemented')
+    
     def __getitem__(self, idx):
-        raise NotImplementedError('Not implemented yet.')
+        if isinstance(idx, slice):
+            idx = list(range(idx.stop)[idx])
+            is_slice = True
+        else:
+            idx = [idx]
+            is_slice = False
+            
+        x_items = []
+        y_items = []
+        for i in idx:
+            x_raw = self.inputs(i)
+            y_raw = self.outputs(i)
+            
+            if self.transforms:
+                for tx_name, tx_list in self.transforms:
+                    if tx_name == 'x':
+                        for tx_fn in tx_list:
+                            x_raw = tx_fn(x_raw)
+                    elif tx_name == 'y':
+                        for tx_fn in tx_list:
+                            y_raw = tx_fn(y_raw)
+                    elif tx_name == 'co':
+                        for tx_fn in tx_list:
+                            x_raw, y_raw = tx_fn(x_raw, y_raw)
+                    else:
+                        # TODO: match to name in inputs / outputs
+                        pass
+                            
+            x_items.append(x_raw)
+            y_items.append(y_raw)
+        
+        if not is_slice:
+            x_items = x_items[0]
+            y_items = y_items[0]
+
+        return x_items, y_items
     
     def __len__(self):
-        raise NotImplementedError('Not implemented yet.')
+        raise NotImplementedError('Not implemented')
     
-    def __copy__(self):
-        raise NotImplementedError('Not implemented yet.')
+    def __str__(self):
+        raise NotImplementedError('Not implemented')
     
     def __repr__(self):
-        raise NotImplementedError('Not implemented yet.')
+        raise NotImplementedError('Not implemented')

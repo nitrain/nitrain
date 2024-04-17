@@ -1,7 +1,7 @@
 
 
 
-class LocalTrainer:
+class Trainer:
     """
     The LocalTrainer class provides high-level functionality to train
     deep learning models on dataset loaders. It wraps the most popular

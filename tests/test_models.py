@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 import numpy.testing as nptest
 
-import ants
+import ntimage as nt
 from nitrain import models
 
 

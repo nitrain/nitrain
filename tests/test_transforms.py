@@ -7,14 +7,14 @@ from tempfile import mktemp
 import numpy as np
 import numpy.testing as nptest
 
-import ants
+import ntimage as nt
 from nitrain import transforms as tx
 
 
 class TestClass_StructuralTransforms(unittest.TestCase):
     def setUp(self):
-        self.img2d = ants.image_read(ants.get_data('r16'))
-        self.img3d = ants.image_read(ants.get_data('mni'))
+        self.img2d = nt.load(nt.example_data('r16'))
+        self.img3d = nt.load(nt.example_data('mni'))
 
     def tearDown(self):
         pass
@@ -88,8 +88,8 @@ class TestClass_StructuralTransforms(unittest.TestCase):
 
 class TestClass_IntensityTransforms(unittest.TestCase):
     def setUp(self):
-        self.img2d = ants.image_read(ants.get_data('r16'))
-        self.img3d = ants.image_read(ants.get_data('mni'))
+        self.img2d = nt.load(nt.example_data('r16'))
+        self.img3d = nt.load(nt.example_data('mni'))
 
     def tearDown(self):
         pass
@@ -146,10 +146,10 @@ class TestClass_IntensityTransforms(unittest.TestCase):
 
 class TestClass_AntsTransforms(unittest.TestCase):
     def setUp(self):
-        self.img2d = ants.image_read(ants.get_data('r16'))
-        self.template2d = ants.image_read(ants.get_data('r64'))
-        self.img3d = ants.image_read(ants.get_data('mni'))
-        self.template3d = ants.image_read(ants.get_data('ch2'))
+        self.img2d = nt.load(nt.example_data('r16'))
+        self.template2d = nt.load(nt.example_data('r64'))
+        self.img3d = nt.load(nt.example_data('mni'))
+        self.template3d = nt.load(nt.example_data('ch2'))
 
     def tearDown(self):
         pass
@@ -204,8 +204,8 @@ class TestClass_AntsTransforms(unittest.TestCase):
 
 class TestClass_SpatialTransforms(unittest.TestCase):
     def setUp(self):
-        self.img2d = ants.image_read(ants.get_data('r16'))
-        self.img3d = ants.image_read(ants.get_data('mni'))
+        self.img2d = nt.load(nt.example_data('r16'))
+        self.img3d = nt.load(nt.example_data('mni'))
 
     def tearDown(self):
         pass

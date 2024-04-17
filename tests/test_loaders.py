@@ -7,14 +7,14 @@ from tempfile import mktemp
 import numpy as np
 import numpy.testing as nptest
 
-import ants
+import ntimage as nt
 from nitrain import datasets, loaders, samplers
 
 
 class TestClass_DatasetLoader(unittest.TestCase):
     def setUp(self):
-        img2d = ants.image_read(ants.get_data('r16'))
-        img3d = ants.image_read(ants.get_data('mni'))
+        img2d = nt.load(nt.example_data('r16'))
+        img3d = nt.load(nt.example_data('mni'))
         
         x = [img2d for _ in range(10)]
         y = list(range(10))
@@ -52,7 +52,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
         self.assertTrue(x_batch.shape == (4, 182, 218, 182, 1))
     
     def test_image_to_image(self):
-        img = ants.image_read(ants.get_data('r16'))
+        img = nt.load(nt.example_data('r16'))
         x = [img for _ in range(10)]
         dataset = datasets.MemoryDataset(x, x)
         loader = loaders.DatasetLoader(dataset,
@@ -63,7 +63,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
         self.assertTrue(y_batch.shape == (4, 256, 256, 1))
 
     def test_multi_image_to_image(self):
-        img = ants.image_read(ants.get_data('r16'))
+        img = nt.load(nt.example_data('r16'))
         dataset = datasets.MemoryDataset([[img, img] for _ in range(10)], 
                                          [img for _ in range(10)])
         loader = loaders.DatasetLoader(dataset,
@@ -76,7 +76,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
         self.assertTrue(y_batch.shape == (4, 256, 256, 1))
     
     def test_image_to_image_with_slice_sampler(self):
-        img = ants.image_read(ants.get_data('mni'))
+        img = nt.load(nt.example_data('mni'))
         x = [img for _ in range(10)]
         dataset = datasets.MemoryDataset(x, x)
         loader = loaders.DatasetLoader(dataset,

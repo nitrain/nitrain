@@ -6,7 +6,7 @@ from fnmatch import fnmatch
 import datalad.api as dl
 import pandas as pd
 import numpy as np
-import ants
+import ntimage as nt
 
 def infer_reader(x, base_dir=None):
     """
@@ -33,7 +33,7 @@ def infer_reader(x, base_dir=None):
     >>> base_dir = os.path.expanduser('~/Desktop/openneuro/ds004711')
     >>> array = np.random.normal(40,10,(10,50,50,50))
     >>> x = infer_config(array)
-    >>> x = infer_config([ants.image_read(ants.get_data('r16')) for _ in range(10)])
+    >>> x = infer_config([nt.load(nt.example_data('r16')) for _ in range(10)])
     >>> x = infer_config([{'pattern': '{id}/anat/*.nii.gz'}, {'pattern': '{id}/anat/*.nii.gz'}], base_dir) 
     >>> x = infer_config({'pattern': '{id}/anat/*.nii.gz'}, base_dir) 
     >>> x = infer_config({'pattern': '*/anat/*.nii.gz'}, base_dir)

@@ -1,4 +1,4 @@
-import ants
+import ntimage as nt
 import numpy as np
 import random
 
@@ -14,13 +14,13 @@ class RandomTranslate(BaseTransform):
     """
     Examples
     --------
-    >>> import ants
+    >>> import ntimage as nt
     >>> from nitrain import transforms as tx
-    >>> img = ants.image_read(ants.get_data('r16'))
+    >>> img = nt.load(nt.example_data('r16'))
     >>> my_tx = RandomTranslate(-20, 20)
     >>> img_tx = my_tx(img)
     >>> img_tx.plot(img)
-    >>> img = ants.image_read(ants.get_data('mni'))
+    >>> img = nt.load(nt.example_data('mni'))
     >>> my_tx = RandomTranslate(-20, 20)
     >>> img_tx = my_tx(img)
     >>> img_tx.plot(img)
@@ -81,9 +81,9 @@ class RandomZoom(BaseTransform):
     
     Examples
     --------
-    >>> import ants
+    >>> import ntimage as nt
     >>> from nitrain import transforms as tx
-    >>> image = ants.image_read(ants.get_data('r16'))
+    >>> image = nt.load(nt.example_data('r16'))
     >>> my_tx = tx.RandomZoom(0.8,1.2)
     >>> new_image = my_tx(image)
     """
@@ -112,9 +112,9 @@ class RandomFlip(BaseTransform):
     
     Examples
     --------
-    >>> import ants
+    >>> import ntimage as nt
     >>> from nitrain import transforms as tx
-    >>> img = ants.image_read(ants.get_data('r16'))
+    >>> img = nt.load(nt.example_data('r16'))
     >>> my_tx = tx.RandomFlip(p=1)
     >>> new_img = my_tx(img)
     >>> new_img.plot()

@@ -2,7 +2,50 @@
 
 class Dataset:
     
-    def __init__(self, inputs, outputs, transforms):
+    def __init__(self, inputs, outputs, transforms=None, base_dir=None):
+        """
+        Create a nitrain dataset.
+        
+        Examples
+        --------
+        >>> dataset = datasets.Dataset(
+        ...     inputs = readers.PatternReader(),
+        ...     outputs = readers.ColumnReader()
+        ... )
+        >>> dataset = datasets.Dataset(
+        ...     inputs = [
+        ...         readers.PatternReader(),
+        ...         readers.PatternReader(),
+        ...     ]
+        ...     outputs = readers.ColumnReader()
+        ... )
+        >>> dataset = datasets.Dataset(
+        ...     inputs = {
+        ...         't1': readers.PatternReader(),
+        ...         't2': readers.PatternReader(),
+        ...     }
+        ...     outputs = readers.ColumnReader()
+        ... )
+        >>> dataset = datasets.Dataset(
+        ...     inputs = readers.PatternReader(),
+        ...     outputs = readers.ColumnReader(),
+        ...     transforms = {
+        ...         'inputs': tx.RangeNormalize(0,1),
+        ...         ['inputs','outputs']: [
+        ...             tx.Resample((128,128,128)),
+        ...             tx.Reorient('RPI')
+        ...         ]
+        ...     }
+        ... )
+        >>> dataset = datasets.Dataset(
+        ...     inputs = {'anat': readers.PatternReader()},
+        ...     outputs = {'seg': readers.ColumnReader()},
+        ...     transforms = {
+        ...         'anat': tx.RangeNormalize(0,1),
+        ...         ['anat','seg']: tx.Resample((128,128,128))
+        ...     }
+        ... )
+        """
         self.inputs = inputs
         self.outputs = outputs
         self.transforms = transforms
@@ -24,8 +67,8 @@ class Dataset:
         x_items = []
         y_items = []
         for i in idx:
-            x_raw = self.x_config[i]
-            y_raw = self.y_config[i]
+            x_raw = self.inputs(i)
+            y_raw = self.outputs(i)
             
             if self.transforms:
                 for tx_name, tx_list in self.transforms:
@@ -39,7 +82,7 @@ class Dataset:
                         for tx_fn in tx_list:
                             x_raw, y_raw = tx_fn(x_raw, y_raw)
                     else:
-                        # TODO: match to name in config
+                        # TODO: match to name in inputs / outputs
                         pass
                             
             x_items.append(x_raw)

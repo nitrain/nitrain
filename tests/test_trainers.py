@@ -7,13 +7,13 @@ import tempfile
 import numpy as np
 import numpy.testing as nptest
 
-import ants
+import ntimage as nt
 from nitrain import datasets, loaders, models, trainers
 
 
 class TestClass_LocalTrainer(unittest.TestCase):
     def setUp(self):
-        img = ants.image_read(ants.get_data('r16')).resample_image((4,4))
+        img = nt.load(nt.example_data('r16')).resample_image((4,4))
         x = [img for _ in range(6)]
         y = list(range(6))
         dataset = datasets.MemoryDataset(x, y)

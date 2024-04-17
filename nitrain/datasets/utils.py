@@ -1,10 +1,8 @@
 import os
 import sys
 
-import ants
 import numpy as np
 
-from .memory_dataset import MemoryDataset
 from ..utils import get_nitrain_dir
 
 def fetch_data(name, path=None):
@@ -45,35 +43,9 @@ def fetch_data(name, path=None):
     
     elif name.startswith('example'):
         # create example datasets
-        if name == 'example/t1-age':
-            res = _create_example_t1_age()
+        pass
         
     else:
         raise ValueError('Dataset name not recognized.')
 
     return res
-
-
-def _create_example_t1_age():
-    img = ants.image_read(ants.get_data('mni'))
-    res = MemoryDataset(x=[img for _ in range(10)],
-                        y=np.random.normal(60, 20, 10))
-    return res
-
-
-class SilentFunction(object):
-    def __init__(self,stdout = None, stderr = None):
-        self.devnull = open(os.devnull,'w')
-        self._stdout = stdout or self.devnull or sys.stdout
-        self._stderr = stderr or self.devnull or sys.stderr
-
-    def __enter__(self):
-        self.old_stdout, self.old_stderr = sys.stdout, sys.stderr
-        self.old_stdout.flush(); self.old_stderr.flush()
-        sys.stdout, sys.stderr = self._stdout, self._stderr
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self._stdout.flush(); self._stderr.flush()
-        sys.stdout = self.old_stdout
-        sys.stderr = self.old_stderr
-        self.devnull.close()

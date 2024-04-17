@@ -1,5 +1,5 @@
 import os
-import ants
+import ntimage as nt
 import random
 import string
 import numpy as np

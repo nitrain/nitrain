@@ -2,7 +2,6 @@
 import math
 import numpy as np
 import torch
-import ants
     
 
 class TorchLoader(torch.utils.data.DataLoader):

@@ -1,3 +1,4 @@
 # functions for easily training deep learning models on neuroimages
-from .local_trainer import LocalTrainer
+from .google_cloud_trainer import GoogleCloudTrainer
+from .trainer import Trainer
 from .platform_trainer import PlatformTrainer

@@ -1,5 +1,5 @@
 # Transforms that apply specific antspy functions to images
-import ants
+import ntimage as nt
 
 
 import random
@@ -49,8 +49,8 @@ class DisplacementField(BaseTransform):
     Examples
     --------
     >>> from nitrain import transforms as tx
-    >>> import ants
-    >>> img = ants.image_read(ants.get_data('r16'))
+    >>> import ntimage as nt
+    >>> img = nt.load(nt.example_data('r16'))
     >>> my_tx = tx.DisplacementField()
     >>> new_img = my_tx(img)
     >>> new_img.plot()
@@ -95,8 +95,8 @@ class BiasField(BaseTransform):
     Examples
     --------
     >>> from nitrain import transforms as tx
-    >>> import ants
-    >>> img = ants.image_read(ants.get_data('mni'))
+    >>> import ntimage as nt
+    >>> img = nt.example_data(nt.example_data('mni'))
     >>> my_tx = tx.BiasField()
     >>> new_img = my_tx(img)
     >>> ants.plot_ortho_stack([new_img, img])

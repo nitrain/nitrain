@@ -6,7 +6,6 @@ from fnmatch import fnmatch
 import datalad.api as dl
 import pandas as pd
 import numpy as np
-import ants
 
 class ColumnReader:
     def __init__(self, base_dir, file, column, id=None):

@@ -6,7 +6,7 @@ from fnmatch import fnmatch
 import datalad.api as dl
 import pandas as pd
 import numpy as np
-import ants
+import ntimage as nt
 
 # one image from file
 class PatternReader:
@@ -44,7 +44,7 @@ class PatternReader:
         
         if self.datalad:
             ds = dl.Dataset(path = self.base_dir)
-            res = ds.get(filename)
+            ds.get(filename)
             
-        return ants.image_read(self.values[idx])
+        return nt.load(self.values[idx])
     

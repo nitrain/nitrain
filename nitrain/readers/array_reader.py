@@ -6,7 +6,7 @@ from fnmatch import fnmatch
 import datalad.api as dl
 import pandas as pd
 import numpy as np
-import ants
+import ntimage as nt
 
 
 # numpy array that must be converted to images

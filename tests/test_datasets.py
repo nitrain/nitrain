@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 import numpy.testing as nptest
 
-import ants
+import ntimage as nt
 from nitrain import datasets, transforms as tx
 from nitrain.readers.utils import infer_reader
 
@@ -21,8 +21,8 @@ class TestClass_BIDSDataset(unittest.TestCase):
         # set up directory
         tmp_dir = mkdtemp()
         self.tmp_dir = tmp_dir
-        img2d = ants.image_read(ants.get_data('r16'))
-        img3d = ants.image_read(ants.get_data('mni'))
+        img2d = nt.load(nt.example_data('r16'))
+        img3d = nt.load(nt.example_data('mni'))
         
         for i in range(5):
             sub_dir = os.path.join(tmp_dir, f'sub-00{i}')
@@ -77,8 +77,8 @@ class TestClass_CSVDataset(unittest.TestCase):
         # set up directory
         tmp_dir = mkdtemp()
         self.tmp_dir = tmp_dir
-        img2d = ants.image_read(ants.get_data('r16'))
-        img3d = ants.image_read(ants.get_data('mni'))
+        img2d = nt.load(nt.example_data('r16'))
+        img3d = nt.load(nt.example_data('mni'))
         
         filenames_2d = []
         filenames_3d = []
@@ -137,8 +137,8 @@ class TestClass_FolderDataset(unittest.TestCase):
         # set up directory
         tmp_dir = mkdtemp()
         self.tmp_dir = tmp_dir
-        img2d = ants.image_read(ants.get_data('r16'))
-        img3d = ants.image_read(ants.get_data('mni'))
+        img2d = nt.load(nt.example_data('r16'))
+        img3d = nt.load(nt.example_data('mni'))
         for i in range(5):
             sub_dir = os.path.join(tmp_dir, f'sub_{i}')
             os.mkdir(sub_dir)
@@ -279,8 +279,8 @@ class TestClass_GoogleCloudDataset(unittest.TestCase):
 
 class TestClass_MemoryDataset(unittest.TestCase):
     def setUp(self):
-        self.img2d = ants.image_read(ants.get_data('r16'))
-        self.img3d = ants.image_read(ants.get_data('mni'))
+        self.img2d = nt.load(nt.example_data('r16'))
+        self.img3d = nt.load(nt.example_data('mni'))
 
     def tearDown(self):
         pass

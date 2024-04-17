@@ -1,4 +1,4 @@
-import ants
+import ntimage as nt
 import random
 
 from .base_transform import BaseTransform
@@ -15,9 +15,9 @@ class SplitLabels(BaseTransform):
     
     Examples
     --------
-    >>> import ants
+    >>> import ntimage as nt
     >>> from nitrain import transforms as tx
-    >>> img = ants.image_read(ants.get_data('r16'))
+    >>> img = nt.load(nt.example_data('r16'))
     >>> img = img > img.mean()
     >>> my_tx = tx.SplitLabels()
     >>> img_split = my_tx(img)
@@ -39,7 +39,7 @@ class SplitLabels(BaseTransform):
 
 class Resample(BaseTransform):
     """
-    img = ants.image_read(ants.get_ants_data('mni'))
+    img = nt.load(ants.get_ants_data('mni'))
     # resample voxel directly (fine if image has even dimensions.. not here though)
     my_tx = ResampleImage((60,60,60))
     img2 = my_tx(img)
@@ -67,7 +67,7 @@ class Resample(BaseTransform):
 
 class ResampleToTarget(BaseTransform):
     """
-    img = ants.image_read(ants.get_ants_data('mni'))
+    img = nt.load(ants.get_ants_data('mni'))
     img2 = img.clone().resample_image((4,4,4))
     my_tx = ResampleImageToTarget(img2)
     img3 = my_tx(img)
@@ -165,9 +165,9 @@ class RandomCrop(BaseTransform):
     
     Examples
     --------
-    >>> import ants
+    >>> import ntimage as nt
     >>> from nitrain import transforms as tx
-    >>> mni = ants.image_read(ants.get_data('mni'))
+    >>> mni = nt.load(nt.example_data('mni'))
     >>> my_tx = tx.RandomCrop(size=(30,30,30))
     >>> mni_crop = my_tx(mni)
     >>> mni_crop.plot(domain_image_map=mni)
@@ -195,9 +195,9 @@ class Pad(BaseTransform):
     
     Example
     -------
-    >>> import ants
+    >>> import ntimage as nt
     >>> from nitrain import transforms as tx
-    >>> mni = ants.image_read(ants.get_data('mni'))
+    >>> mni = nt.load(nt.example_data('mni'))
     >>> my_tx = tx.Pad((220,220,220))
     >>> mni_pad = my_tx(mni)
     """
