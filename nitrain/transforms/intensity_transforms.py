@@ -6,6 +6,19 @@ import numpy as np
 from .base_transform import BaseTransform
 
 
+class Cast(BaseTransform):
+    """
+    Cast an image to another datatype
+    """
+    def __init__(self, dtype):
+        self.dtype = dtype
+    def __call__(self, image, co_image):
+        image = image.clone(self.dtype)
+        if co_image is not None:
+            co_image = co_image.clone(self.dtype)
+            return image, co_image
+        return image
+
 class StandardNormalize(BaseTransform):
     """
     import ntimage as nt

@@ -40,13 +40,7 @@ class ColumnReader:
             
         values = participants[column].to_numpy()
         
-        if id is not None:
-            ids = list(participants[id].to_numpy())
-        else:
-            ids = None
-        
         self.values = values
-        self.ids = ids
         self.file = file
         self.column = column
         self.is_image = is_image
@@ -54,5 +48,8 @@ class ColumnReader:
     def __getitem__(self, idx):
         value = self.values[idx]
         if self.is_image:
-            value = nt.load(value)
+            try:
+                value = nt.load(value)
+            except:
+                raise ValueError(f'This image type (.{value.split(".")[-1]}) cannot be read or the file does not exist.')
         return value

@@ -7,6 +7,8 @@ import pandas as pd
 import numpy as np
 import ntimage as nt
 
+from .. import readers
+
 def infer_reader(x, base_dir=None):
     """
     Infer reader from user-supplied values.
@@ -42,37 +44,32 @@ def infer_reader(x, base_dir=None):
     reader = None
     if isinstance(x, list):
         # list of ntimages
-        if isinstance(x[0], nt.NTImage):
-            return ImageReader(x)
-        # list of multiple ()potentially mixed) readers
-        elif isinstance(x[0], dict):
-            readers = [infer_reader(reader, base_dir=base_dir) for reader in x]
-            return ComposeReader(readers)
+        if nt.is_ntimage(x[0]):
+            return readers.ImageReader(x)
+        # list of multiple (potentially mixed) readers
+        elif 'image_reader' in type(x[0]):
+            reader_list = [infer_reader(reader, base_dir=base_dir) for reader in x]
+            return readers.ComposeReader(reader_list)
         # list that is meant to be an array or multiple-images
         elif isinstance(x[0], list):
-            if isinstance(x[0][0], nt.NTImage):
-                readers = []
+            if nt.is_ntimage(x[0][0]):
+                reader_list = []
                 for i in range(len(x[0])):
-                    readers.append(ImageReader([xx[i] for xx in x]))
-                return ComposeReader(readers)
+                    reader_list.append(readers.ImageReader([xx[i] for xx in x]))
+                return readers.ComposeReader(reader_list)
             else:
-                return ArrayReader(np.array(x))    
+                return readers.ArrayReader(np.array(x))    
         else:
-            return ArrayReader(np.array(x))
+            return readers.ArrayReader(np.array(x))
         
     elif isinstance(x, dict):
-        # options:
-        # - PatternReader
-        # - ColumnReader
-        # - GoogleCloudReader
-        # - PlatformReader
-        if 'pattern' in x.keys():
-            return PatternReader(base_dir=base_dir, **x)
-        if 'file' in x.keys():
-            return ColumnReader(base_dir=base_dir, **x)
+        # named readers
+        pass
         
     elif isinstance(x, np.ndarray):
-        return ArrayReader(x)
+        return readers.ArrayReader(x)
+    elif 'nitrain.readers' in str(type(x)):
+        return x
     
     if reader is None:
         raise Exception(f'Could not infer a configuration from given value: {x}')
@@ -87,9 +84,9 @@ def align_readers(x, y):
     if x.ids is None:
         raise Exception('`x` is missing ids. Specify `{id}` somewhere in the pattern.')
     if y.ids is None:
-        if isinstance(y, PatternReader):
+        if isinstance(y, readers.PatternReader):
             raise Exception('`y` is missing ids. Specify `{id}` somewhere in the pattern.')
-        elif isinstance(y, ColumnReader):
+        elif isinstance(y, readers.ColumnReader):
             raise Exception('`y` is missing ids. Specify "id": "COL_NAME" in the file dict.')
     
     x_ids = x.ids

@@ -34,6 +34,14 @@ class TestClass_Dataset(unittest.TestCase):
         
         # test repr
         r = dataset.__repr__()
+    
+    def test_memory_double_inputs(self):
+        img = nt.load(nt.example_data('r16'))
+        dataset = nitrain.Dataset(
+            inputs = [readers.ImageReader([nt.ones((128,128))*i for i in range(10)]),
+                      readers.ImageReader([nt.ones((128,128))*i for i in range(10)])],
+            outputs = [i for i in range(10)]
+        )
         
     def test_3d(self):
         dataset = datasets.CSVDataset(

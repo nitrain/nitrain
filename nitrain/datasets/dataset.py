@@ -1,4 +1,5 @@
 
+from ..readers.utils import infer_reader
 
 class Dataset:
     
@@ -55,6 +56,12 @@ class Dataset:
         ...     }
         ... )
         """
+        inputs = infer_reader(inputs)
+        outputs = infer_reader(outputs)
+        
+        inputs.map_values(base_dir=base_dir)
+        outputs.map_values(base_dir=base_dir)
+                    
         self.inputs = inputs
         self.outputs = outputs
         self.transforms = transforms
@@ -76,8 +83,8 @@ class Dataset:
         x_items = []
         y_items = []
         for i in idx:
-            x_raw = self.inputs[idx]
-            y_raw = self.outputs[idx]
+            x_raw = self.inputs[i]
+            y_raw = self.outputs[i]
             
             if self.transforms:
                 for tx_name, tx_list in self.transforms:

@@ -4,7 +4,7 @@ import sys
 import numpy as np
 
 from ..utils import get_nitrain_dir
-
+    
 def fetch_data(name, path=None):
     """
     Download example datasets from OpenNeuro and other sources.
@@ -49,3 +49,5 @@ def fetch_data(name, path=None):
         raise ValueError('Dataset name not recognized.')
 
     return res
+
+
