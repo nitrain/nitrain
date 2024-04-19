@@ -83,18 +83,18 @@ class Dataset:
         x_items = []
         y_items = []
         for i in idx:
-            #{'inputs': ntimage} -> img
-            #{'inputs': [{'anat': ntimage}, {'func': ntimage}]} -> [img, img]
-            #{'inputs': {'compose': {'anat': ntimage}, {'func': ntimage}}, {'anat-2', ntimage}} -> [[img, img], img]
-            #{'inputs': {'anat': ntimage}, {'func': ntimage}, {'other': {'other-1': ntimage, 'other-2': ntimage} }} -> [img, img, [img, img]]
             x_raw = self.inputs[i]
             y_raw = self.outputs[i]
             
             if self.transforms:
                 for tx_name, tx_value in self.transforms.items():
+                    # TODO: support transforms applied to input + output together
                     x_raw = apply_transforms(tx_name, tx_value, x_raw)
                     y_raw = apply_transforms(tx_name, tx_value, y_raw)
-                            
+                    
+            x_raw = reduce_to_list(x_raw)
+            y_raw = reduce_to_list(y_raw)
+            
             x_items.append(x_raw)
             y_items.append(y_raw)
         
@@ -113,22 +113,40 @@ class Dataset:
     def __repr__(self):
         raise NotImplementedError('Not implemented')
 
-def apply_transforms(tx_name, tx_value, x):
-    #{'inputs': ntimage} -> img
-    #{'inputs': {'anat': ntimage}, {'func': ntimage}} -> [img, img]
-    #{'inputs': {'compose': {'anat': ntimage}, {'func': ntimage}}, {'anat-2', ntimage}} -> [[img, img], img]
-    #{'inputs': {'anat': ntimage}, {'func': ntimage}, {'other': {'other-1': ntimage, 'other-2': ntimage} }} -> [img, img, [img, img]]
-    
-    # tx_name can be string or tuple
+
+def reduce_to_list(d, idx=0):
+    result = []
+    for key, val in d.items():
+        if isinstance(val, dict):
+            result.extend([recurse(d[key], idx+1)])
+        else:
+            result.append(val)
+        
+    return result if len(result) > 1 else result[0]
+
+
+def apply_transforms(tx_name, tx_value, inputs, force=False):
+    """
+    Apply transforms recursively based on match between transform name
+    and input label. If there is a match and the input is nested, then all
+    children of that input will receive the transform.
+    """
     if not isinstance(tx_name, tuple):
         tx_name = (tx_name,)
+    if not isinstance(tx_value, list):
+        tx_value = list(tx_value)
     
-    for x_name, x_value in x.items():
-        if isinstance(x_value, dict):
-            if x_name in tx_name:
-                pass
+    for input_name, input_value in inputs.items():
+        
+        if isinstance(input_value, dict):
+            if input_name in tx_name:
+                apply_transforms(tx_name, tx_value, input_value, force=True)
             else:
-                apply_transforms(tx_name, tx_value, x_value)
+                apply_transforms(tx_name, tx_value, input_value, force=force)
         else:
-            if x_name in tx_name:
-                pass
+            if (input_name in tx_name) | force:
+                for tx_fn in tx_value:
+                    inputs[input_name] = tx_fn(inputs[input_name])
+    
+    return inputs
+            

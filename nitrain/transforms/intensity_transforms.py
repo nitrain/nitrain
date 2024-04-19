@@ -15,7 +15,7 @@ class Cast(BaseTransform):
     def __call__(self, *images):
         print(images)
         images = [image.clone(self.dtype) for image in images]
-        return images
+        return images if len(images) > 1 else images[0]
 
 class StandardNormalize(BaseTransform):
     """
