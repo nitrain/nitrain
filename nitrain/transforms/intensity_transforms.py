@@ -13,7 +13,6 @@ class Cast(BaseTransform):
     def __init__(self, dtype):
         self.dtype = dtype
     def __call__(self, *images):
-        print(images)
         images = [image.clone(self.dtype) for image in images]
         return images if len(images) > 1 else images[0]
 
