@@ -105,7 +105,7 @@ class Dataset:
         return x_items, y_items
     
     def __len__(self):
-        raise NotImplementedError('Not implemented')
+        return len(self.inputs)
     
     def __str__(self):
         raise NotImplementedError('Not implemented')

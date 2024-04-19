@@ -20,10 +20,14 @@ class ComposeReader:
                 self.label = base_label
             else:
                 self.label = 'compose'
+        self.values = list(zip(*[reader.values for reader in self.readers]))
 
     def __getitem__(self, idx):
         values = {}
         for reader in self.readers:
             values.update(reader[idx])
         return {self.label: values}
+    
+    def __len__(self):
+        return len(self.values)
 

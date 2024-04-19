@@ -41,7 +41,7 @@ class ColumnReader:
             
         values = participants[column].to_numpy()
         
-        self.values = values
+        self.values = list(values)
         self.file = file
         self.column = column
         self.is_image = is_image

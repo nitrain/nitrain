@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import warnings
 
 from .. import samplers
 
@@ -8,9 +9,7 @@ class Loader:
     def __init__(self, 
                  dataset, 
                  images_per_batch, 
-                 x_transforms=None, 
-                 y_transforms=None, 
-                 co_transforms=None,
+                 transforms=None,
                  expand_dims=-1,
                  shuffle=False,
                  sampler=None):
@@ -25,12 +24,14 @@ class Loader:
         xb, yb = next(iter(ld))
 
         """
+        if images_per_batch > len(dataset):
+            warnings.warn(f'Warning: The supplied images_per_batch ({images_per_batch}) is larger than available dataset records ({len(dataset)}). Setting to available dataset records.')
+            images_per_batch = len(dataset)
+            
         self.dataset = dataset
         self.images_per_batch = images_per_batch
         self.expand_dims = expand_dims
-        self.x_transforms = x_transforms
-        self.y_transforms = y_transforms
-        self.co_transforms = co_transforms
+        self.transforms = transforms
         self.shuffle = shuffle
         
         if sampler is None:
@@ -80,19 +81,8 @@ class Loader:
             image_batch_idx += 1
            
             # perform transforms
-            if self.x_transforms:
-                for tx_fn in self.x_transforms:
-                    x = [tx_fn(xx) for xx in x]
-            
-            if self.y_transforms:
-                for tx_fn in self.y_transforms:
-                    y = [tx_fn(yy) for yy in y]
-            
-            if self.co_transforms:
-                for tx_fn in self.co_transforms:
-                    for i in range(len(x)):
-                        x[i], y[i] = tx_fn(x[i], y[i])
-
+            if self.transforms:
+                pass
             # sample the batch
             sampled_batch = self.sampler(x, y)
             
@@ -102,7 +92,6 @@ class Loader:
                 
                 if self.expand_dims is not None:
                     if isinstance(x_batch[0], list):
-                        print('got multiple inputs')
                         x_batch_return = []
                         for i in range(len(x_batch[0])):
                             tmp_x_batch = np.array([np.expand_dims(xx[i].numpy(), self.expand_dims) for xx in x_batch])
