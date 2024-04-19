@@ -41,3 +41,6 @@ class ArrayReader:
         
     def __getitem__(self, idx):
         return {self.label: self.values[idx]}
+
+    def __len__(self):
+        return len(self.values)

@@ -60,3 +60,6 @@ class ColumnReader:
             except:
                 raise ValueError(f'This image type (.{value.split(".")[-1]}) cannot be read or the file does not exist.')
         return {self.label: value}
+
+    def __len__(self):
+        return len(self.values)

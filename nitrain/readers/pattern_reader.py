@@ -65,3 +65,5 @@ class PatternReader:
             raise Exception('You must call `map_values()` before indexing a reader.')
         return {self.label: nt.load(self.values[idx])}
     
+    def __len__(self):
+        return len(self.values)
