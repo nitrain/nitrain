@@ -4,7 +4,7 @@ import ntimage as nt
 
 
 class ColumnReader:
-    def __init__(self, file, column, is_image=False):
+    def __init__(self, file, column, is_image=False, label=None):
         """
         Examples
         --------
@@ -21,8 +21,9 @@ class ColumnReader:
         self.file = file
         self.column = column
         self.is_image = is_image
+        self.label = label
     
-    def map_values(self, base_dir=None):
+    def map_values(self, base_dir=None, base_label=None):
         file = self.file
         column = self.column
         is_image = self.is_image
@@ -44,6 +45,10 @@ class ColumnReader:
         self.file = file
         self.column = column
         self.is_image = is_image
+        
+        if base_label is not None:
+            if self.label is None:
+                self.label = base_label
 
     def __getitem__(self, idx):
         value = self.values[idx]
@@ -52,4 +57,4 @@ class ColumnReader:
                 value = nt.load(value)
             except:
                 raise ValueError(f'This image type (.{value.split(".")[-1]}) cannot be read or the file does not exist.')
-        return value
+        return {self.label: value}

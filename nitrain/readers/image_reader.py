@@ -8,7 +8,7 @@ import numpy as np
 
 # list of ntimage images
 class ImageReader:
-    def __init__(self, images):
+    def __init__(self, images, label=None):
         """
         Examples
         --------
@@ -21,6 +21,7 @@ class ImageReader:
         """
         self.values = images
         self.ids = None
+        self.label = label
     
     def map_values(self):
         pass

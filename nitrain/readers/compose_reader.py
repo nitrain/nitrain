@@ -7,17 +7,21 @@ import pandas as pd
 import numpy as np
 
 class ComposeReader:
-    def __init__(self, readers):
+    def __init__(self, readers, label=None):
         self.readers = readers
-        values = [reader.values for reader in self.readers]
-        self.values = list(zip(*values))
+        self.label = label
+    
+    def map_values(self, base_dir=None, base_label=None):
+        for idx, reader in enumerate(self.readers):
+            reader.map_values(base_dir=base_dir, base_label=f'{base_label}-{idx}')
         
-        # TODO: align ids for composed readers
-        if self.readers[0].ids is not None:
-            self.ids = self.readers[0].ids
-        else:
-            self.ids = None
+        if base_label is not None:
+            if self.label is None:
+                self.label = base_label
 
     def __getitem__(self, idx):
-        return [reader[idx] for reader in self.readers]
+        values = {}
+        for reader in self.readers:
+            values.update(reader[idx])
+        return {self.label: values}
 

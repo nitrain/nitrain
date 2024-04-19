@@ -10,7 +10,7 @@ import ntimage as nt
 
 # numpy array that must be converted to images
 class ArrayReader:
-    def __init__(self, array):
+    def __init__(self, array, label=None):
         """
         Examples
         --------
@@ -21,8 +21,9 @@ class ArrayReader:
         >>> img = reader[1]
         """
         self.array = array
+        self.label = label
     
-    def map_values(self):
+    def map_values(self, **kwargs):
         array = self.array
         if array.ndim > 2:
             # arrays must be converted to images

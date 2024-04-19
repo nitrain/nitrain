@@ -12,12 +12,10 @@ class Cast(BaseTransform):
     """
     def __init__(self, dtype):
         self.dtype = dtype
-    def __call__(self, image, co_image):
-        image = image.clone(self.dtype)
-        if co_image is not None:
-            co_image = co_image.clone(self.dtype)
-            return image, co_image
-        return image
+    def __call__(self, *images):
+        print(images)
+        images = [image.clone(self.dtype) for image in images]
+        return images
 
 class StandardNormalize(BaseTransform):
     """
