@@ -20,7 +20,7 @@ class PatternReader:
         self.exclude = exclude
         self.label = label
     
-    def map_values(self, base_dir=None):
+    def map_values(self, base_dir=None, base_label=None):
         pattern = self.pattern
         exclude = self.exclude
         
@@ -54,8 +54,14 @@ class PatternReader:
         self.values = x
         self.ids = ids
         
+        if self.label is None:
+            if base_label is not None:
+                self.label = base_label
+            else:
+                self.label = 'pattern'
+                
     def __getitem__(self, idx):
         if not self.values:
             raise Exception('You must call `map_values()` before indexing a reader.')
-        return nt.load(self.values[idx])
+        return {self.label: nt.load(self.values[idx])}
     

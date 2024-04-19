@@ -43,6 +43,7 @@ def infer_reader(x, base_dir=None):
     """
     reader = None
     if isinstance(x, list):
+        # TODO: add tests to make sure this is correct for all scenarios
         # list of ntimages
         if nt.is_ntimage(x[0]):
             return readers.ImageReader(x)
@@ -57,10 +58,14 @@ def infer_reader(x, base_dir=None):
                 for i in range(len(x[0])):
                     reader_list.append(readers.ImageReader([xx[i] for xx in x]))
                 return readers.ComposeReader(reader_list)
+            elif 'nitrain.readers' in str(type(x[0][0])):
+                reader_list = [infer_reader(xx, base_dir=base_dir) for xx in x]
+                return readers.ComposeReader(reader_list)
             else:
                 return readers.ArrayReader(np.array(x))    
         else:
-            return readers.ArrayReader(np.array(x))
+            reader_list = [infer_reader(reader, base_dir=base_dir) for reader in x]
+            return readers.ComposeReader(reader_list)
         
     elif isinstance(x, dict):
         # named readers

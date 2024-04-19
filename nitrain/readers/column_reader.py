@@ -46,9 +46,11 @@ class ColumnReader:
         self.column = column
         self.is_image = is_image
         
-        if base_label is not None:
-            if self.label is None:
+        if self.label is None:
+            if base_label is not None:
                 self.label = base_label
+            else:
+                self.label = 'column'
 
     def __getitem__(self, idx):
         value = self.values[idx]

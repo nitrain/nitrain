@@ -15,9 +15,11 @@ class ComposeReader:
         for idx, reader in enumerate(self.readers):
             reader.map_values(base_dir=base_dir, base_label=f'{base_label}-{idx}')
         
-        if base_label is not None:
-            if self.label is None:
+        if self.label is None:
+            if base_label is not None:
                 self.label = base_label
+            else:
+                self.label = 'compose'
 
     def __getitem__(self, idx):
         values = {}

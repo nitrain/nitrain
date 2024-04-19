@@ -23,7 +23,7 @@ class ArrayReader:
         self.array = array
         self.label = label
     
-    def map_values(self, **kwargs):
+    def map_values(self, base_dir=None, base_label=None):
         array = self.array
         if array.ndim > 2:
             # arrays must be converted to images
@@ -33,5 +33,11 @@ class ArrayReader:
         else:
             self.values = array
         
+        if self.label is None:
+            if base_label is not None:
+                self.label = base_label
+            else:
+                self.label = 'array'
+        
     def __getitem__(self, idx):
-        return self.values[idx]
+        return {self.label: self.values[idx]}
