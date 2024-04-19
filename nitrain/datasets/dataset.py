@@ -118,7 +118,7 @@ def reduce_to_list(d, idx=0):
     result = []
     for key, val in d.items():
         if isinstance(val, dict):
-            result.extend([recurse(d[key], idx+1)])
+            result.extend([reduce_to_list(d[key], idx+1)])
         else:
             result.append(val)
         
