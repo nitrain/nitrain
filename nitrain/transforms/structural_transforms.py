@@ -52,15 +52,13 @@ class Resample(BaseTransform):
         self.use_spacing = use_spacing
         self.interpolation = interpolation
         
-    def __call__(self, image, co_image=None):
-        interpolation_value = 0 if self.interpolation != 'nearest_neighbor' else 1 
-        image = nt.resample(image, self.params, not self.use_spacing, interpolation_value)
+    def __call__(self, *images):
+        new_images = []
+        for image in images:
+            image = nt.resample(image, self.params, interpolation=self.interpolation, use_spacing=self.use_spacing)
+            new_images.append(image)
         
-        if co_image is not None:
-            co_image = nt.resample(co_image, self.params, not self.use_spacing, interpolation_value)
-            return image, co_image
-        
-        return image
+        return new_images if len(new_images) > 1 else new_images[0]
 
     def __repr__(self):
         return f'tx.Resample({self.params}, {self.use_spacing}, "{self.interpolation}")'

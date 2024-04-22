@@ -45,9 +45,9 @@ class Trainer:
             optimizer = 'adam' if optimizer is None else optimizer
             loss = 'mse' if loss is None else loss
             metrics = ['mse'] if metrics is None else metrics
-        elif task == 'classification':
+        elif task in ('classification', 'segmentation'):
             optimizer = 'adam' if optimizer is None else optimizer
-            if model.output_shape[-1] == 1:
+            if model.output_shape[-1] > 1:
                 loss = 'categorical_crossentropy' if loss is None else loss
             else:
                 loss = 'binary_crossentropy' if loss is None else loss
@@ -63,15 +63,15 @@ class Trainer:
         framework = infer_framework(model)
         self.framework = framework
         
-        if framework == 'keras':
-            self.model.compile(optimizer=optimizer,
-                               loss=loss,
-                               metrics=metrics)
-        
     def fit(self, loader, epochs, **kwargs):
         if self.framework == 'keras':
+            self.model.compile(optimizer=self.optimizer,
+                               loss=self.loss,
+                               metrics=self.metrics)
+            
             if type(loader).__name__ == 'DatasetLoader':
                 loader = loader.to_keras()
+                
             return self.model.fit(loader, epochs=epochs, **kwargs)
 
     def evaluate(self, loader):
