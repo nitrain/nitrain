@@ -15,11 +15,11 @@ To learn how to use nitrain or to view complete examples of training medical ima
 Here is a canonical example of using nitrain to fit a brain-age model. If you want to learn a bit more about key components of nitrain then you can follow the overview tutorials just below the quickstart.
 
 ```python
-import nitrain
+import nitrain as nt
 from nitrain.readers import PatternReader, ColumnReader
 
 # create dataset from folder of images + participants file
-dataset = nitrain.Dataset(inputs=PatternReader('sub-*/anat/*_T1w.nii.gz'),
+dataset = nt.Dataset(inputs=PatternReader('sub-*/anat/*_T1w.nii.gz'),
                           outputs=ColumnReader('participants.tsv', 'age'),
                           transforms={
                               'inputs': [tx.Resize((64,64,64)), tx.NormalizeIntensity(0,1)],
@@ -27,7 +27,7 @@ dataset = nitrain.Dataset(inputs=PatternReader('sub-*/anat/*_T1w.nii.gz'),
                           base_dir='~/desktop/ds004711/')
 
 # create loader with random transforms
-loader = nitrain.Loader(dataset,
+loader = nt.Loader(dataset,
                         images_per_batch=4,
                         shuffle=True,
                         sampler=nitrain.SliceSampler(batch_size = 32, axis = 2)
@@ -36,13 +36,13 @@ loader = nitrain.Loader(dataset,
                         })
 
 # create model from architecture
-arch_fn = nitrain.fetch_architecture('alexnet', dim=2)
+arch_fn = nt.fetch_architecture('alexnet', dim=2)
 model = arch_fn(input_image_size=(64,64,1),
                 number_of_outcomes=1,
                 mode='regression')
 
 # create trainer and fit model
-trainer = nitrain.Trainer(model,
+trainer = nt.Trainer(model,
                           loss='mse',
                           optimizer='adam',
                           lr=1e-3,
@@ -51,7 +51,7 @@ trainer = nitrain.Trainer(model,
 trainer.fit(loader, epochs=100)
 
 # upload trained model to platform
-nitrain.register_model(trainer.model, 'nick/t1-brain-age')
+nt.register_model(trainer.model, 'nick/t1-brain-age')
 ```
 
 A more in-depth introduction can be found in the [tutorials](github.com/ncullen93/nitrain) and if you can also check out the [examples](github.com/ncullen93/nitrain) for self-contained notebooks showing how to perform common deep learning tasks.

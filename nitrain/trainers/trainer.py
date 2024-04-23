@@ -63,26 +63,26 @@ class Trainer:
         framework = infer_framework(model)
         self.framework = framework
         
-    def fit(self, loader, epochs, **kwargs):
         if self.framework == 'keras':
             self.model.compile(optimizer=self.optimizer,
                                loss=self.loss,
                                metrics=self.metrics)
-            
-            if type(loader).__name__ == 'DatasetLoader':
+        
+    def fit(self, loader, epochs, **kwargs):
+        if self.framework == 'keras':
+            if type(loader).__name__ == 'Loader':
                 loader = loader.to_keras()
-                
             return self.model.fit(loader, epochs=epochs, **kwargs)
 
     def evaluate(self, loader):
         if self.framework == 'keras':
-            if type(loader).__name__ == 'DatasetLoader':
+            if type(loader).__name__ == 'Loader':
                 loader = loader.to_keras()
             return self.model.evaluate(loader)
     
     def predict(self, loader):
         if self.framework == 'keras':
-            if type(loader).__name__ == 'DatasetLoader':
+            if type(loader).__name__ == 'Loader':
                 loader = loader.to_keras()
             return self.model.predict(loader)
     
@@ -94,14 +94,22 @@ class Trainer:
         if self.framework == 'keras':
             self.model.save(path)
     
-    def __str__(self):
-        return f'LocalTrainer with loss: {self.loss}, optimizer: {self.optimizer}'
+    def __repr__(self):
+        s = 'LocalTrainer ({})\n'.format(self.task)
+        s = s +\
+            '     {:<10} : {}\n'.format('Framework', self.framework)+\
+            '     {:<10} : {}\n'.format('Loss', self.loss)+\
+            '     {:<10} : {}\n'.format('Optimizer', self.optimizer)
+        return s
 
 
 def infer_framework(model):
     model_type = str(type(model))
     if 'keras' in model_type:
         return 'keras'
+    
     if 'torch' in model_type:
         return 'torch'
+    
+    raise ValueError('Could not infer framework from model')
     
