@@ -114,9 +114,9 @@ class Slice(BaseTransform):
     
     def __call__(self, image):
         if self.idx is None:
-            new_image = [image.slice_image(self.axis, idx, 1) for idx in range(image.shape[self.axis])]
+            new_image = [image.slice(self.axis, idx) for idx in range(image.shape[self.axis])]
         else:
-            new_image = image.slice_image(self.axis, self.idx, 1)
+            new_image = image.slice(self.axis, self.idx)
         return new_image
 
 
@@ -134,7 +134,7 @@ class RandomSlice(BaseTransform):
             image = image.crop_image()
         
         idx = random.sample(range(image.shape[self.axis]), 1)[0]
-        new_image = image.slice_image(self.axis, idx)
+        new_image = image.slice(self.axis, idx)
         
         return new_image
 

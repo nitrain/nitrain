@@ -67,8 +67,8 @@ def create_slices(images, values, axis):
         co_slices = []
         for image, co_image in zip(images, values):
             for i in range(image.shape[axis]):
-                slices.append(image.slice_image(axis, i, 1))
-                co_slices.append(co_image.slice_image(axis, i, 1))
+                slices.append(image.slice(axis, i))
+                co_slices.append(co_image.slice(axis, i))
                 
         return slices, co_slices
     else:
@@ -76,7 +76,7 @@ def create_slices(images, values, axis):
         new_values = []
         for image, value in zip(images, values):
             for i in range(image.shape[axis]):
-                slices.append(image.slice_image(axis, i, 1))
+                slices.append(image.slice(axis, i))
                 new_values.append(value)
                 
         return slices, np.array(new_values)
