@@ -144,17 +144,17 @@ class Crop(BaseTransform):
     Crop an image to remove all blank space around the brain or
     crop based on specified indices.
     """
-    def __init__(self, lower_indices=None, upper_indices=None):
-        self.lower_indices = lower_indices
-        self.upper_indices = upper_indices
+    def __init__(self, lower=None, upper=None, leader=None):
+        self.lower = lower
+        self.upper = upper
+        self.leader = leader
     
-    def __call__(self, image):
-        if self.lower_indices and self.upper_indices:
-            new_image = image.crop_indices(self.lower_indices,
-                                           self.upper_indices)
-        else:
-            new_image = image.crop_image()
-        return new_image
+    def __call__(self, *images):
+        new_images = []
+        for image in images:
+            new_image = image.crop(self.lower, self.upper)
+            new_images.append(new_image)
+        return new_images if len(new_images) > 1 else new_images[0]
 
 
 class RandomCrop(BaseTransform):
