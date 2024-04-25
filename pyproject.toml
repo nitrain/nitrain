@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "nitrain"
 version = "0.3.0"
-description = "Cloud-based framework for training and sharing medical imaging AI models"
+description = "Train medical imaging AI models locally or in the cloud with any framework"
 authors = ["ncullen93 <nicholas.cullen@med.lu.se>"]
 license = "MIT"
 readme = "README.md"
