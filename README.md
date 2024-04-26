@@ -12,7 +12,7 @@ To learn how to use nitrain or to view complete examples of training medical ima
 
 ## Quickstart
 
-Here is a canonical example of using nitrain to a semantic segmentation model. If you want to learn a bit more about key components of nitrain then you can follow the overview tutorials just below the quickstart.
+Here is a canonical example of using nitrain to a semantic segmentation model. Notice in particular how easy it is to map image files from a local folder using glob patterns, as well as how straight-forward it is to sample batches of augmented, 2D slices from 3D images.
 
 ```python
 import nitrain as nt
@@ -36,10 +36,9 @@ loader = nt.Loader(dataset,
                    })
 
 # create model from architecture
-arch_fn = nt.fetch_architecture('alexnet', dim=2)
+arch_fn = nt.fetch_architecture('unet', dim=2)
 model = arch_fn(input_image_size=(64,64,1),
-                number_of_outcomes=1,
-                mode='regression')
+                mode='segmentation')
 
 # create trainer and fit model
 trainer = nt.Trainer(model, task='segmentation')
@@ -49,7 +48,7 @@ trainer.fit(loader, epochs=100)
 nt.register_model(trainer.model, 'nick/t1-brain-segmentation')
 ```
 
-A variety of self-contained notebooks showing how to perform common medical imaging AI tasks is available in the [tutorials](github.com/nitrain/tutorials) repo.
+If you want to learn a bit more about key components of nitrain then you can follow the overview tutorials just below the quickstart. Also, a large variety of self-contained notebooks showing how to perform common medical imaging AI tasks is available in the [tutorials](https://www.github.com/nitrain/tutorials) repo.
 
 <br />
 
