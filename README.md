@@ -68,7 +68,7 @@ python -m pip install git+github.com/ncullen93/nitrain.git
 
 ### Dependencies
 
-The [nitrain-image](https://www.github.com/nitrain/nitrain-image) package is a key dependency that allows you to efficiently read and transform medical images, based on the ITK framework. Additionally, you can use keras (tf.keras or keras3), tensorflow, pytorch, or jax as backend for creating your models.
+The [nitrain-image](https://www.github.com/nitrain/nitrain-image) package is a key dependency that allows you to efficiently read and transform medical images using the great ITK framework. Additionally, you can use keras (tf.keras or keras3), tensorflow, pytorch, or jax as backend for creating your models.
 
 <br />
 
@@ -85,15 +85,15 @@ The 10-minute overview presented below will take you through the key components 
 
 <br />
 
-### Datasets and Loaders
+### Datasets
 
 Datasets help you read in your images from wherever they are stored -- in a local folder, in memory, on a cloud service. You can flexibly specify the inputs and outputs using glob patterns, etc. Transforms can also be passed to your datasets as a sort of preprocessing pipeline that will be applied whenever the dataset is accessed.
 
 ```python
-from nitrain import datasets, transforms as tx
+import nitrain as nt
+from nitrain import transforms as tx
 
-dataset = datasets.FolderDataset(base_dir='~/datasets/ds004711',
-                                 x={'pattern': 'sub-*/anat/*_T1w.nii.gz', 'exclude': '**run-02*'},
+dataset = datasets.FolderDataset(x={'pattern': 'sub-*/anat/*_T1w.nii.gz', 'exclude': '**run-02*'},
                                  y={'file': 'participants.tsv', 'column': 'age'},
                                  x_transforms=[tx.Resample((64,64,64))])
 ```
@@ -103,6 +103,16 @@ Although you will rarely need to do this, data can be read into memory by indexi
 ```python
 x_raw, y_raw = dataset[:3]
 ```
+
+#### Readers
+
+Notice that we used a `FolderReader` to specify that we wanted to read images from a local folder.
+
+#### Fixed Transforms
+
+You also saw that we passed in transforms to our dataset using a dictionary. We call these "fixed transforms" because they will only be applied once to your images (when they are first loaded from file) and their result never changes.
+
+### Loaders
 
 To prepare your images for batch generation during training, you pass the dataset into one the loaders. Here is where you can also pass in random transforms that will act as data augmentation. If you want to train on slices, patches, or blocks of images then you will additionally provide a sampler. The different samplers are explained later.
 
@@ -120,9 +130,7 @@ for x_batch, y_batch in loader:
 
 The loader can be be used directly as a batch generator to fit models in tensorflow, keras, pytorch, or any other framework.
 
-<br />
-
-### Samplers
+#### Samplers
 
 Samplers allow you to keep the same dataset + loader workflow that batches entire images and applies transforms to them, but then expand on those transformed image batches to create special "sub-batches".
 
@@ -140,7 +148,7 @@ What happens is that we start with the ~190 images from the dataset, but 4 image
 
 <br />
 
-### Transforms
+#### Random Transforms
 
 The philosophy of nitrain is to be medical imaging-native. This means that all transforms are applied directly on images - specifically, `antsImage` types from the [ANTsPy](https://github.com/antsx/antspy) package - and only at the very end of batch generator are the images converted to arrays / tensors for model consumption.
 
