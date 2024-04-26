@@ -5,6 +5,7 @@ from tempfile import mkdtemp
 import shutil
 import pandas as pd
 
+import numpy as np
 import ntimage as nti
 import nitrain as nt
 from nitrain import readers, transforms as tx
@@ -34,6 +35,22 @@ class TestClass_Dataset(unittest.TestCase):
         # test repr
         r = dataset.__repr__()
     
+    def test_memory_array(self):
+        dataset = nt.Dataset(
+            inputs = [nti.ones((128,128))*i for i in range(10)],
+            outputs = np.array([i for i in range(10)])
+        )
+        self.assertEqual(len(dataset), 10)
+        
+        x, y = dataset[4]
+        
+        self.assertEqual(y, 4)
+        self.assertTrue(nti.is_ntimage(x))
+        self.assertEqual(x.mean(), 4)
+        
+        # test repr
+        r = dataset.__repr__()
+        
     def test_memory_double_inputs(self):
         dataset = nt.Dataset(
             inputs = [readers.ImageReader([nti.ones((128,128))*i for i in range(10)]),
@@ -87,10 +104,10 @@ class TestClass_CSVDataset(unittest.TestCase):
     def test_2d(self):
         tmp_dir = self.tmp_dir
         dataset = nt.Dataset(
-            inputs=readers.ColumnReader(file='participants.csv',
+            inputs=readers.ColumnReader(base_file='participants.csv',
                                         column='filenames_2d',
                                         is_image=True),
-            outputs=readers.ColumnReader(file='participants.csv',
+            outputs=readers.ColumnReader(base_file='participants.csv',
                                          column='age'),
             base_dir=tmp_dir
         )
@@ -134,7 +151,6 @@ class TestClass_FolderDataset(unittest.TestCase):
     def setUp(self):
         # set up directory
         tmp_dir = mkdtemp()
-        self.tmp_dir = tmp_dir
         img2d = nti.load(nti.example_data('r16'))
         img3d = nti.load(nti.example_data('mni'))
         for i in range(5):
@@ -149,93 +165,70 @@ class TestClass_FolderDataset(unittest.TestCase):
         df = pd.DataFrame({'sub_id': ids, 'age': age})
         df.to_csv(os.path.join(tmp_dir, 'participants.csv'), index=False)
         
+        self.tmp_dir = tmp_dir
+        
     def tearDown(self):
         shutil.rmtree(self.tmp_dir)
     
     def test_2d(self):
-        dataset = nt.FolderDataset(
-            base_dir=self.tmp_dir,
-            x={'pattern': '*/img2d.nii.gz'},
-            y={'file': 'participants.csv', 'column': 'age'}
+        tmp_dir = self.tmp_dir
+        dataset = nt.Dataset(
+            inputs=readers.PatternReader('*/img2d.nii.gz'),
+            outputs=readers.ColumnReader('age'),
+            base_dir=tmp_dir,
+            base_file=os.path.join(tmp_dir, 'participants.csv')   
         )
-        self.assertTrue(len(dataset.x) == 5)
-        self.assertTrue(len(dataset.y) == 5)
+        self.assertEqual(len(dataset), 5)
+        self.assertTrue(dataset.inputs.values[0].endswith('.nii.gz'))
+        self.assertEqual(dataset.outputs.values[2], 52)
         
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
+        self.assertTrue(nti.is_ntimage(x[0]))
+        self.assertEqual(y, [50, 51])
         
         # test repr
         r = dataset.__repr__()
         
     def test_double_image_input(self):
-        dataset = nt.FolderDataset(
-            base_dir=self.tmp_dir,
-            x=[{'pattern': '*/img2d.nii.gz'},{'pattern': '*/img2d.nii.gz'}],
-            y={'file': 'participants.csv', 'column': 'age'}
+        tmp_dir = self.tmp_dir
+        dataset = nt.Dataset(
+            inputs=[readers.PatternReader('*/img2d.nii.gz'),
+                    readers.PatternReader('*/img3d.nii.gz')],
+            outputs=readers.ColumnReader('age'),
+            base_dir=tmp_dir,
+            base_file=os.path.join(tmp_dir, 'participants.csv')   
         )
-        self.assertTrue(len(dataset.x) == 5)
-        self.assertTrue(len(dataset.x[0]) == 2)
-        self.assertTrue(len(dataset.y) == 5)
+        self.assertEqual(len(dataset), 5)
+        self.assertEqual(len(dataset.inputs.values), 5)
+        self.assertEqual(len(dataset.inputs.values[0]), 2)
+        self.assertTrue(dataset.inputs.values[0][0].endswith('.nii.gz'))
+        self.assertEqual(dataset.outputs.values[2], 52)
         
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
         self.assertTrue(len(x[0]) == 2)
+        self.assertTrue(nti.is_ntimage(x[0][0]))
+        self.assertTrue(nti.is_ntimage(x[0][1]))
+        self.assertEqual(y, [50, 51])
 
-    def test_2d_image_to_image(self):
-        dataset = nt.FolderDataset(
-            base_dir=self.tmp_dir,
-            x={'pattern': '*/img2d.nii.gz'},
-            y={'pattern': '*/img2d.nii.gz'}
+    def test_2d_image_to_3d_image(self):
+        tmp_dir = self.tmp_dir
+        dataset = nt.Dataset(
+            inputs=readers.PatternReader('*/img2d.nii.gz'),
+            outputs=readers.PatternReader('*/img3d.nii.gz'),
+            base_dir=tmp_dir
         )
-        self.assertTrue(len(dataset.x) == 5)
-        self.assertTrue(len(dataset.y) == 5)
+        self.assertEqual(len(dataset), 5)
+        self.assertTrue(dataset.inputs.values[0].endswith('.nii.gz'))
+        self.assertTrue(dataset.outputs.values[0].endswith('.nii.gz'))
         
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
-
-    def test_2d_image_to_image_and_x_transforms(self):
-        dataset = nt.FolderDataset(
-            base_dir=self.tmp_dir,
-            x={'pattern': '*/img2d.nii.gz'},
-            y={'pattern': '*/img2d.nii.gz'},
-            transforms={'x': [tx.Resample((69,69))]}
-        )
-        self.assertTrue(len(dataset.x) == 5)
-        self.assertTrue(len(dataset.y) == 5)
-        
-        x, y = dataset[:2]
-        self.assertTrue(len(x) == 2)
-        
-        self.assertTrue(x[0].shape==(69,69))
-        self.assertTrue(y[0].shape!=(69,69))
-        
-    def test_2d_image_to_image_and_co_transforms(self):
-        dataset = nt.FolderDataset(
-            base_dir=self.tmp_dir,
-            x={'pattern': '*/img2d.nii.gz'},
-            y={'pattern': '*/img2d.nii.gz'},
-            transforms={'co': [tx.Resample((69,69))]}
-        )
-        self.assertTrue(len(dataset.x) == 5)
-        self.assertTrue(len(dataset.y) == 5)
-        
-        x, y = dataset[:2]
-        self.assertTrue(len(x) == 2)
-        
-        self.assertTrue(x[0].shape==(69,69))
-        self.assertTrue(y[0].shape==(69,69))
-        
-    def test_3d(self):
-        dataset = nt.FolderDataset(
-            base_dir=self.tmp_dir,
-            x={'pattern': '*/img3d.nii.gz'},
-            y={'file': 'participants.csv', 'column': 'age'}
-        )
-        self.assertTrue(len(dataset.x) == 5)
-        self.assertTrue(len(dataset.y) == 5)
-        
-        x, y = dataset[:2]
-        self.assertTrue(len(x) == 2)
+        self.assertTrue(len(y) == 2)
+        self.assertTrue(nti.is_ntimage(x[0]))
+        self.assertEqual(x[0].dimension, 2)
+        self.assertEqual(y[0].dimension, 3)
 
 
 if __name__ == '__main__':

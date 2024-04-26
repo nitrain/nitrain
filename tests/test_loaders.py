@@ -7,67 +7,64 @@ from tempfile import mktemp
 import numpy as np
 import numpy.testing as nptest
 
-import ntimage as nt
-from nitrain import datasets, loaders, samplers
+import ntimage as nti
+import nitrain as nt
+from nitrain import samplers
 
 
 class TestClass_DatasetLoader(unittest.TestCase):
     def setUp(self):
-        img2d = nt.load(nt.example_data('r16'))
-        img3d = nt.load(nt.example_data('mni'))
+        img2d = nti.load(nti.example_data('r16'))
+        img3d = nti.load(nti.example_data('mni'))
         
         x = [img2d for _ in range(10)]
         y = list(range(10))
         
-        dataset_2d = datasets.MemoryDataset(x, y)
+        dataset_2d = nt.Dataset(x, y)
         
         x = [img3d for _ in range(10)]
         y = list(range(10))
         
-        dataset_3d = datasets.MemoryDataset(x, y)
+        dataset_3d = nt.Dataset(x, y)
         
         self.dataset_2d = dataset_2d
         self.dataset_3d = dataset_3d
         
-
     def tearDown(self):
         pass
     
     def test_2d(self):
-        loader = loaders.DatasetLoader(self.dataset_2d, images_per_batch=4)
+        loader = nt.Loader(self.dataset_2d, images_per_batch=4)
         x_batch, y_batch = next(iter(loader))
         self.assertTrue(x_batch.shape == (4, 256, 256, 1))
     
     def test_to_keras(self):
-        loader = loaders.DatasetLoader(self.dataset_2d, images_per_batch=4)
+        loader = nt.Loader(self.dataset_2d, images_per_batch=4)
         keras_loader = loader.to_keras()
         x_batch, y_batch = next(iter(keras_loader))
         self.assertTrue(x_batch.shape == (4, 256, 256, 1))
         
     def test_3d(self):
-        loader = loaders.DatasetLoader(self.dataset_3d,
-                                       images_per_batch=4)
+        loader = nt.Loader(self.dataset_3d, images_per_batch=4)
 
         x_batch, y_batch = next(iter(loader))
         self.assertTrue(x_batch.shape == (4, 182, 218, 182, 1))
     
     def test_image_to_image(self):
-        img = nt.load(nt.example_data('r16'))
+        img = nti.load(nti.example_data('r16'))
         x = [img for _ in range(10)]
-        dataset = datasets.MemoryDataset(x, x)
-        loader = loaders.DatasetLoader(dataset,
-                                       images_per_batch=4)
+        dataset = nt.Dataset(x, x)
+        loader = nt.Loader(dataset, images_per_batch=4)
 
         x_batch, y_batch = next(iter(loader))
         self.assertTrue(x_batch.shape == (4, 256, 256, 1))
         self.assertTrue(y_batch.shape == (4, 256, 256, 1))
 
     def test_multi_image_to_image(self):
-        img = nt.load(nt.example_data('r16'))
-        dataset = datasets.MemoryDataset([[img, img] for _ in range(10)], 
-                                         [img for _ in range(10)])
-        loader = loaders.DatasetLoader(dataset,
-                                       images_per_batch=4)
+        img = nti.load(nti.example_data('r16'))
+        dataset = nt.Dataset([[img, img] for _ in range(10)], 
+                             [img for _ in range(10)])
+        loader = nt.Loader(dataset, images_per_batch=4)
 
         x_batch, y_batch = next(iter(loader))
         self.assertTrue(len(x_batch) == 2)
@@ -76,12 +73,12 @@ class TestClass_DatasetLoader(unittest.TestCase):
         self.assertTrue(y_batch.shape == (4, 256, 256, 1))
     
     def test_image_to_image_with_slice_sampler(self):
-        img = nt.load(nt.example_data('mni'))
+        img = nti.load(nti.example_data('mni'))
         x = [img for _ in range(10)]
-        dataset = datasets.MemoryDataset(x, x)
-        loader = loaders.DatasetLoader(dataset,
-                                       images_per_batch=4,
-                                       sampler=samplers.SliceSampler(batch_size=12))
+        dataset = nt.Dataset(x, x)
+        loader = nt.Loader(dataset, 
+                           images_per_batch=4,
+                           sampler=samplers.SliceSampler(batch_size=12))
 
         x_batch, y_batch = next(iter(loader))
         self.assertTrue(x_batch.shape == (12, 218, 182, 1))

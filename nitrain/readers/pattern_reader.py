@@ -8,7 +8,7 @@ import numpy as np
 import ntimage as nt
 
 class PatternReader:
-    def __init__(self, pattern, exclude=None, label=None):
+    def __init__(self, pattern, base_dir=None, exclude=None, label=None):
         """
         >>> import ntimage as nt
         >>> from nitrain.readers import PatternReader
@@ -17,10 +17,14 @@ class PatternReader:
         >>> img = reader[1]
         """
         self.pattern = pattern
+        self.base_dir = base_dir
         self.exclude = exclude
         self.label = label
     
     def map_values(self, base_dir=None, base_file=None, base_label=None):
+        if self.base_dir is not None:
+            base_dir = self.base_dir
+        
         pattern = self.pattern
         exclude = self.exclude
         
