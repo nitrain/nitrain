@@ -4,9 +4,9 @@
 [![Build](https://github.com/ncullen93/nitrain/actions/workflows/test.yml/badge.svg)](https://github.com/ncullen93/nitrain/actions/workflows/test.yml)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/nitrain)
 
-Nitrain (formerly <i>torchsample</i>) provides tools for sampling and augmenting medical images, training models on medical imaging datasets, and visualizing model results in a medical imaging context. It supports using pytorch, keras, and tensorflow.
+Nitrain (formerly <i>torchsample</i>) is a framework-agnostic library for sampling and augmenting medical images, training models on medical imaging datasets, and visualizing results in a medical imaging context.
 
-To learn how to use nitrain or to view complete examples of training medical imaging AI models using nitrain, visit [github.com/nitrain/tutorials](https://github.com/nitrain/tutorials) or view the rendered version at [nitrain.dev/docs](https://nitrain.dev/docs). If you want to learn more generally about medical imaging AI, check out the book [Becoming a medical imaging AI expert with Python](https://book.nitrain.dev).
+Full examples of training medical imaging AI models using nitrain can be found at the [tutorial](https://github.com/nitrain/tutorials) repo. If you want to learn more generally about medical imaging AI, check out the book [Becoming a medical imaging AI expert with Python](https://book.nitrain.dev).
 
 <br />
 
