@@ -1,4 +1,4 @@
-import ntimage as nt
+import ntimage as nti
 import random
 
 from .base_transform import BaseTransform
@@ -17,7 +17,7 @@ class SplitLabels(BaseTransform):
     --------
     >>> import ntimage as nt
     >>> from nitrain import transforms as tx
-    >>> img = nt.load(nt.example_data('r16'))
+    >>> img = nti.load(nti.example_data('r16'))
     >>> img = img > img.mean()
     >>> my_tx = tx.SplitLabels()
     >>> img_split = my_tx(img)
@@ -33,13 +33,13 @@ class SplitLabels(BaseTransform):
         image_list = [image == label_value for label_value in labels]
         
         # merge channels
-        image_merged = nt.merge(image_list)
+        image_merged = nti.stack(image_list, components=True)
         
         return image_merged
 
 class Resample(BaseTransform):
     """
-    img = nt.load(nt.example_data('mni'))
+    img = nti.load(nti.example_data('mni'))
     # resample voxel directly (fine if image has even dimensions.. not here though)
     my_tx = ResampleImage((60,60,60))
     img2 = my_tx(img)
@@ -55,7 +55,7 @@ class Resample(BaseTransform):
     def __call__(self, *images):
         new_images = []
         for image in images:
-            image = nt.resample(image, self.params, interpolation=self.interpolation, use_spacing=self.use_spacing)
+            image = nti.resample(image, self.params, interpolation=self.interpolation, use_spacing=self.use_spacing)
             new_images.append(image)
         
         return new_images if len(new_images) > 1 else new_images[0]
@@ -65,7 +65,7 @@ class Resample(BaseTransform):
 
 class ResampleToTarget(BaseTransform):
     """
-    img = nt.load(nt.example_data('mni'))
+    img = nti.load(nti.example_data('mni'))
     img2 = img.clone().resample_image((4,4,4))
     my_tx = ResampleImageToTarget(img2)
     img3 = my_tx(img)
@@ -75,7 +75,7 @@ class ResampleToTarget(BaseTransform):
         self.interpolation = 0 if interpolation != 'nearest_neighbor' else 1 
     
     def __call__(self, image):
-        image = nt.resample(image, self.target, self.interpolation)
+        image = nti.resample(image, self.target, self.interpolation)
         return image
 
 
@@ -96,10 +96,10 @@ class Reorient(BaseTransform):
         self.orientation = orientation
     
     def __call__(self, image, co_image=None):
-        image = nt.reorient(image, self.orientation)
+        image = nti.reorient(image, self.orientation)
         
         if co_image is not None:
-            co_image = nt.reorient(co_image, self.orientation)
+            co_image = nti.reorient(co_image, self.orientation)
             return image, co_image
 
         return image
@@ -165,7 +165,7 @@ class RandomCrop(BaseTransform):
     --------
     >>> import ntimage as nt
     >>> from nitrain import transforms as tx
-    >>> mni = nt.load(nt.example_data('mni'))
+    >>> mni = nti.load(nti.example_data('mni'))
     >>> my_tx = tx.RandomCrop(size=(30,30,30))
     >>> mni_crop = my_tx(mni)
     >>> mni_crop.plot(domain_image_map=mni)
@@ -196,7 +196,7 @@ class Pad(BaseTransform):
     -------
     >>> import ntimage as nt
     >>> from nitrain import transforms as tx
-    >>> mni = nt.load(nt.example_data('mni'))
+    >>> mni = nti.load(nti.example_data('mni'))
     >>> my_tx = tx.Pad((220,220,220))
     >>> mni_pad = my_tx(mni)
     """

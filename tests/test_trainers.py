@@ -7,18 +7,18 @@ import tempfile
 import numpy as np
 import numpy.testing as nptest
 
-import ntimage as nt
-from nitrain import datasets, loaders, models, trainers
+import ntimage as nti
+import nitrain as nt
 
 
 class TestClass_LocalTrainer(unittest.TestCase):
     def setUp(self):
-        img = nt.load(nt.example_data('r16')).resample_image((4,4))
+        img = nti.load(nti.example_data('r16')).resample((4,4), use_spacing=True)
         x = [img for _ in range(6)]
         y = list(range(6))
-        dataset = datasets.MemoryDataset(x, y)
-        loader = loaders.DatasetLoader(dataset, images_per_batch=4)
-        arch_fn = models.fetch_architecture('vgg', dim=2)
+        dataset = nt.Dataset(x, y)
+        loader = nt.Loader(dataset, images_per_batch=4)
+        arch_fn = nt.fetch_architecture('vgg', dim=2)
         model = arch_fn(input_image_size=(64,64,1), 
                         number_of_classification_labels=1,
                         mode='regression')
@@ -29,7 +29,7 @@ class TestClass_LocalTrainer(unittest.TestCase):
         pass
     
     def test_trainer(self):
-        trainer = trainers.LocalTrainer(self.model, task='regression')
+        trainer = nt.Trainer(self.model, task='regression')
         trainer.fit(self.loader, epochs=2)
         
         trainer.evaluate(self.loader)

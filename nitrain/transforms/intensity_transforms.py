@@ -1,4 +1,4 @@
-import ntimage as nt
+import ntimage as nti
 
 import random
 import numpy as np
@@ -19,7 +19,7 @@ class Cast(BaseTransform):
 class StandardNormalize(BaseTransform):
     """
     import ntimage as nt
-    img = nt.load(nt.example_data('r16'))
+    img = nti.load(nti.example_data('r16'))
     img2 = (img - img.mean()) / img.std()
     
     from nitrain import transforms as tx
@@ -41,7 +41,7 @@ class StandardNormalize(BaseTransform):
 class Threshold(BaseTransform):
     """
     import ntimage as nt
-    img = nt.load(nt.example_data('r16'))
+    img = nti.load(nti.example_data('r16'))
     """
     def __init__(self, threshold):
         self.threshold = threshold
@@ -70,9 +70,9 @@ class RangeNormalize(BaseTransform):
 class Smoothing(BaseTransform):
     """
     import ntimage as nt
-    img = nt.load(nt.example_data('r16'))
-    img2 = nt.smooth(img, 2, True)
-    img3 = nt.smooth(img, 2, False)
+    img = nti.load(nti.example_data('r16'))
+    img2 = nti.smooth(img, 2, True)
+    img3 = nti.smooth(img, 2, False)
     """
     
     def __init__(self, std, physical_space=True):
@@ -93,7 +93,7 @@ class Smoothing(BaseTransform):
     def __call__(self, *images):
         new_images = []
         for image in images:
-            new_image = nt.smooth(image, self.std, self.physical_space)
+            new_image = nti.smooth(image, self.std, self.physical_space)
             new_images.append(new_image)
         return new_images if len(new_images) > 1 else new_images[0]
 
@@ -110,7 +110,7 @@ class RandomSmoothing(BaseTransform):
         
         new_images = []
         for image in images:
-            new_image = nt.smooth(image, std, self.physical_space)
+            new_image = nti.smooth(image, std, self.physical_space)
             new_images.append(new_image)
         return new_images if len(new_images) > 1 else new_images[0]
 
@@ -122,9 +122,9 @@ class RandomNoise(BaseTransform):
     Apply random additive gaussian noise to an image.
     
     import ntimage as nt
-    img = nt.load(nt.example_data('r16'))
-    img2 = nt.add_noise(img, 'additivegaussian', (0, 16))
-    nt.plot((img2 - img))
+    img = nti.load(nti.example_data('r16'))
+    img2 = nti.add_noise(img, 'additivegaussian', (0, 16))
+    nti.plot((img2 - img))
     """
     def __init__(self, min_std, max_std):
         self.min_std = min_std
@@ -134,7 +134,7 @@ class RandomNoise(BaseTransform):
         std = random.uniform(self.min_std, self.max_std)
         new_images = []
         for image in images:
-            new_image = nt.add_noise(image, 'additivegaussian', (0, std))
+            new_image = nti.add_noise(image, 'additivegaussian', (0, std))
             new_images.append(new_image)
         return new_images if len(new_images) > 1 else new_images[0]
     
