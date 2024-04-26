@@ -4,5 +4,4 @@ and they ALWAYS return an ntimage.
 """
 
 from .base import *
-from .intensity import *
-from .utility import *
+from .image import *

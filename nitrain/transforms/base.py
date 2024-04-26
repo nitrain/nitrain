@@ -9,7 +9,10 @@ class BaseTransform:
         
     def fit(self, *inputs):
         raise NotImplementedError
-    
+
+    def __call__(self, *inputs):
+        raise NotImplementedError
+
     def sample(self, image, n=10):
         res = []
         for _ in range(n):
@@ -17,6 +20,9 @@ class BaseTransform:
         return res
         
     def __call__(self, *inputs):
+        raise NotImplementedError
+
+    def __repr__(self):
         raise NotImplementedError
 
 

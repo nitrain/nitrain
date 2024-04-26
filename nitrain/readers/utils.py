@@ -9,7 +9,7 @@ import ntimage as nt
 
 from .. import readers
 
-def infer_reader(x, base_dir=None):
+def infer_reader(x, base_dir=None, label=None):
     """
     Infer reader from user-supplied values.
     
@@ -72,8 +72,7 @@ def infer_reader(x, base_dir=None):
             return readers.ComposeReader(reader_list)
         
     elif isinstance(x, dict):
-        # named readers
-        pass
+        return readers.ComposeReader(x)
         
     elif isinstance(x, np.ndarray):
         return readers.ArrayReader(x)

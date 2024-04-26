@@ -88,9 +88,7 @@ class Dataset:
             
             if self.transforms:
                 for tx_name, tx_value in self.transforms.items():
-                    # TODO: support transforms applied to input + output together
-                    x_raw = apply_transforms(tx_name, tx_value, x_raw)
-                    y_raw = apply_transforms(tx_name, tx_value, y_raw)
+                    x_raw, y_raw = apply_transforms(tx_name, tx_value, x_raw, y_raw)
                     
             x_raw = reduce_to_list(x_raw)
             y_raw = reduce_to_list(y_raw)
@@ -131,7 +129,7 @@ def reduce_to_list(d, idx=0):
     return result if len(result) > 1 else result[0]
 
 
-def apply_transforms(tx_name, tx_value, inputs, force=False):
+def apply_transforms(tx_name, tx_value, inputs, outputs, force=False):
     """
     Apply transforms recursively based on match between transform name
     and input label. If there is a match and the input is nested, then all
@@ -140,19 +138,35 @@ def apply_transforms(tx_name, tx_value, inputs, force=False):
     if not isinstance(tx_name, tuple):
         tx_name = (tx_name,)
     if not isinstance(tx_value, list):
-        tx_value = list(tx_value)
-    
-    for input_name, input_value in inputs.items():
-        
-        if isinstance(input_value, dict):
-            if input_name in tx_name:
-                apply_transforms(tx_name, tx_value, input_value, force=True)
-            else:
-                apply_transforms(tx_name, tx_value, input_value, force=force)
+        if isinstance(tx_value, tuple):
+            tx_value = list(tx_value)
         else:
-            if (input_name in tx_name) | force:
-                for tx_fn in tx_value:
-                    inputs[input_name] = tx_fn(inputs[input_name])
+            tx_value = [tx_value]
+
+    if inputs:
+        for input_name, input_value in inputs.items():
+            if isinstance(input_value, dict):
+                if input_name in tx_name:
+                    apply_transforms(tx_name, tx_value, input_value, None, force=True)
+                else:
+                    apply_transforms(tx_name, tx_value, input_value, None, force=force)
+            else:
+                if (input_name in tx_name) | force:
+                    for tx_fn in tx_value:
+                        inputs[input_name] = tx_fn(inputs[input_name])
+
+    if outputs:
+        for output_name, output_value in outputs.items():
+            if isinstance(output_value, dict):
+                if output_name in tx_name:
+                    apply_transforms(tx_name, tx_value, None, output_value, force=True)
+                else:
+                    apply_transforms(tx_name, tx_value, None, output_value, force=force)
+            else:
+                if (output_name in tx_name) | force:
+                    for tx_fn in tx_value:
+                        print(output_name)
+                        outputs[output_name] = tx_fn(outputs[output_name])
     
-    return inputs
+    return inputs, outputs
             

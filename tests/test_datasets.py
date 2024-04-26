@@ -34,7 +34,36 @@ class TestClass_Dataset(unittest.TestCase):
         
         # test repr
         r = dataset.__repr__()
+        
+    def test_memory_dict_inputs(self):
+        dataset = nt.Dataset(
+            inputs={'x':readers.ImageReader([nti.example('mni') for _ in range(10)]),
+                    'y':readers.ImageReader([nti.example('mni') for _ in range(10)])},
+            outputs=readers.ImageReader([nti.example('mni') for _ in range(10)])
+        )
+        x, y = dataset[0]
+        self.assertEqual(len(x), 2)
+        
+        x, y = dataset[:3]
+        self.assertEqual(len(x), 3)
+        self.assertEqual(len(x[0]), 2)
     
+    def test_memory_dict_inputs_with_transform(self):
+        dataset = nt.Dataset(
+            inputs={'x':readers.ImageReader([nti.example('mni') for _ in range(10)]),
+                    'y':readers.ImageReader([nti.example('mni') for _ in range(10)])},
+            outputs=readers.ImageReader([nti.example('mni') for _ in range(10)]),
+            transforms={
+                'y': [tx.Astype('uint8')]
+            }
+        )
+        x, y = dataset[0]
+        self.assertEqual(len(x), 2)
+        
+        x, y = dataset[:3]
+        self.assertEqual(len(x), 3)
+        self.assertEqual(len(x[0]), 2)
+        
     def test_memory_array(self):
         dataset = nt.Dataset(
             inputs = [nti.ones((128,128))*i for i in range(10)],
@@ -230,6 +259,54 @@ class TestClass_FolderDataset(unittest.TestCase):
         self.assertEqual(x[0].dimension, 2)
         self.assertEqual(y[0].dimension, 3)
 
+class TestOther_Bugs(unittest.TestCase):
+    def setUp(self):
+        pass
+        
+    def tearDown(self):
+        pass
+    
+    def test_multi_input_dict_transform(self):
+        dataset = nt.Dataset(
+            inputs={'x':readers.ImageReader([nti.example('mni') for _ in range(10)]),
+                    'y':readers.ImageReader([nti.example('mni') for _ in range(10)])},
+            outputs=readers.ImageReader([nti.example('mni') for _ in range(10)]),
+            transforms={
+                'x': [tx.Astype('uint8')]
+            }
+        )
+        x, y = dataset[0]
+        
+        self.assertEqual(x[0].dtype, 'uint8')
+        self.assertEqual(x[1].dtype, 'float32')
+        self.assertEqual(y.dtype, 'float32')
 
+        x, y = dataset[:2]
+        self.assertEqual(x[0][0].dtype, 'uint8')
+        self.assertEqual(x[0][1].dtype, 'float32')
+        self.assertEqual(x[1][0].dtype, 'uint8')
+        self.assertEqual(x[1][1].dtype, 'float32')
+        
+    def test_multi_input_dict_transform_no_list(self):
+        dataset = nt.Dataset(
+            inputs={'x':readers.ImageReader([nti.example('mni') for _ in range(10)]),
+                    'y':readers.ImageReader([nti.example('mni') for _ in range(10)])},
+            outputs=readers.ImageReader([nti.example('mni') for _ in range(10)]),
+            transforms={
+                'x': tx.Astype('uint8')
+            }
+        )
+        x, y = dataset[0]
+        
+        self.assertEqual(x[0].dtype, 'uint8')
+        self.assertEqual(x[1].dtype, 'float32')
+        self.assertEqual(y.dtype, 'float32')
+        
+        x, y = dataset[:2]
+        self.assertEqual(x[0][0].dtype, 'uint8')
+        self.assertEqual(x[0][1].dtype, 'float32')
+        self.assertEqual(x[1][0].dtype, 'uint8')
+        self.assertEqual(x[1][1].dtype, 'float32')
+        
 if __name__ == '__main__':
     run_tests()
