@@ -6,7 +6,7 @@
 
 Nitrain (formerly <i>torchsample</i>) is a framework-agnostic library for sampling and augmenting medical images, training models on medical imaging datasets, and visualizing results in a medical imaging context.
 
-Full examples of training medical imaging AI models using nitrain can be found at the [tutorial](https://github.com/nitrain/tutorials) repo. If you want to learn more generally about medical imaging AI, check out the book [Becoming a medical imaging AI expert with Python](https://book.nitrain.dev).
+Full examples of training medical imaging AI models using nitrain can be found at the [tutorials](https://github.com/nitrain/tutorials) repo. If you are interested more generally in medical imaging AI, check out the book [Becoming a medical imaging AI expert with Python](https://book.nitrain.dev).
 
 <br />
 
