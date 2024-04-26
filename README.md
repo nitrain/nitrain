@@ -76,11 +76,10 @@ The [nitrain-image](https://www.github.com/nitrain/nitrain-image) package is a k
 
 The 10-minute overview presented below will take you through the key components of nitrain:
 
-- [Datasets and Loaders](#datasets-and-loaders)
-- [Samplers](#samplers)
-- [Transforms](#transforms)
-- [Architectures and pretrained models](#architectures-and-pretrained-models)
-- [Model trainers](#model-trainers)
+- [Datasets](#datasets)
+- [Loaders](#loaders)
+- [Architectures](#architectures-and-pretrained-models)
+- [Trainers](#model-trainers)
 - [Explainers](#explainers)
 
 <br />
