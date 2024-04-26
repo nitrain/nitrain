@@ -104,13 +104,9 @@ Although you will rarely need to do this, data can be read into memory by indexi
 x_raw, y_raw = dataset[:3]
 ```
 
-<br />
-
 #### Readers
 
 Notice that we used a `FolderReader` to specify that we wanted to read images from a local folder.
-
-<br />
 
 #### Fixed Transforms
 
@@ -136,8 +132,6 @@ for x_batch, y_batch in loader:
 
 The loader can be be used directly as a batch generator to fit models in tensorflow, keras, pytorch, or any other framework.
 
-<br />
-
 #### Samplers
 
 Samplers allow you to keep the same dataset + loader workflow that batches entire images and applies transforms to them, but then expand on those transformed image batches to create special "sub-batches".
@@ -153,8 +147,6 @@ loader = loaders.DatasetLoader(dataset,
 ```
 
 What happens is that we start with the ~190 images from the dataset, but 4 images will be read in from file at a time. Then, all possible 2D slices will be created from those 4 images and served in shuffled batches of 24 from the loader. Once all "sub-batches" (sets of 24 slices from the 4 images) have been served, the loader will move on to the next 4 images and serve slices from those images. One epoch is completed when all slices from all images have been served.
-
-<br />
 
 #### Random Transforms
 
