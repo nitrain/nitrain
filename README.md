@@ -12,7 +12,7 @@ To learn how to use nitrain or to view complete examples of training medical ima
 
 ## Quickstart
 
-Here is a canonical example of using nitrain to a semantic segmentation model. Notice in particular how easy it is to map image files from a local folder using glob patterns, as well as how straight-forward it is to sample batches of augmented, 2D slices from 3D images.
+Here is a canonical example of using nitrain to a semantic segmentation model. Notice how easy it is to map image files from a local folder and how straight-forward it is to sample batches of augmented, 2D slices from 3D images.
 
 ```python
 import nitrain as nt
