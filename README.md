@@ -104,13 +104,19 @@ Although you will rarely need to do this, data can be read into memory by indexi
 x_raw, y_raw = dataset[:3]
 ```
 
+<br />
+
 #### Readers
 
 Notice that we used a `FolderReader` to specify that we wanted to read images from a local folder.
 
+<br />
+
 #### Fixed Transforms
 
 You also saw that we passed in transforms to our dataset using a dictionary. We call these "fixed transforms" because they will only be applied once to your images (when they are first loaded from file) and their result never changes.
+
+<br />
 
 ### Loaders
 
@@ -129,6 +135,8 @@ for x_batch, y_batch in loader:
 ```
 
 The loader can be be used directly as a batch generator to fit models in tensorflow, keras, pytorch, or any other framework.
+
+<br />
 
 #### Samplers
 
