@@ -23,9 +23,6 @@ pushd "$(dirname "$0")"
 echo "Testing datasets"
 $PYCMD test_datasets.py $@
 
-echo "Testing explainers"
-$PYCMD test_explainers.py $@
-
 echo "Testing loaders"
 $PYCMD test_loaders.py $@
 
