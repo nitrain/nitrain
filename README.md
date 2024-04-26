@@ -48,7 +48,7 @@ trainer.fit(loader, epochs=100)
 nt.register_model(trainer.model, 'nick/t1-brain-segmentation')
 ```
 
-If you want to learn a bit more about key components of nitrain then you can follow the overview tutorials just below the quickstart. Also, a large variety of self-contained notebooks showing how to perform common medical imaging AI tasks is available in the [tutorials](https://www.github.com/nitrain/tutorials) repo.
+If you want to learn a bit more about key components of nitrain then you can follow the 10-minute overview tutorial further below. Also, a large variety of self-contained notebooks showing how to perform common medical imaging AI tasks is available in the [tutorials](https://www.github.com/nitrain/tutorials) repo.
 
 <br />
 
