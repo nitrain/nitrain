@@ -2,8 +2,8 @@ import numpy as np
 import random
 import math
 
-from .patch_sampler import create_patches
-from .slice_sampler import create_slices
+from .patch import create_patches
+from .slice import create_slices
 
 class SlicePatchSampler:
     """

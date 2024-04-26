@@ -5,8 +5,8 @@ want to randomly sample slices, patches, or blocks
 from images.
 """
 
-from .base_sampler import BaseSampler
-from .block_sampler import BlockSampler
-from .patch_sampler import PatchSampler
-from .slice_sampler import SliceSampler
-from .slice_patch_sampler import SlicePatchSampler
+from .base import BaseSampler
+from .block import BlockSampler
+from .patch import PatchSampler
+from .slice import SliceSampler
+from .slice_patch import SlicePatchSampler
