@@ -3,7 +3,7 @@ from ..readers.utils import infer_reader
 
 class Dataset:
     
-    def __init__(self, inputs, outputs, transforms=None, base_dir=None):
+    def __init__(self, inputs, outputs, transforms=None, base_dir=None, base_file=None):
         """
         Create a nitrain dataset.
         
@@ -59,8 +59,8 @@ class Dataset:
         inputs = infer_reader(inputs)
         outputs = infer_reader(outputs)
         
-        inputs.map_values(base_dir=base_dir, base_label='inputs')
-        outputs.map_values(base_dir=base_dir, base_label='outputs')
+        inputs.map_values(base_dir=base_dir, base_file=base_file, base_label='inputs')
+        outputs.map_values(base_dir=base_dir, base_file=base_file, base_label='outputs')
                     
         self.inputs = inputs
         self.outputs = outputs
@@ -111,7 +111,13 @@ class Dataset:
         raise NotImplementedError('Not implemented')
     
     def __repr__(self):
-        raise NotImplementedError('Not implemented')
+        s = 'Dataset (n={})\n'.format(len(self))
+        
+        s = s +\
+            '     {:<10} : {}\n'.format('Inputs', self.inputs)+\
+            '     {:<10} : {}\n'.format('Outputs', self.outputs)+\
+            '     {:<10} : {}\n'.format('Transforms', len(self.transforms) if self.transforms else '{}')
+        return s
 
 
 def reduce_to_list(d, idx=0):

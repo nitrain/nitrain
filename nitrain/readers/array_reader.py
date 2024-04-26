@@ -23,7 +23,7 @@ class ArrayReader:
         self.array = array
         self.label = label
     
-    def map_values(self, base_dir=None, base_label=None):
+    def map_values(self, base_dir=None, base_file=None, base_label=None):
         array = self.array
         if array.ndim > 2:
             # arrays must be converted to images

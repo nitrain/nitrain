@@ -11,8 +11,8 @@ import pandas as pd
 import numpy as np
 import numpy.testing as nptest
 
-import ntimage as nt
-import nitrain
+import ntimage as nti
+import nitrain as nt
 from nitrain import readers
 
 class TestClass_Dataset(unittest.TestCase):
@@ -23,38 +23,116 @@ class TestClass_Dataset(unittest.TestCase):
         pass
     
     def test_memory(self):
-        img = nt.load(nt.example_data('r16'))
-        dataset = nitrain.Dataset(
-            inputs = [nt.ones((128,128))*i for i in range(10)],
+        dataset = nt.Dataset(
+            inputs = [nti.ones((128,128))*i for i in range(10)],
             outputs = [i for i in range(10)]
         )
-        self.assertEqual(len(dataset), 5)
+        self.assertEqual(len(dataset), 10)
         
-        x, y = dataset[0]
+        x, y = dataset[4]
+        
+        self.assertEqual(y, 4)
+        self.assertTrue(nti.is_ntimage(x))
+        self.assertEqual(x.mean(), 4)
         
         # test repr
         r = dataset.__repr__()
     
     def test_memory_double_inputs(self):
-        img = nt.load(nt.example_data('r16'))
-        dataset = nitrain.Dataset(
-            inputs = [readers.ImageReader([nt.ones((128,128))*i for i in range(10)]),
-                      readers.ImageReader([nt.ones((128,128))*i for i in range(10)])],
+        dataset = nt.Dataset(
+            inputs = [readers.ImageReader([nti.ones((128,128))*i for i in range(10)]),
+                      readers.ImageReader([nti.ones((128,128))*i*2 for i in range(10)])],
             outputs = [i for i in range(10)]
         )
+        self.assertEqual(len(dataset), 10)
         
-    def test_3d(self):
-        dataset = datasets.CSVDataset(
-            path=os.path.join(self.tmp_dir, 'participants.csv'),
-            x={'images': 'filenames_3d'},
-            y={'column': 'age'}
+        x, y = dataset[4]
+        
+        self.assertTrue(len(x), 2)
+        self.assertTrue(nti.is_ntimage(x[0]))
+        self.assertTrue(nti.is_ntimage(x[1]))
+        self.assertEqual(x[0].mean(), 4)
+        self.assertEqual(x[1].mean(), 8)
+        self.assertEqual(y, 4)
+
+class TestClass_CSVDataset(unittest.TestCase):
+    def setUp(self):
+        # set up directory
+        tmp_dir = mkdtemp()
+        img2d = nti.load(nti.example_data('r16'))
+        img3d = nti.load(nti.example_data('mni'))
+        
+        filenames_2d = []
+        filenames_3d = []
+        for i in range(5):
+            sub_dir = os.path.join(tmp_dir, f'sub_{i}')
+            os.mkdir(sub_dir)
+            filepath_2d = os.path.join(sub_dir, 'img2d.nii.gz')
+            filenames_2d.append(filepath_2d)
+            nti.save(img2d, filepath_2d)
+            
+            filepath_3d = os.path.join(sub_dir, 'img3d.nii.gz')
+            filenames_3d.append(filepath_3d)
+            nti.save(img3d, filepath_3d)
+        
+        # write csv file
+        ids = [f'sub_{i}' for i in range(5)]
+        age = [i + 50 for i in range(5)]
+        df = pd.DataFrame({'sub_id': ids, 'age': age, 
+                           'filenames_2d': filenames_2d,
+                           'filenames_3d': filenames_3d})
+        df.to_csv(os.path.join(tmp_dir, 'participants.csv'), index=False)
+        
+        self.tmp_dir = tmp_dir
+         
+    def tearDown(self):
+       shutil.rmtree(self.tmp_dir)
+    
+    def test_2d(self):
+        tmp_dir = self.tmp_dir
+        dataset = nt.Dataset(
+            inputs=readers.ColumnReader(file='participants.csv',
+                                        column='filenames_2d',
+                                        is_image=True),
+            outputs=readers.ColumnReader(file='participants.csv',
+                                         column='age'),
+            base_dir=tmp_dir
         )
-        self.assertTrue(len(dataset.x) == 5)
-        self.assertTrue(len(dataset.y) == 5)
+        self.assertEqual(len(dataset), 5)
+        self.assertTrue(dataset.inputs.values[0].endswith('.nii.gz'))
+        self.assertEqual(dataset.outputs.values[2], 52)
         
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
+        self.assertTrue(nti.is_ntimage(x[0]))
+        self.assertEqual(y, [50, 51])
+        
+        # test repr
+        r = dataset.__repr__()
+        
+    def test_3d(self):
+        tmp_dir = self.tmp_dir
+        dataset = nt.Dataset(
+            inputs=readers.ColumnReader(column='filenames_3d', is_image=True),
+            outputs=readers.ColumnReader(column='age'),
+            base_file=os.path.join(tmp_dir, 'participants.csv')
+        )
+        self.assertEqual(len(dataset), 5)
+        self.assertTrue(dataset.inputs.values[0].endswith('.nii.gz'))
+        self.assertEqual(dataset.outputs.values[2], 52)
+        
+        x, y = dataset[:2]
+        self.assertTrue(len(x) == 2)
+        self.assertTrue(nti.is_ntimage(x[0]))
+        self.assertEqual(y, [50, 51])
 
-
+    def test_missing_file(self):
+        with self.assertRaises(Exception):
+            # file arg is needed somewhere
+            dataset = nt.Dataset(
+                inputs=readers.ColumnReader(column='filenames_3d', is_image=True),
+                outputs=readers.ColumnReader(column='age')
+            )
+        
 if __name__ == '__main__':
     run_tests()

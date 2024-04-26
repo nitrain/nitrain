@@ -20,7 +20,7 @@ class PatternReader:
         self.exclude = exclude
         self.label = label
     
-    def map_values(self, base_dir=None, base_label=None):
+    def map_values(self, base_dir=None, base_file=None, base_label=None):
         pattern = self.pattern
         exclude = self.exclude
         

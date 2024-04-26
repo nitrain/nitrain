@@ -62,8 +62,12 @@ def infer_reader(x, base_dir=None):
                 reader_list = [infer_reader(xx, base_dir=base_dir) for xx in x]
                 return readers.ComposeReader(reader_list)
             else:
-                return readers.ArrayReader(np.array(x))    
+                return readers.ArrayReader(np.array(x))
+        elif np.isscalar(x[0]):
+            # list of scalars -> interpret as array
+            return readers.ArrayReader(np.array(x))
         else:
+            # something else?
             reader_list = [infer_reader(reader, base_dir=base_dir) for reader in x]
             return readers.ComposeReader(reader_list)
         

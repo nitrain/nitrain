@@ -2,6 +2,8 @@ import numpy as np
 import random
 import math
 
+import ntimage as nti
+
     
 class SliceSampler:
     """
@@ -62,7 +64,7 @@ class SliceSampler:
 
 def create_slices(images, values, axis):
     
-    if 'NTImage' in str(type(values[0])):
+    if nti.is_ntimage(values[0]):
         slices = []
         co_slices = []
         for image, co_image in zip(images, values):

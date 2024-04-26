@@ -11,9 +11,9 @@ class ComposeReader:
         self.readers = readers
         self.label = label
     
-    def map_values(self, base_dir=None, base_label=None):
+    def map_values(self, base_dir=None, base_file=None, base_label=None):
         for idx, reader in enumerate(self.readers):
-            reader.map_values(base_dir=base_dir, base_label=f'{base_label}-{idx}')
+            reader.map_values(base_dir=base_dir, base_file=base_file, base_label=f'{base_label}-{idx}')
         
         if self.label is None:
             if base_label is not None:
