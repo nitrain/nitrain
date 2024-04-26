@@ -131,7 +131,7 @@ class RandomSlice(BaseTransform):
     
     def __call__(self, image):
         if not self.allow_blank:
-            image = image.crop_image()
+            image = image.crop()
         
         idx = random.sample(range(image.shape[self.axis]), 1)[0]
         new_image = image.slice(self.axis, idx)
@@ -178,12 +178,13 @@ class RandomCrop(BaseTransform):
         size = self.size
         if isinstance(size, int):
             size = tuple([size for _ in range(image.dimension)])
+        
+        indices = []
+        for i in range(len(size)):
+            lower_idx = random.sample(range(0, image.shape[i]-size[0]), 1)[0]
+            indices.append((lower_idx, lower_idx + size[i]))
             
-        lower_indices = [random.sample(range(0, image.shape[i]-size[0]), 1)[0] for i in range(len(size))]
-        upper_indices = [lower_indices[i] + size[i] for i in range(len(size))]
-            
-        new_image = image.crop_indices(lower_indices,
-                                       upper_indices)
+        new_image = image.crop(indices)
         return new_image
 
 

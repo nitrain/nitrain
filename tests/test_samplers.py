@@ -7,17 +7,18 @@ from tempfile import mktemp
 import numpy as np
 import numpy.testing as nptest
 
-import ntimage as nt
-from nitrain import datasets, loaders, samplers, transforms as tx
+import ntimage as nti
+import nitrain as nt
+from nitrain import samplers, transforms as tx
 
 
 
 class TestClass_BaseSampler(unittest.TestCase):
     def setUp(self):
-        img = nt.load(nt.example_data('mni'))
+        img = nti.load(nti.example_data('mni'))
         x = [img for _ in range(5)]
         y = list(range(5))
-        self.dataset = datasets.MemoryDataset(x, y)
+        self.dataset = nt.Dataset(x, y)
 
     def tearDown(self):
         pass
@@ -36,10 +37,10 @@ class TestClass_BaseSampler(unittest.TestCase):
 
 class TestClass_PatchSampler(unittest.TestCase):
     def setUp(self):
-        img = nt.load(nt.example_data('r16')).resample_image((4,4))
+        img = nti.load(nti.example_data('r16')).resample((4,4), use_spacing=True)
         x = [img for _ in range(5)]
         y = list(range(5))
-        self.dataset = datasets.MemoryDataset(x, y)
+        self.dataset = nt.Dataset(x, y)
 
     def tearDown(self):
         pass
@@ -62,10 +63,10 @@ class TestClass_PatchSampler(unittest.TestCase):
 
 class TestClass_SlicePatchSampler(unittest.TestCase):
     def setUp(self):
-        img = nt.load(nt.example_data('mni')).resample_image((4,4,4))
+        img = nti.load(nti.example_data('mni')).resample((4,4,4), use_spacing=True)
         x = [img for _ in range(5)]
         y = list(range(5))
-        self.dataset = datasets.MemoryDataset(x, y)
+        self.dataset = nt.Dataset(x, y)
 
     def tearDown(self):
         pass
@@ -90,10 +91,10 @@ class TestClass_SlicePatchSampler(unittest.TestCase):
         
 class TestClass_SliceSampler(unittest.TestCase):
     def setUp(self):
-        img = nt.load(nt.example_data('mni'))
+        img = nti.load(nti.example_data('mni'))
         x = [img for _ in range(5)]
         y = list(range(5))
-        self.dataset = datasets.MemoryDataset(x, y)
+        self.dataset = nt.Dataset(x, y)
 
     def tearDown(self):
         pass
@@ -114,10 +115,10 @@ class TestClass_SliceSampler(unittest.TestCase):
 
 class TestClass_BlockSampler(unittest.TestCase):
     def setUp(self):
-        img = nt.load(nt.example_data('mni'))
+        img = nti.load(nti.example_data('mni'))
         x = [img for _ in range(5)]
         y = list(range(5))
-        self.dataset = datasets.MemoryDataset(x, y)
+        self.dataset = nt.Dataset(x, y)
 
     def tearDown(self):
         pass
