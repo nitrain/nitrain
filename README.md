@@ -68,7 +68,7 @@ python -m pip install git+github.com/ncullen93/nitrain.git
 
 ### Dependencies
 
-The nitrain package uses the `antspy` package to efficiently read and transform medical images. It relies on the `antspynet` package to create some architectures. Additionally, you can use keras (tf.keras or keras3), tensorflow, or pytorch as backend - with support for only importing the framework you are using.
+The `nitrain-image` package is a key dependency that allows you to efficiently read and transform medical images. It is based on the ITK framework for medical imaging. Additionally, you can use keras (tf.keras or keras3), tensorflow, pytorch, or jax as backend for creating your models.
 
 <br />
 
