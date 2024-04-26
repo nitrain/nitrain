@@ -78,8 +78,8 @@ The 10-minute overview presented below will take you through the key components 
 
 - [Datasets](#datasets)
 - [Loaders](#loaders)
-- [Architectures](#architectures-and-pretrained-models)
-- [Trainers](#model-trainers)
+- [Architectures and pretrained models](#architectures-and-pretrained-models)
+- [Model Trainers](#model-trainers)
 - [Explainers](#explainers)
 
 <br />
