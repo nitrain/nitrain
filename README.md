@@ -49,7 +49,7 @@ trainer.fit(loader, epochs=100)
 nt.register_model(trainer.model, 'nick/t1-brain-segmentation')
 ```
 
-A more in-depth introduction can be found in the [tutorials](github.com/ncullen93/nitrain) and if you can also check out the [examples](github.com/ncullen93/nitrain) for self-contained notebooks showing how to perform common deep learning tasks.
+A variety of self-contained notebooks showing how to perform common medical imaging AI tasks is available in the [tutorials](github.com/nitrain/tutorials) repo.
 
 <br />
 
