@@ -81,5 +81,49 @@ class TestClass_IntensityTransforms(unittest.TestCase):
         img_tx = my_tx(self.img_2d)
         img_tx2 = my_tx(self.img_3d)
 
+class TestClass_MathTransforms(unittest.TestCase):
+    
+    def setUp(self):
+        self.img_2d = nti.ones_like(nti.example('r16'))
+        self.img_3d = nti.ones_like(nti.example('mni'))
+
+    def tearDown(self):
+        pass
+    
+    def test_Abs(self):
+        my_tx = tx.Abs()
+        img2d_tx = my_tx(self.img_2d)
+        img3d_tx = my_tx(self.img_3d)
+
+    def test_Ceil(self):
+        my_tx = tx.Ceil()
+        img2d_tx = my_tx(self.img_2d)
+        img3d_tx = my_tx(self.img_3d)
+
+    def test_Floor(self):
+        my_tx = tx.Floor()
+        img2d_tx = my_tx(self.img_2d)
+        img3d_tx = my_tx(self.img_3d)
+
+    def test_Log(self):
+        my_tx = tx.Log()
+        img2d_tx = my_tx(self.img_2d)
+        img3d_tx = my_tx(self.img_3d)
+
+    def test_Exp(self):
+        my_tx = tx.Exp()
+        img2d_tx = my_tx(self.img_2d)
+        img3d_tx = my_tx(self.img_3d)
+
+    def test_Sqrt(self):
+        my_tx = tx.Sqrt()
+        img2d_tx = my_tx(self.img_2d)
+        img3d_tx = my_tx(self.img_3d)
+
+    def test_Power(self):
+        my_tx = tx.Power(2)
+        img2d_tx = my_tx(self.img_2d)
+        img3d_tx = my_tx(self.img_3d)
+
 if __name__ == '__main__':
     run_tests()
