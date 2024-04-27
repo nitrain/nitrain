@@ -9,7 +9,6 @@ __all__ = [
     'Slice'
 ]
 
-
 class Astype(BaseTransform):
     """
     import ntimage as nti
@@ -71,10 +70,10 @@ class Resample(BaseTransform):
         return images if len(images) > 1 else images[0]
 
 class Slice(BaseTransform):
-    def __init__(self, axis, index):
+    def __init__(self, index, axis):
         self.axis = axis
         self.index = index
     
     def __call__(self, *images):
-        images = [image.slice(self.axis, self.index) for image in images]
+        images = [image.slice(self.index, self.axis) for image in images]
         return images if len(images) > 1 else images[0]

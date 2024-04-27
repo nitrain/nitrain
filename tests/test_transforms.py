@@ -11,10 +11,10 @@ import ntimage as nti
 from nitrain import transforms as tx
 
 
-class TestClass_StructuralTransforms(unittest.TestCase):
+class TestClass_ImageTransforms(unittest.TestCase):
     def setUp(self):
-        self.img_2d = nti.load(nti.example_data('r16'))
-        self.img_3d = nti.load(nti.example_data('mni'))
+        self.img_2d = nti.example('r16')
+        self.img_3d = nti.example('mni')
 
     def tearDown(self):
         pass
@@ -42,21 +42,44 @@ class TestClass_StructuralTransforms(unittest.TestCase):
         img_tx2 = my_tx(self.img_3d)
 
     def test_Slice(self):
-        my_tx = tx.Slice(0, 10)
+        my_tx = tx.Slice(10, 0)
         img_tx = my_tx(self.img_2d)
         
-        my_tx = tx.Slice(0, 10)
+        my_tx = tx.Slice(10, 0)
         img_tx2 = my_tx(self.img_3d)
         
-        my_tx = tx.Slice(1, 10)
+        my_tx = tx.Slice(10, 1)
         img_tx = my_tx(self.img_2d)
         
-        my_tx = tx.Slice(1, 10)
+        my_tx = tx.Slice(10, 1)
         img_tx2 = my_tx(self.img_3d)
         
-        my_tx = tx.Slice(2, 10)
+        my_tx = tx.Slice(10, 2)
         img_tx2 = my_tx(self.img_3d)
 
+
+class TestClass_IntensityTransforms(unittest.TestCase):
+    def setUp(self):
+        self.img_2d = nti.example('r16')
+        self.img_3d = nti.example('mni')
+
+    def tearDown(self):
+        pass
+
+    def test_StdNormalize(self):
+        my_tx = tx.StdNormalize()
+        img_tx = my_tx(self.img_2d)
+        img_tx2 = my_tx(self.img_3d)
+        
+    def test_Normalize(self):
+        my_tx = tx.Normalize(0, 1)
+        img_tx = my_tx(self.img_2d)
+        img_tx2 = my_tx(self.img_3d)
+    
+    def test_Clamp(self):
+        my_tx = tx.Clamp(0, 200)
+        img_tx = my_tx(self.img_2d)
+        img_tx2 = my_tx(self.img_3d)
 
 if __name__ == '__main__':
     run_tests()
