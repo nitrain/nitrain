@@ -56,6 +56,47 @@ class TestClass_ImageTransforms(unittest.TestCase):
         
         my_tx = tx.Slice(10, 2)
         img_tx2 = my_tx(self.img_3d)
+        
+    def test_Pad(self):
+        img = nti.ones((100,110))
+        mytx = tx.Pad((10,5))
+        img2 = mytx(img)
+        self.assertEqual(img2.shape, (120,120))
+
+        img = nti.ones((100,110))
+        mytx = tx.Pad(((10,5),5))
+        img2 = mytx(img)
+        self.assertEqual(img2.shape, (115,120))
+
+        img = nti.ones((100,110))
+        mytx = tx.Pad([(10,5),(3,4)])
+        img2 = mytx(img)
+        self.assertEqual(img2.shape, (115,117))
+
+    def test_PadLike(self):
+        img = nti.ones((100,110))
+
+        img2 = nti.ones((72,108))
+        mytx = tx.PadLike(img)
+        img3 = mytx(img2)
+        self.assertEqual(img.shape, img3.shape)
+        
+        img2 = nti.ones((73,109))
+        mytx = tx.PadLike(img)
+        img3 = mytx(img2)
+        self.assertEqual(img.shape, img3.shape)
+        
+        img = nti.ones((101,111))
+
+        img2 = nti.ones((72,108))
+        mytx = tx.PadLike(img)
+        img3 = mytx(img2)
+        self.assertEqual(img.shape, img3.shape)
+        
+        img2 = nti.ones((73,109))
+        mytx = tx.PadLike(img)
+        img3 = mytx(img2)
+        self.assertEqual(img.shape, img3.shape)
 
 
 class TestClass_IntensityTransforms(unittest.TestCase):
@@ -124,6 +165,35 @@ class TestClass_MathTransforms(unittest.TestCase):
         my_tx = tx.Power(2)
         img2d_tx = my_tx(self.img_2d)
         img3d_tx = my_tx(self.img_3d)
+
+class TestClass_ShapeTransforms(unittest.TestCase):
+    
+    def setUp(self):
+        self.img_2d = nti.example('r16')
+        self.img_3d = nti.example('mni')
+
+    def tearDown(self):
+        pass
+    
+    def test_Reorient(self):
+        my_tx = tx.Reorient('LPI')
+        img3d_tx = my_tx(self.img_3d)
+        
+        my_tx = tx.Reorient('IPR')
+        img3d_tx = my_tx(self.img_3d)
+    
+    def test_Rollaxis(self):
+        my_tx = tx.Rollaxis(1)
+        img3d_tx = my_tx(self.img_3d)
+        
+        my_tx = tx.Rollaxis(2, 1)
+        img3d_tx = my_tx(self.img_3d)
+        
+    def test_Repeat(self):
+        my_tx = tx.Repeat(5)
+        img2d_tx = my_tx(self.img_3d)
+        img3d_tx = my_tx(self.img_3d)
+
 
 if __name__ == '__main__':
     run_tests()

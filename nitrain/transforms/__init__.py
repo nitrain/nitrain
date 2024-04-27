@@ -6,3 +6,4 @@ and they ALWAYS return an ntimage.
 from .image import *
 from .intensity import *
 from .math import *
+from .shape import *

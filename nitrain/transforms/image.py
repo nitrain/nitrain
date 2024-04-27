@@ -6,7 +6,9 @@ __all__ = [
     'Smooth',
     'Crop',
     'Resample',
-    'Slice'
+    'Slice',
+    'Pad',
+    'PadLike'
 ]
 
 class Astype(BaseTransform):
@@ -76,4 +78,26 @@ class Slice(BaseTransform):
     
     def __call__(self, *images):
         images = [image.slice(self.index, self.axis) for image in images]
+        return images if len(images) > 1 else images[0]
+
+
+class Pad(BaseTransform):
+    def __init__(self, width, mode='constant', **kwargs):
+        self.width = width
+        self.mode = mode
+        self.kwargs = kwargs
+    
+    def __call__(self, *images):
+        images = [image.pad(self.width, self.mode, **self.kwargs) for image in images]
+        return images if len(images) > 1 else images[0]
+
+
+class PadLike(BaseTransform):
+    def __init__(self, target, mode='constant', **kwargs):
+        self.target = target
+        self.mode = mode
+        self.kwargs = kwargs
+    
+    def __call__(self, *images):
+        images = [image.pad_like(self.target, self.mode, **self.kwargs) for image in images]
         return images if len(images) > 1 else images[0]
