@@ -205,9 +205,31 @@ class TestClass_ShapeTransforms(unittest.TestCase):
         
     def test_Repeat(self):
         my_tx = tx.Repeat(5)
-        img2d_tx = my_tx(self.img_3d)
+        img2d_tx = my_tx(self.img_2d)
         img3d_tx = my_tx(self.img_3d)
 
+
+class TestClass_SpatialTransforms(unittest.TestCase):
+    
+    def setUp(self):
+        pass
+    
+    def tearDown(self):
+        pass
+
+    def test_Zoom(self):
+        img2d = nti.example('r16')
+        img3d = nti.example('mni')
+        
+        my_tx = tx.Zoom(0.9)
+        
+        img2d_tx = my_tx(img2d)
+        img3d_tx = my_tx(img3d)
+
+        my_tx = tx.Zoom(1.1)
+        
+        img2d_tx = my_tx(img2d)
+        img3d_tx = my_tx(img3d)
 
 if __name__ == '__main__':
     run_tests()

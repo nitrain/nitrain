@@ -7,3 +7,4 @@ from .image import *
 from .intensity import *
 from .math import *
 from .shape import *
+from .spatial import *
