@@ -121,6 +121,20 @@ class TestClass_IntensityTransforms(unittest.TestCase):
         my_tx = tx.Clamp(0, 200)
         img_tx = my_tx(self.img_2d)
         img_tx2 = my_tx(self.img_3d)
+        
+    def test_Threshold(self):
+        my_tx = tx.Threshold(200)
+        img_tx = my_tx(self.img_2d)
+
+        my_tx = tx.Threshold(200, True)
+        img_tx = my_tx(self.img_2d)
+        
+        my_tx = tx.Threshold(2000)
+        img_tx = my_tx(self.img_3d)
+
+        my_tx = tx.Threshold(2000, True)
+        img_tx = my_tx(self.img_3d)
+        
 
 class TestClass_MathTransforms(unittest.TestCase):
     
