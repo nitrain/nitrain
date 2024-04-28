@@ -230,6 +230,20 @@ class TestClass_SpatialTransforms(unittest.TestCase):
         
         img2d_tx = my_tx(img2d)
         img3d_tx = my_tx(img3d)
+        
+    def test_Flip(self):
+        img2d = nti.example('r16')
+        img3d = nti.example('mni')
+        
+        my_tx = tx.Flip(0)
+        
+        img2d_tx = my_tx(img2d)
+        img3d_tx = my_tx(img3d)
+
+        my_tx = tx.Flip(1)
+        
+        img2d_tx = my_tx(img2d)
+        img3d_tx = my_tx(img3d)
 
 if __name__ == '__main__':
     run_tests()
