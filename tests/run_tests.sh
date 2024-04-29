@@ -22,6 +22,7 @@ pushd "$(dirname "$0")"
 
 echo "Testing datasets"
 $PYCMD test_datasets.py $@
+$PYCMD test_datasets_gcs.py $@
 
 echo "Testing loaders"
 $PYCMD test_loaders.py $@

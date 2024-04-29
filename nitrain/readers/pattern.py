@@ -2,10 +2,13 @@ import glob
 import os
 from parse import parse
 from fnmatch import fnmatch
+import glob
+from google.cloud import storage
+from google.oauth2 import service_account
 
 import pandas as pd
 import numpy as np
-import ntimage as nt
+import ntimage as nti
 
 class PatternReader:
     def __init__(self, pattern, base_dir=None, exclude=None, label=None):
@@ -16,30 +19,44 @@ class PatternReader:
         >>> reader.map_values(base_dir='~/Desktop/kaggle-liver-ct/')
         >>> img = reader[1]
         """
-        self.pattern = pattern
+        self.pattern = os.path.expanduser(pattern)
+        
+        if base_dir:
+            base_dir = os.path.expanduser(base_dir)
         self.base_dir = base_dir
         self.exclude = exclude
         self.label = label
-    
-    def map_values(self, base_dir=None, base_file=None, base_label=None):
-        if self.base_dir is not None:
+        
+    def map_values(self, base_dir=None, base_file=None, base_label=None, bucket=None, credentials=None):
+        if base_dir is None:
             base_dir = self.base_dir
         
         pattern = self.pattern
         exclude = self.exclude
         
-        pattern = os.path.expanduser(pattern)
         glob_pattern = pattern.replace('{id}','*')
         
         if base_dir is not None:
             if not base_dir.endswith('/'):
                 base_dir += '/'
-            base_dir = os.path.expanduser(base_dir)
             glob_pattern = os.path.join(base_dir, glob_pattern)
-        x = sorted(glob.glob(glob_pattern, recursive=True))
-
-        if base_dir is not None:
-            x = [os.path.relpath(xx, base_dir) for xx in x]
+        
+        print(glob_pattern)
+        if bucket is None:
+            # LOCAL 
+            x = sorted(glob.glob(glob_pattern, recursive=True))
+            
+            if base_dir is not None:
+                x = [os.path.relpath(xx, base_dir) for xx in x]
+        else:
+            # GCS
+            if isinstance(credentials, str):
+                credentials = service_account.Credentials.from_service_account_file(credentials)
+            storage_client = storage.Client(credentials=credentials)
+            bucket_client = storage_client.bucket(bucket)
+            
+            x = storage_client.list_blobs(bucket, match_glob=glob_pattern)
+            x = list([blob.name.replace(base_dir, '') for blob in x])
         
         if exclude:
             x = [file for file in x if not fnmatch(file, exclude)]
@@ -67,7 +84,7 @@ class PatternReader:
     def __getitem__(self, idx):
         if not self.values:
             raise Exception('You must call `map_values()` before indexing a reader.')
-        return {self.label: nt.load(self.values[idx])}
+        return {self.label: nti.load(self.values[idx])}
     
     def __len__(self):
         return len(self.values)

@@ -22,7 +22,10 @@ class ColumnReader:
         self.column = column
         self.is_image = is_image
         self.label = label
-    
+        
+    def map_gcs_values(self, bucket, credentials, base_dir=None, base_file=None, base_label=None):
+        pass
+        
     def map_values(self, base_dir=None, base_file=None, base_label=None):
         file = self.base_file
         if file is None:
@@ -37,6 +40,7 @@ class ColumnReader:
         if base_dir is not None:
             file = os.path.join(base_dir, file)
         
+        file = os.path.expanduser(file)
         if not os.path.exists(file):
             raise Exception(f'No file found at {file}')
         

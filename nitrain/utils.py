@@ -1,6 +1,6 @@
 
 import os
-import ntimage as nt
+import ntimage as nti
 import numpy as np
 
 def get_nitrain_dir():
@@ -18,7 +18,7 @@ def files_to_array(files, dtype='float32'):
     # read in the images to a numpy array
     img_arrays = []
     for file in files:
-        img = nt.load(file)
+        img = nti.load(file)
         img_array = img.numpy()
         img_arrays.append(img_array)
         
