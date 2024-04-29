@@ -64,7 +64,7 @@ class SliceSampler:
 
 def create_slices(images, values, axis):
     
-    if nti.is_ntimage(values[0]):
+    if nti.is_image(values[0]):
         slices = []
         co_slices = []
         for image, co_image in zip(images, values):

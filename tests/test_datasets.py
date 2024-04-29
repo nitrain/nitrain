@@ -29,7 +29,7 @@ class TestClass_Dataset(unittest.TestCase):
         x, y = dataset[4]
         
         self.assertEqual(y, 4)
-        self.assertTrue(nti.is_ntimage(x))
+        self.assertTrue(nti.is_image(x))
         self.assertEqual(x.mean(), 4)
         
         # test repr
@@ -74,7 +74,7 @@ class TestClass_Dataset(unittest.TestCase):
         x, y = dataset[4]
         
         self.assertEqual(y, 4)
-        self.assertTrue(nti.is_ntimage(x))
+        self.assertTrue(nti.is_image(x))
         self.assertEqual(x.mean(), 4)
         
         # test repr
@@ -91,8 +91,8 @@ class TestClass_Dataset(unittest.TestCase):
         x, y = dataset[4]
         
         self.assertTrue(len(x), 2)
-        self.assertTrue(nti.is_ntimage(x[0]))
-        self.assertTrue(nti.is_ntimage(x[1]))
+        self.assertTrue(nti.is_image(x[0]))
+        self.assertTrue(nti.is_image(x[1]))
         self.assertEqual(x[0].mean(), 4)
         self.assertEqual(x[1].mean(), 8)
         self.assertEqual(y, 4)
@@ -146,7 +146,7 @@ class TestClass_CSVDataset(unittest.TestCase):
         
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
-        self.assertTrue(nti.is_ntimage(x[0]))
+        self.assertTrue(nti.is_image(x[0]))
         self.assertEqual(y, [50, 51])
         
         # test repr
@@ -165,7 +165,7 @@ class TestClass_CSVDataset(unittest.TestCase):
         
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
-        self.assertTrue(nti.is_ntimage(x[0]))
+        self.assertTrue(nti.is_image(x[0]))
         self.assertEqual(y, [50, 51])
 
     def test_missing_file(self):
@@ -213,7 +213,7 @@ class TestClass_FolderDataset(unittest.TestCase):
         
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
-        self.assertTrue(nti.is_ntimage(x[0]))
+        self.assertTrue(nti.is_image(x[0]))
         self.assertEqual(y, [50, 51])
         
         # test repr
@@ -237,8 +237,8 @@ class TestClass_FolderDataset(unittest.TestCase):
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
         self.assertTrue(len(x[0]) == 2)
-        self.assertTrue(nti.is_ntimage(x[0][0]))
-        self.assertTrue(nti.is_ntimage(x[0][1]))
+        self.assertTrue(nti.is_image(x[0][0]))
+        self.assertTrue(nti.is_image(x[0][1]))
         self.assertEqual(y, [50, 51])
 
     def test_2d_image_to_3d_image(self):
@@ -255,7 +255,7 @@ class TestClass_FolderDataset(unittest.TestCase):
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
         self.assertTrue(len(y) == 2)
-        self.assertTrue(nti.is_ntimage(x[0]))
+        self.assertTrue(nti.is_image(x[0]))
         self.assertEqual(x[0].dimension, 2)
         self.assertEqual(y[0].dimension, 3)
 
