@@ -41,7 +41,6 @@ class PatternReader:
                 base_dir += '/'
             glob_pattern = os.path.join(base_dir, glob_pattern)
         
-        print(glob_pattern)
         if bucket is None:
             # LOCAL 
             x = sorted(glob.glob(glob_pattern, recursive=True))

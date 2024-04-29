@@ -61,7 +61,8 @@ class Dataset:
         inputs = infer_reader(inputs)
         outputs = infer_reader(outputs)
         
-        base_dir = os.path.expanduser(base_dir)
+        if base_dir:
+            base_dir = os.path.expanduser(base_dir)
         
         inputs.map_values(base_dir=base_dir, base_file=base_file, base_label='inputs')
         outputs.map_values(base_dir=base_dir, base_file=base_file, base_label='outputs')
