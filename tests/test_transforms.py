@@ -1,7 +1,7 @@
 import os
 import unittest
 from main import run_tests
-
+import math
 from tempfile import mktemp
 
 import numpy as np
@@ -216,7 +216,47 @@ class TestClass_SpatialTransforms(unittest.TestCase):
     
     def tearDown(self):
         pass
+    
 
+    def test_Affine(self):
+        img2d = nti.example('r16')
+        
+        theta = math.radians(15)
+        arr = np.array([[math.cos(theta),-math.sin(theta)],
+                        [math.sin(theta),math.cos(theta)],
+                        [0,0]])
+        mytx = tx.Affine(arr)
+        img2d_tx = mytx(img2d)
+
+    def test_Shear(self):
+        img2d = nti.example('r16')
+        img3d = nti.example('mni')
+        mytx = tx.Shear(0.5, 0)
+
+        img2d_tx = mytx(img2d)
+        img3d_tx = mytx(img3d)
+
+    def test_Rotate(self):
+        img2d = nti.example('r16')
+        mytx = tx.Rotate(30)
+        img2d_tx = mytx(img2d)
+        
+        img3d = nti.example('mni')
+        mytx = tx.Rotate(30, 0)
+        img3d_tx = mytx(img3d)
+        mytx = tx.Rotate(-30, 1)
+        img3d_tx = mytx(img3d)
+
+    
+    def test_Swapaxes(self):
+        img3d = nti.example('mni')
+        
+        my_tx = tx.Swapaxes(0, 1)
+        img3d_tx = my_tx(img3d)
+        
+        my_tx = tx.Swapaxes(0, 2)
+        img3d_tx = my_tx(img3d)
+        
     def test_Zoom(self):
         img2d = nti.example('r16')
         img3d = nti.example('mni')
