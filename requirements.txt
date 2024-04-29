@@ -1,3 +1,5 @@
 tensorflow
 antspynet
 tf-keras
+google.cloud
+google.oauth2
