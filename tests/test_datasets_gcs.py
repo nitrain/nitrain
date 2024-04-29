@@ -1,20 +1,26 @@
 import os
 import unittest
 
-from tempfile import mkdtemp
-import shutil
-import pandas as pd
+from tempfile import NamedTemporaryFile
+import base64
+import json
 
-import numpy as np
-import ntimage as nti
 import nitrain as nt
 from nitrain import readers, transforms as tx
         
 from main import run_tests
 
-class TestClass_Dataset(unittest.TestCase):
+class TestClass_GCSDataset(unittest.TestCase):
     def setUp(self):
-        pass
+        base64_string = os.environ.get('GCP64')
+        decodedBytes = base64.b64decode(base64_string)
+        decodedStr = decodedBytes.decode("ascii") 
+        object = json.loads(decodedStr)
+        file = NamedTemporaryFile(suffix='.json')
+        with open(file.name, 'w') as f:
+            json.dump(object, f)
+        self.credentials = file
+
          
     def tearDown(self):
         pass
@@ -25,7 +31,7 @@ class TestClass_Dataset(unittest.TestCase):
             outputs=readers.ColumnReader('participants.tsv', 'age'),
             base_dir='datasets/nick-2/ds004711',
             bucket='ants-dev',
-            credentials = os.environ['GCP64']
+            credentials = self.credentials.name
         )
         
         self.assertTrue(len(d.inputs.values) > 0)
