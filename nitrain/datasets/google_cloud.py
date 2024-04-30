@@ -5,9 +5,9 @@ from .utils import reduce_to_list, apply_transforms
 from .dataset import Dataset
 from ..readers.utils import infer_reader
 
-__all__ = ['GCSDataset']
+__all__ = ['GoogleCloudDataset']
 
-class GCSDataset(Dataset):
+class GoogleCloudDataset(Dataset):
     
     def __init__(self, bucket, inputs, outputs, transforms=None, base_dir=None, base_file=None, credentials=None):
         """
@@ -17,7 +17,7 @@ class GCSDataset(Dataset):
         --------
         import nitrain as nt
         from nitrain import readers
-        d = nt.GCSDataset(
+        d = nt.GoogleCloudDataset(
             inputs=readers.PatternReader('sub-*/anat/*_T1w.nii.gz'),
             outputs=readers.ColumnReader('age', 'participants.tsv'),
             base_dir='datasets/nick-2/ds004711',
@@ -40,7 +40,7 @@ class GCSDataset(Dataset):
         self.transforms = transforms
     
     def __repr__(self):
-        s = 'GCSDataset (n={})\n'.format(len(self))
+        s = 'GoogleCloudDataset (n={})\n'.format(len(self))
         
         s = s +\
             '     {:<10} : {}\n'.format('Inputs', self.inputs)+\

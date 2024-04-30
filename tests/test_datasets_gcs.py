@@ -10,7 +10,7 @@ from nitrain import readers, transforms as tx
         
 from main import run_tests
 
-class TestClass_GCSDataset(unittest.TestCase):
+class TestClass_GoogleCloudDataset(unittest.TestCase):
     def setUp(self):
         base64_string = os.environ.get('GCP64')
         decodedBytes = base64.b64decode(base64_string)
@@ -26,7 +26,7 @@ class TestClass_GCSDataset(unittest.TestCase):
         pass
     
     def test_gcs_basic(self):
-        d = nt.GCSDataset(
+        d = nt.GoogleCloudDataset(
             inputs=readers.PatternReader('sub-*/anat/*_T1w.nii.gz'),
             outputs=readers.ColumnReader('age', 'participants.tsv'),
             base_dir='datasets/nick-2/ds004711',
@@ -37,7 +37,7 @@ class TestClass_GCSDataset(unittest.TestCase):
         self.assertTrue(len(d.inputs.values) > 0)
 
     def test_gcs_compose(self):
-        d = nt.GCSDataset(
+        d = nt.GoogleCloudDataset(
             inputs=[readers.PatternReader('sub-*/anat/*_T1w.nii.gz'),
                     readers.PatternReader('sub-*/anat/*_T1w.nii.gz')],
             outputs=readers.ColumnReader('age', 'participants.tsv'),
