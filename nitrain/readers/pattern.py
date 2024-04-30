@@ -48,6 +48,7 @@ class PatternReader:
         bucket_client = storage_client.bucket(bucket)
         
         x = storage_client.list_blobs(bucket, match_glob=glob_pattern)
+        
         x = list([blob.name.replace(base_dir, '') for blob in x])
 
         if exclude:
@@ -87,7 +88,6 @@ class PatternReader:
                 base_dir += '/'
             glob_pattern = os.path.join(base_dir, glob_pattern)
 
-        # LOCAL 
         x = sorted(glob.glob(glob_pattern, recursive=True))
         
         if base_dir is not None:

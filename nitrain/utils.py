@@ -14,13 +14,3 @@ def get_nitrain_dir():
         
     return nitrain_dir    
 
-def files_to_array(files, dtype='float32'):
-    # read in the images to a numpy array
-    img_arrays = []
-    for file in files:
-        img = nti.load(file)
-        img_array = img.numpy()
-        img_arrays.append(img_array)
-        
-    img_arrays = np.array(img_arrays, dtype=dtype)
-    return img_arrays

@@ -1,5 +1,5 @@
 
-
+import os
 
 from .utils import reduce_to_list, apply_transforms
 from .dataset import Dataset
@@ -11,7 +11,7 @@ class GoogleCloudDataset(Dataset):
     
     def __init__(self, bucket, inputs, outputs, transforms=None, base_dir=None, base_file=None, credentials=None):
         """
-        Create a nitrain dataset.
+        Create a nitrain dataset from a Google Cloud Storage bucket.
         
         Examples
         --------
@@ -32,8 +32,10 @@ class GoogleCloudDataset(Dataset):
         inputs = infer_reader(inputs)
         outputs = infer_reader(outputs)
         
-        inputs.map_gcs_values(base_dir=base_dir, base_file=base_file, base_label='inputs', bucket=bucket, credentials=credentials)
-        outputs.map_gcs_values(bucket=bucket, credentials=credentials, base_dir=base_dir, base_file=base_file, base_label='outputs')
+        inputs.map_gcs_values(bucket=bucket, credentials=credentials,
+                              base_dir=base_dir, base_file=base_file, base_label='inputs')
+        outputs.map_gcs_values(bucket=bucket, credentials=credentials,
+                               base_dir=base_dir, base_file=base_file, base_label='outputs')
                     
         self.inputs = inputs
         self.outputs = outputs
