@@ -23,13 +23,12 @@ def fetch_data(name, path=None):
             
     Example
     -------
-    >>> from nitrain.utils import download_data
-    >>> ds = fetch_data('openneuro/ds004711')
+    import nitrain as nt
+    ds = nt.fetch_data('openneuro/ds004711')
     """
     
     if path is None:
         path = get_nitrain_dir()
-
     
     if name.startswith('openneuro'):
         import datalad.api as dl
@@ -44,11 +43,11 @@ def fetch_data(name, path=None):
     elif name.startswith('example'):
         # create example datasets
         pass
-        
+    
     else:
         raise ValueError('Dataset name not recognized.')
 
-    return res
+    return save_dir
 
 
 def reduce_to_list(d, idx=0):

@@ -3,7 +3,7 @@
 __version__ = "0.3.1"
 
 
-from .datasets import Dataset, GoogleCloudDataset
+from .datasets import Dataset, GoogleCloudDataset, fetch_data
 from .explainers import Explainer
 from .loaders import Loader
 from .trainers import Trainer

@@ -3,3 +3,4 @@ antspynet
 tf-keras
 google-cloud-storage
 google-auth
+datalad
