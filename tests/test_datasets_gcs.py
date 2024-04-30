@@ -25,10 +25,10 @@ class TestClass_GCSDataset(unittest.TestCase):
     def tearDown(self):
         pass
     
-    def test_gcs(self):
+    def test_gcs_basic(self):
         d = nt.GCSDataset(
             inputs=readers.PatternReader('sub-*/anat/*_T1w.nii.gz'),
-            outputs=readers.ColumnReader('participants.tsv', 'age'),
+            outputs=readers.ColumnReader('age', 'participants.tsv'),
             base_dir='datasets/nick-2/ds004711',
             bucket='ants-dev',
             credentials = self.credentials.name
@@ -36,5 +36,18 @@ class TestClass_GCSDataset(unittest.TestCase):
         
         self.assertTrue(len(d.inputs.values) > 0)
 
+    def test_gcs_compose(self):
+        d = nt.GCSDataset(
+            inputs=[readers.PatternReader('sub-*/anat/*_T1w.nii.gz'),
+                    readers.PatternReader('sub-*/anat/*_T1w.nii.gz')],
+            outputs=readers.ColumnReader('age', 'participants.tsv'),
+            base_dir='datasets/nick-2/ds004711',
+            bucket='ants-dev',
+            credentials = self.credentials.name
+        )
+        
+        self.assertEqual(len(d.inputs.values[0]), 2)
+        self.assertTrue(len(d.inputs.values) > 0)
+        
 if __name__ == '__main__':
     run_tests()

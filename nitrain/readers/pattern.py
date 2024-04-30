@@ -26,8 +26,8 @@ class PatternReader:
         self.base_dir = base_dir
         self.exclude = exclude
         self.label = label
-        
-    def map_values(self, base_dir=None, base_file=None, base_label=None, bucket=None, credentials=None):
+    
+    def map_gcs_values(self, bucket, credentials=None, base_dir=None, base_file=None, base_label=None):
         if base_dir is None:
             base_dir = self.base_dir
         
@@ -41,21 +41,57 @@ class PatternReader:
                 base_dir += '/'
             glob_pattern = os.path.join(base_dir, glob_pattern)
         
-        if bucket is None:
-            # LOCAL 
-            x = sorted(glob.glob(glob_pattern, recursive=True))
-            
-            if base_dir is not None:
-                x = [os.path.relpath(xx, base_dir) for xx in x]
+        # GCS
+        if isinstance(credentials, str):
+            credentials = service_account.Credentials.from_service_account_file(credentials)
+        storage_client = storage.Client(credentials=credentials)
+        bucket_client = storage_client.bucket(bucket)
+        
+        x = storage_client.list_blobs(bucket, match_glob=glob_pattern)
+        x = list([blob.name.replace(base_dir, '') for blob in x])
+
+        if exclude:
+            x = [file for file in x if not fnmatch(file, exclude)]
+
+        if '{id}' in pattern:
+            ids = [parse(pattern.replace('*','{other}'), file).named['id'] for file in x]
         else:
-            # GCS
-            if isinstance(credentials, str):
-                credentials = service_account.Credentials.from_service_account_file(credentials)
-            storage_client = storage.Client(credentials=credentials)
-            bucket_client = storage_client.bucket(bucket)
-            
-            x = storage_client.list_blobs(bucket, match_glob=glob_pattern)
-            x = list([blob.name.replace(base_dir, '') for blob in x])
+            ids = None
+
+        if base_dir is not None:
+            x = [os.path.join(base_dir, file) for file in x]
+        
+        if len(x) == 0:
+            raise Exception(f'No filepaths found that match {glob_pattern}')
+
+        self.values = x
+        self.ids = ids
+        
+        if self.label is None:
+            if base_label is not None:
+                self.label = base_label
+            else:
+                self.label = 'pattern'
+                
+    def map_values(self, base_dir=None, base_label=None, **kwargs):
+        if base_dir is None:
+            base_dir = self.base_dir
+        
+        pattern = self.pattern
+        exclude = self.exclude
+        
+        glob_pattern = pattern.replace('{id}','*')
+        
+        if base_dir is not None:
+            if not base_dir.endswith('/'):
+                base_dir += '/'
+            glob_pattern = os.path.join(base_dir, glob_pattern)
+
+        # LOCAL 
+        x = sorted(glob.glob(glob_pattern, recursive=True))
+        
+        if base_dir is not None:
+            x = [os.path.relpath(xx, base_dir) for xx in x]
         
         if exclude:
             x = [file for file in x if not fnmatch(file, exclude)]

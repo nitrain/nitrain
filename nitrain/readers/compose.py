@@ -18,6 +18,18 @@ class ComposeReader:
                 
         self.readers = readers
         self.label = label
+        
+    def map_gcs_values(self, base_dir=None, base_file=None, base_label=None, bucket=None, credentials=None):
+        for idx, reader in enumerate(self.readers):
+            reader.map_gcs_values(base_dir=base_dir, base_file=base_file, base_label=f'{base_label}-{idx}',
+                                  bucket=bucket, credentials=credentials)
+        
+        if self.label is None:
+            if base_label is not None:
+                self.label = base_label
+            else:
+                self.label = 'compose'
+        self.values = list(zip(*[reader.values for reader in self.readers]))
     
     def map_values(self, base_dir=None, base_file=None, base_label=None):
         for idx, reader in enumerate(self.readers):
