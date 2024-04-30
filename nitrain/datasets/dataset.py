@@ -1,4 +1,5 @@
 import os
+import warnings
 
 from ..readers.utils import infer_reader
 from .utils import reduce_to_list, apply_transforms
@@ -66,6 +67,10 @@ class Dataset:
         
         inputs.map_values(base_dir=base_dir, base_file=base_file, base_label='inputs')
         outputs.map_values(base_dir=base_dir, base_file=base_file, base_label='outputs')
+        
+        # ensure alignment
+        if len(inputs.values) != len(outputs.values):
+            warnings.warn('Inputs and outputs do not have same length. This could be misalignment between mappings.')
                     
         self.inputs = inputs
         self.outputs = outputs
