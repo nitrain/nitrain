@@ -1,7 +1,9 @@
 import os
 import sys
 
-import numpy as np
+import pandas as pd
+from tempfile import mkdtemp
+import ntimage as nti
 
 from ..utils import get_nitrain_dir
     
@@ -39,11 +41,6 @@ def fetch_data(name, path=None):
             
         # load openneuro dataset using datalad
         res = dl.clone(source=f'///{name}', path=save_dir)
-    
-    elif name.startswith('example'):
-        # create example datasets
-        pass
-    
     else:
         raise ValueError('Dataset name not recognized.')
 

@@ -31,6 +31,8 @@ jobs:
           python -m pip install --upgrade pip
       - name: Install requirements
         run: python -m pip install -r requirements.txt
+      - name: Install other deps
+        run: apt-get install git-annex
       - name: Install nitrain-image
         run: python -m pip install git+https://github.com/nitrain/nitrain-image.git
       - name: Install package
