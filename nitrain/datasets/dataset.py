@@ -8,56 +8,58 @@ class Dataset:
     
     def __init__(self, inputs, outputs, transforms=None, base_dir=None, base_file=None):
         """
-        Create a nitrain dataset.
+        Create a nitrain dataset from data in memory or on the local filesystem.
         
         Examples
         --------
-        >>> dataset = datasets.Dataset(
-        ...     inputs = readers.PatternReader('~/desktop/ds004711/sub-*/anat/*_T1w.nii.gz'),
-        ...     outputs = readers.ColumnReader('~/desktop/ds004711/participants.tsv', 'age'),
-        ...     
-        ... )
-        >>> dataset = datasets.Dataset(
-        ...     inputs = [img1, img2, img3, img4],
-        ...     outputs = readers.ColumnReader()
-        ... )
-        >>> dataset = datasets.Dataset(
-        ...     inputs = np.random.randn(10, 128, 128),
-        ...     outputs = readers.ColumnReader()
-        ... )
-        >>> dataset = datasets.Dataset(
-        ...     inputs = [
-        ...         readers.PatternReader(),
-        ...         readers.PatternReader(),
-        ...     ]
-        ...     outputs = readers.ColumnReader()
-        ... )
-        >>> dataset = datasets.Dataset(
-        ...     inputs = {
-        ...         't1': readers.PatternReader(),
-        ...         't2': readers.PatternReader(),
-        ...     }
-        ...     outputs = readers.ColumnReader()
-        ... )
-        >>> dataset = datasets.Dataset(
-        ...     inputs = readers.PatternReader(),
-        ...     outputs = readers.ColumnReader(),
-        ...     transforms = {
-        ...         'inputs': tx.RangeNormalize(0,1),
-        ...         ['inputs','outputs']: [
-        ...             tx.Resample((128,128,128)),
-        ...             tx.Reorient('RPI')
-        ...         ]
-        ...     }
-        ... )
-        >>> dataset = datasets.Dataset(
-        ...     inputs = {'anat': readers.PatternReader()},
-        ...     outputs = {'seg': readers.ColumnReader()},
-        ...     transforms = {
-        ...         'anat': tx.RangeNormalize(0,1),
-        ...         ['anat','seg']: tx.Resample((128,128,128))
-        ...     }
-        ... )
+        import nitrain as nt
+        from nitrain import readers
+        dataset = nt.Dataset(
+            inputs = readers.PatternReader('~/desktop/ds004711/sub-*/anat/*_T1w.nii.gz'),
+            outputs = readers.ColumnReader('~/desktop/ds004711/participants.tsv', 'age'),
+            
+        )
+        dataset = nt.Dataset(
+            inputs = [img1, img2, img3, img4],
+            outputs = readers.ColumnReader()
+        )
+        dataset = nt.Dataset(
+            inputs = np.random.randn(10, 128, 128),
+            outputs = readers.ColumnReader()
+        )
+        dataset = nt.Dataset(
+            inputs = [
+                readers.PatternReader(),
+                readers.PatternReader(),
+            ]
+            outputs = readers.ColumnReader()
+        )
+        dataset = nt.Dataset(
+            inputs = {
+                't1': readers.PatternReader(),
+                't2': readers.PatternReader(),
+            }
+            outputs = readers.ColumnReader()
+        )
+        dataset = nt.Dataset(
+            inputs = readers.PatternReader(),
+            outputs = readers.ColumnReader(),
+            transforms = {
+                'inputs': tx.RangeNormalize(0,1),
+                ['inputs','outputs']: [
+                    tx.Resample((128,128,128)),
+                    tx.Reorient('RPI')
+                ]
+            }
+        )
+        dataset = nt.Dataset(
+            inputs = {'anat': readers.PatternReader()},
+            outputs = {'seg': readers.ColumnReader()},
+            transforms = {
+                'anat': tx.RangeNormalize(0,1),
+                ['anat','seg']: tx.Resample((128,128,128))
+            }
+        )
         """
         inputs = infer_reader(inputs)
         outputs = infer_reader(outputs)
