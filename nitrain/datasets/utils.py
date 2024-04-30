@@ -94,7 +94,6 @@ def apply_transforms(tx_name, tx_value, inputs, outputs, force=False):
             else:
                 if (output_name in tx_name) | force:
                     for tx_fn in tx_value:
-                        print(output_name)
                         outputs[output_name] = tx_fn(outputs[output_name])
     
     return inputs, outputs
