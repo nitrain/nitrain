@@ -111,7 +111,7 @@ class TestClass_SliceSampler(unittest.TestCase):
         
         self.assertTrue(len(y_batch)==12)
         # no shuffle
-        self.assertTrue(all(y_batch==0))
+        self.assertEqual(sum(y_batch), 0)
 
 class TestClass_BlockSampler(unittest.TestCase):
     def setUp(self):

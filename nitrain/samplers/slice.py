@@ -62,23 +62,26 @@ class SliceSampler:
 
 
 
-def create_slices(images, values, axis):
-    
-    if nti.is_image(values[0]):
-        slices = []
-        co_slices = []
-        for image, co_image in zip(images, values):
-            for i in range(image.shape[axis]):
-                slices.append(image.slice(i, axis))
-                co_slices.append(co_image.slice(i, axis))
-                
-        return slices, co_slices
-    else:
-        slices = []
-        new_values = []
-        for image, value in zip(images, values):
-            for i in range(image.shape[axis]):
-                slices.append(image.slice(i, axis))
-                new_values.append(value)
-                
-        return slices, np.array(new_values)
+def create_slices(inputs, outputs, axis):
+    # TODO: let slice sampler be applied selectively via dictionary
+    new_inputs = []
+    new_outputs = []
+    for tmp_input, tmp_output in zip(inputs, outputs):
+        if nti.is_image(tmp_input):
+            slices = tmp_input.shape[axis]
+        else:
+            if nti.is_image(tmp_input[0]):
+                slices = tmp_input[0].shape[axis]
+        
+        for i in range(slices):
+            if isinstance(tmp_input, list):
+                new_inputs.append([x.slice(i, axis) if nti.is_image(x) else x for x in tmp_input])
+            else:
+                new_inputs.append(tmp_input.slice(i, axis) if nti.is_image(tmp_input) else tmp_input)
+            
+            if isinstance(tmp_output, list):
+                new_outputs.append([x.slice(i, axis) if nti.is_image(x) else x for x in tmp_output])
+            else:
+                new_outputs.append(tmp_output.slice(i, axis) if nti.is_image(tmp_output) else tmp_output)
+            
+    return new_inputs, new_outputs

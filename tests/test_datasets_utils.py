@@ -27,6 +27,9 @@ class TestFile_Utils(unittest.TestCase):
         ds = nt.fetch_data('openneuro/ds004711', self.tmp_dir)
         self.assertEqual(ds, os.path.join(self.tmp_dir, 'openneuro/ds004711'))
     
+    def test_fetch_data_example(self):
+        ds = nt.fetch_data('example-01')
+        self.assertTrue(os.path.exists(ds))
 
 
 if __name__ == '__main__':
