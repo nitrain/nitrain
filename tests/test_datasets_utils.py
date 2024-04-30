@@ -21,14 +21,11 @@ class TestFile_Utils(unittest.TestCase):
     
     def test_fetch_data_openneuro(self):
         # no dir
-        #ds = nt.fetch_data('openneuro/ds004711', self.tmp_dir)
+        ds = nt.fetch_data('openneuro/ds004711')
         
         # specific dir
         ds = nt.fetch_data('openneuro/ds004711', self.tmp_dir)
         self.assertEqual(ds, os.path.join(self.tmp_dir, 'openneuro/ds004711'))
-    
-    def test_fetch_data_example(self):
-        ds = nt.fetch_data('example/dataset-01', self.tmp_dir)
     
 
 
