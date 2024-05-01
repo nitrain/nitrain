@@ -47,7 +47,7 @@ class Loader:
             my_iter = iter(self)
             for x_batch, y_batch in my_iter:
                 for i in range(x_batch.shape[0]):
-                    yield x_batch[i,:], y_batch[i]
+                    yield x_batch[i], y_batch[i]
  
         # generate a training batch to infer the output signature
         if output_signature is None:
@@ -55,7 +55,7 @@ class Loader:
             self.images_per_batch = 1
             x_batch, y_batch = next(iter(self))
             self.images_per_batch = tmp_batch_size
-            x_spec = tf.type_spec_from_value(x_batch[0,:])
+            x_spec = tf.type_spec_from_value(x_batch[0])
             y_spec = tf.type_spec_from_value(y_batch[0])
         
         generator = tf.data.Dataset.from_generator(

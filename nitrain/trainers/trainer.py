@@ -95,7 +95,7 @@ class Trainer:
             self.model.save(path)
     
     def __repr__(self):
-        s = 'LocalTrainer ({})\n'.format(self.task)
+        s = 'Trainer ({})\n'.format(self.task)
         s = s +\
             '     {:<10} : {}\n'.format('Framework', self.framework)+\
             '     {:<10} : {}\n'.format('Loss', self.loss)+\
