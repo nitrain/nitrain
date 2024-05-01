@@ -1,8 +1,10 @@
 import math
 import numpy as np
 import warnings
+import ntimage as nti
 
 from .. import samplers
+from ..datasets.utils import reduce_to_list, apply_transforms
 
 class Loader:
     
@@ -77,12 +79,25 @@ class Loader:
             
             data_indices = slice(image_batch_idx*images_per_batch, min((image_batch_idx+1)*images_per_batch, len(dataset)))
             x, y = dataset[data_indices]
+           
+            # apply transforms
+            if self.transforms:
+                for i in range(len(x)):
+                    x_tmp = x[i]
+                    y_tmp = y[i]
+                    
+                    for tx_name, tx_value in self.transforms.items():
+                        x_tmp, y_tmp = apply_transforms(tx_name, tx_value, x_tmp, y_tmp)
+                            
+                    x_tmp = reduce_to_list(x_tmp)
+                    y_tmp = reduce_to_list(y_tmp)
+                    
+                    x[i] = x_tmp
+                    y[i] = y_tmp
+                
             
             image_batch_idx += 1
-           
-            # perform transforms
-            if self.transforms:
-                pass
+            
             # sample the batch
             sampled_batch = self.sampler(x, y)
             
@@ -99,11 +114,11 @@ class Loader:
                         x_batch = x_batch_return
                     else:
                         x_batch = np.array([np.expand_dims(xx.numpy(), self.expand_dims) for xx in x_batch])
-                    if 'NTImage' in str(type(y[0])):
+                    if nti.is_image(y[0]):
                         y_batch = np.array([np.expand_dims(yy.numpy(), self.expand_dims) for yy in y_batch])
                 else:
                     x_batch = np.array([xx.numpy() for xx in x_batch])
-                    if 'NTImage' in str(type(y[0])):
+                    if nti.is_image(y[0]):
                         y_batch = np.array([yy.numpy() for yy in y_batch])
                 
                 yield x_batch, y_batch
