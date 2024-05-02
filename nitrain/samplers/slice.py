@@ -48,15 +48,6 @@ class SliceSampler:
         else:
             raise StopIteration
     
-    def __len__(self):
-        """
-        number of batches from the sampler
-        """
-        if self.n_batches is not None:
-            return self.n_batches
-        else:
-            return 0
-    
     def __repr__(self):
         return f'''samplers.SliceSampler(axis={self.axis}, batch_size={self.batch_size}, shuffle={self.shuffle})'''
 

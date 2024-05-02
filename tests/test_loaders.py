@@ -37,19 +37,46 @@ class TestClass_DatasetLoader(unittest.TestCase):
     def test_2d(self):
         loader = nt.Loader(self.dataset_2d, images_per_batch=4)
         x_batch, y_batch = next(iter(loader))
-        self.assertTrue(x_batch.shape == (4, 256, 256, 1))
+        self.assertEqual(x_batch.shape, (4, 256, 256, 1))
     
     def test_to_keras(self):
         loader = nt.Loader(self.dataset_2d, images_per_batch=4)
         keras_loader = loader.to_keras()
         x_batch, y_batch = next(iter(keras_loader))
-        self.assertTrue(x_batch.shape == (4, 256, 256, 1))
+        self.assertEqual(x_batch.shape, (4, 256, 256, 1))
+        
+    def test_keras_multi(self):
+        img2d = nti.load(nti.example_data('r16'))
+        x = [img2d for _ in range(10)]
+        y = list(range(10))
+
+        dataset_2d = nt.Dataset([x,x], y)
+
+        loader = nt.Loader(dataset_2d, images_per_batch=4)
+        keras_loader = loader.to_keras()
+        xb, yb = next(iter(keras_loader))
+        
+        self.assertEqual(len(xb), 2)
+        self.assertEqual(xb[0].shape, (4,256,256,1))
+        self.assertEqual(xb[1].shape, (4,256,256,1))
+        self.assertEqual(yb.shape, (4))
         
     def test_3d(self):
         loader = nt.Loader(self.dataset_3d, images_per_batch=4)
-
+        
+        self.assertTrue(len(loader) > 0)
+        
+        rep = loader.__repr__()
+        
         x_batch, y_batch = next(iter(loader))
-        self.assertTrue(x_batch.shape == (4, 182, 218, 182, 1))
+        self.assertEqual(x_batch.shape,  (4, 182, 218, 182, 1))
+        
+    def test_3d_no_expand(self):
+        loader = nt.Loader(self.dataset_3d, images_per_batch=4,
+                           expand_dims=None)
+        
+        x_batch, y_batch = next(iter(loader))
+        self.assertTrue(x_batch.shape == (4, 182, 218, 182))
     
     def test_image_to_image(self):
         img = nti.load(nti.example_data('r16'))
@@ -135,6 +162,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
                             },
                            sampler=SliceSampler(batch_size=20, axis=-1))
         xb,yb = next(iter(loader))
+        
         
         self.assertEqual(xb[0].shape, (20,48,48,1))
         self.assertEqual(xb[1].shape, (20,48,48,1))

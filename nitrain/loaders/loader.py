@@ -46,13 +46,21 @@ class Loader:
         def batch_generator():
             my_iter = iter(self)
             for x_batch, y_batch in my_iter:
-                if isinstance(x_batch, list) and nti.is_image(x_batch[0]):
-                    if isinstance(y_batch, list) and nti.is_image(y_batch[0]):
-                        for i in range(x_batch[0].shape[0]):
-                            yield tuple([xb[i] for xb in x_batch]), tuple([yb[i] for yb in y_batch])
+                if isinstance(x_batch, list):
+                    if isinstance(y_batch, list):
+                        if nti.is_image(y_batch[0]):
+                            for i in range(len(x_batch[0])):
+                                yield tuple([xb[i] for xb in x_batch]), tuple([yb[i] for yb in y_batch])
+                        else:
+                            for i in range(len(x_batch[0])):
+                                yield tuple([xb[i] for xb in x_batch]), y_batch[i]
                     else:
-                        for i in range(len(x_batch[0])):
-                            yield tuple([xb[i] for xb in x_batch]), y_batch[i]
+                        if nti.is_image(x_batch[0]):
+                            for i in range(len(x_batch[0])):
+                                yield tuple([xb[i] for xb in x_batch]), y_batch[i]
+                        else:
+                            for i in range(len(x_batch[0])):
+                                yield x_batch[i], y_batch[i]
                 else:
                     for i in range(len(x_batch)):
                         yield x_batch[i], y_batch[i]
@@ -63,7 +71,7 @@ class Loader:
             self.images_per_batch = 1
             x_batch, y_batch = next(iter(self))
             self.images_per_batch = tmp_batch_size
-            if isinstance(x_batch, list) and nti.is_image(x_batch[0]):
+            if isinstance(x_batch, list):
                 x_spec = tuple([tf.type_spec_from_value(xb[0]) for xb in x_batch])
             else:
                 x_spec = tf.type_spec_from_value(x_batch[0])
@@ -132,20 +140,31 @@ class Loader:
                     if nti.is_image(y[0]):
                         y_batch = np.array([np.expand_dims(yy.numpy(), self.expand_dims) for yy in y_batch])
                 else:
-                    x_batch = np.array([xx.numpy() for xx in x_batch])
+                    if isinstance(x_batch[0], list):
+                        x_batch_return = []
+                        for i in range(len(x_batch[0])):
+                            tmp_x_batch = np.array([xx[i].numpy() for xx in x_batch])
+                            x_batch_return.append(tmp_x_batch)
+                        x_batch = x_batch_return
+                    else:
+                        x_batch = np.array([xx.numpy() for xx in x_batch])
                     if nti.is_image(y[0]):
                         y_batch = np.array([yy.numpy() for yy in y_batch])
                 
                 yield x_batch, y_batch
                 
     def __len__(self):
-        return math.ceil((len(self.dataset) / self.images_per_batch) * len(self.sampler))
+        """
+        This is not correct
+        """
+        return math.ceil((len(self.dataset) / self.images_per_batch) * self.sampler.batch_size)
     
     def __repr__(self):
-        x_tx_repr = ', '.join([repr(x_tx) for x_tx in self.x_transforms])
-        return f'''DatasetLoader(dataset,
-                   images_per_batch={self.images_per_batch},
-                   sampler={repr(self.sampler)},
-                   x_transforms=[{x_tx_repr}])'''
+        s = 'Loader (batches={})\n'.format(len(self))
+        
+        s = s +\
+            '   {}\n'.format(repr(self.dataset))+\
+            '   {} : {}\n'.format('Transforms', len(self.transforms) if self.transforms else '{}')
+        return s
     
 

@@ -43,9 +43,3 @@ class BaseSampler:
             return x, y
         else:
             raise StopIteration
-    
-    def __len__(self):
-        """
-        number of batches from the sampler
-        """
-        return 1

@@ -51,15 +51,6 @@ class BlockSampler:
             return x, y
         else:
             raise StopIteration
-    
-    def __len__(self):
-        """
-        number of batches from the sampler
-        """
-        if not self.x:
-            return 0
-        return math.ceil(len(self.x) / self.batch_size)
-
 
 def create_patches(images, values, block_size, stride):
     cropped_images = []
