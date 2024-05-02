@@ -104,6 +104,11 @@ class Dataset:
         raise NotImplementedError('Not implemented')
     
     def __getitem__(self, idx):
+        reduce = True
+        if isinstance(idx, tuple):
+            reduce = idx[1]
+            idx = idx[0]
+            
         if isinstance(idx, slice):
             idx = list(range(idx.stop)[idx])
             is_slice = True
@@ -120,9 +125,10 @@ class Dataset:
             if self.transforms:
                 for tx_name, tx_value in self.transforms.items():
                     x_raw, y_raw = apply_transforms(tx_name, tx_value, x_raw, y_raw)
-                    
-            x_raw = reduce_to_list(x_raw)
-            y_raw = reduce_to_list(y_raw)
+            
+            if reduce:
+                x_raw = reduce_to_list(x_raw)
+                y_raw = reduce_to_list(y_raw)
             
             x_items.append(x_raw)
             y_items.append(y_raw)

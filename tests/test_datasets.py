@@ -35,6 +35,22 @@ class TestClass_Dataset(unittest.TestCase):
         # test repr
         r = dataset.__repr__()
         
+    def test_multiple_memory(self):
+        x = [nti.example('r16') for _ in range(10)]
+        y = list(range(10))
+        dataset = nt.Dataset([x, x], y)
+        xx, yy = dataset[0]
+        self.assertEqual(len(xx), 2)
+        self.assertEqual(xx[0].shape, (256,256))
+        self.assertEqual(xx[1].shape, (256,256))
+        self.assertEqual(yy, 0)
+        
+        xx, yy = dataset[0:3]
+        self.assertEqual(len(xx), 3)
+        self.assertEqual(xx[0][0].shape, (256,256))
+        self.assertEqual(xx[0][1].shape, (256,256))
+        self.assertEqual(yy, [0,1,2])
+        
     def test_memory_dict_inputs(self):
         dataset = nt.Dataset(
             inputs={'x':readers.ImageReader([nti.example('mni') for _ in range(10)]),

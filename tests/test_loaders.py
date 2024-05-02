@@ -9,8 +9,9 @@ import numpy.testing as nptest
 
 import ntimage as nti
 import nitrain as nt
-from nitrain import samplers, readers
-
+from nitrain import samplers, readers, transforms as tx
+from nitrain.readers import PatternReader
+from nitrain.samplers import SliceSampler
 
 class TestClass_DatasetLoader(unittest.TestCase):
     def setUp(self):
@@ -62,7 +63,8 @@ class TestClass_DatasetLoader(unittest.TestCase):
 
     def test_multi_image_to_image(self):
         img = nti.load(nti.example_data('r16'))
-        dataset = nt.Dataset([[img, img] for _ in range(10)], 
+        dataset = nt.Dataset([[img for _ in range(10)], 
+                              [img for _ in range(10)]],
                              [img for _ in range(10)])
         loader = nt.Loader(dataset, images_per_batch=4)
 
@@ -117,6 +119,39 @@ class TestClass_DatasetLoader(unittest.TestCase):
         for i, (xbatch, ybatch) in enumerate(loader):
                 self.assertEqual(xbatch[0].mean(), i+1)
                 self.assertEqual(xbatch[1].mean(), i+1+100)
+                
+    def test_transforms(self):
+        base_dir = nt.fetch_data('example-01')
+
+        dataset = nt.Dataset(inputs=[PatternReader('*/img3d.nii.gz'),
+                                     PatternReader('*/img3d.nii.gz')],
+                            outputs=PatternReader('*/img3d_100.nii.gz'),
+                            base_dir=base_dir)
+
+        loader = nt.Loader(dataset,
+                           images_per_batch=2,
+                           transforms={
+                               ('inputs', 'outputs'): tx.Resample((48,48,48))
+                            },
+                           sampler=SliceSampler(batch_size=20, axis=-1))
+        xb,yb = next(iter(loader))
+        
+        self.assertEqual(xb[0].shape, (20,48,48,1))
+        self.assertEqual(xb[1].shape, (20,48,48,1))
+        self.assertEqual(yb.shape, (20,48,48,1))
+        
+        loader = nt.Loader(dataset,
+                           images_per_batch=2,
+                           transforms={
+                               'inputs': tx.Resample((48,48,48))
+                            },
+                           sampler=SliceSampler(batch_size=20, axis=-1))
+        xb,yb = next(iter(loader))
+        
+        self.assertEqual(xb[0].shape, (20,48,48,1))
+        self.assertEqual(xb[1].shape, (20,48,48,1))
+        self.assertEqual(yb.shape, (20,30,40,1))
+
     
 if __name__ == '__main__':
     run_tests()

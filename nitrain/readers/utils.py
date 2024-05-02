@@ -54,9 +54,9 @@ def infer_reader(x, base_dir=None, label=None):
         # list that is meant to be an array or multiple-images
         elif isinstance(x[0], list):
             if nt.is_image(x[0][0]):
-                reader_list = []
-                for i in range(len(x[0])):
-                    reader_list.append(readers.ImageReader([xx[i] for xx in x]))
+                reader_list = [infer_reader(xx) for xx in x]
+                #for i in range(len(x[0])):
+                    #reader_list.append(readers.ImageReader([xx[i] for xx in x]))
                 return readers.ComposeReader(reader_list)
             elif 'nitrain.readers' in str(type(x[0][0])):
                 reader_list = [infer_reader(xx, base_dir=base_dir) for xx in x]

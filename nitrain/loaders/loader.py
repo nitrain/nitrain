@@ -46,8 +46,16 @@ class Loader:
         def batch_generator():
             my_iter = iter(self)
             for x_batch, y_batch in my_iter:
-                for i in range(x_batch.shape[0]):
-                    yield x_batch[i], y_batch[i]
+                if isinstance(x_batch, list) and nti.is_image(x_batch[0]):
+                    if isinstance(y_batch, list) and nti.is_image(y_batch[0]):
+                        for i in range(x_batch[0].shape[0]):
+                            yield tuple([xb[i] for xb in x_batch]), tuple([yb[i] for yb in y_batch])
+                    else:
+                        for i in range(len(x_batch[0])):
+                            yield tuple([xb[i] for xb in x_batch]), y_batch[i]
+                else:
+                    for i in range(len(x_batch)):
+                        yield x_batch[i], y_batch[i]
  
         # generate a training batch to infer the output signature
         if output_signature is None:
@@ -55,8 +63,14 @@ class Loader:
             self.images_per_batch = 1
             x_batch, y_batch = next(iter(self))
             self.images_per_batch = tmp_batch_size
-            x_spec = tf.type_spec_from_value(x_batch[0])
-            y_spec = tf.type_spec_from_value(y_batch[0])
+            if isinstance(x_batch, list) and nti.is_image(x_batch[0]):
+                x_spec = tuple([tf.type_spec_from_value(xb[0]) for xb in x_batch])
+            else:
+                x_spec = tf.type_spec_from_value(x_batch[0])
+            if isinstance(y_batch, list) and nti.is_image(y_batch[0]):
+                y_spec = tuple([tf.type_spec_from_value(yb[0]) for yb in y_batch])
+            else:
+                y_spec = tf.type_spec_from_value(y_batch[0])
         
         generator = tf.data.Dataset.from_generator(
             lambda: batch_generator(),
@@ -80,7 +94,7 @@ class Loader:
             # TODO: implement shuffle here 
             data_indices = slice(image_batch_idx*images_per_batch, min((image_batch_idx+1)*images_per_batch, len(dataset)))
             #data_indices = original_indices[data_indices] # this doesnt work
-            x, y = dataset[data_indices]
+            x, y = dataset[data_indices, self.transforms is None]
            
             # apply transforms
             if self.transforms:
@@ -97,7 +111,6 @@ class Loader:
                     x[i] = x_tmp
                     y[i] = y_tmp
                 
-            
             image_batch_idx += 1
             
             # sample the batch
