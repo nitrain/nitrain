@@ -22,7 +22,10 @@ class ImageReader:
         self.values = images
         self.ids = None
         self.label = label
-    
+
+    def select(self, idx):
+        self.values = [self.values[i] for i in idx]
+        
     def map_values(self, base_dir=None, base_file=None, base_label=None):
         if self.label is None:
             if base_label is not None:

@@ -27,6 +27,9 @@ class PatternReader:
         self.exclude = exclude
         self.label = label
     
+    def select(self, idx):
+        self.values = [self.values[i] for i in idx]
+        
     def map_gcs_values(self, bucket, credentials=None, base_dir=None, base_file=None, base_label=None):
         if base_dir is None:
             base_dir = self.base_dir

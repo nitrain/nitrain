@@ -25,6 +25,9 @@ class ColumnReader:
         self.column = column
         self.is_image = is_image
         self.label = label
+
+    def select(self, idx):
+        self.values = [self.values[i] for i in idx]
         
     def map_gcs_values(self, bucket, credentials, base_dir=None, base_file=None, base_label=None):
         file = self.base_file

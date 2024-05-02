@@ -96,6 +96,18 @@ class TestClass_Dataset(unittest.TestCase):
         self.assertEqual(x[0].mean(), 4)
         self.assertEqual(x[1].mean(), 8)
         self.assertEqual(y, 4)
+        
+        # test split
+        ds_train, ds_test = dataset.split(0.8)
+        self.assertEqual(len(ds_train), 8)
+        self.assertEqual(len(ds_test), 2)
+        
+        x, y = ds_train[0]
+        x2, y2 = ds_test[0]
+        self.assertEqual(x[0].mean(), 0)
+        self.assertEqual(x2[0].mean(), 8)
+        self.assertEqual(y, 0)
+        self.assertEqual(y2, 8)
 
 class TestClass_CSVDataset(unittest.TestCase):
     def setUp(self):
@@ -216,6 +228,25 @@ class TestClass_FolderDataset(unittest.TestCase):
         self.assertTrue(nti.is_image(x[0]))
         self.assertEqual(y, [50, 51])
         
+        # test split
+        ds_train, ds_test = dataset.split(0.8)
+        self.assertTrue(len(ds_train) > len(ds_test))
+        
+        # test repr
+        r = dataset.__repr__()
+
+    def test_2d_split(self):
+        tmp_dir = self.tmp_dir
+        dataset = nt.Dataset(
+            inputs=readers.PatternReader('*/img2d.nii.gz'),
+            outputs=readers.ColumnReader('age'),
+            base_dir=tmp_dir,
+            base_file=os.path.join(tmp_dir, 'participants.csv')   
+        )
+        
+        ds_train, ds_test = dataset.split(0.8)
+        self.assertTrue(len(ds_train) > len(ds_test))
+        
         # test repr
         r = dataset.__repr__()
         
@@ -258,6 +289,34 @@ class TestClass_FolderDataset(unittest.TestCase):
         self.assertTrue(nti.is_image(x[0]))
         self.assertEqual(x[0].dimension, 2)
         self.assertEqual(y[0].dimension, 3)
+
+class TestFunction_split(unittest.TestCase):
+    
+    def setUp(self):
+        pass
+    def tearDown(self):
+        pass
+
+    def test_pattern_compose(self):
+        base_dir = nt.fetch_data('example-01')
+
+        dataset = nt.Dataset(inputs=[readers.PatternReader('*/img3d.nii.gz'),
+                                     readers.PatternReader('*/img3d.nii.gz')],
+                            outputs=readers.PatternReader('*/img3d_100.nii.gz'),
+                            base_dir=base_dir)
+
+        data_train, data_test = dataset.split(0.8)
+
+        self.assertEqual(len(data_train), 8)
+        self.assertEqual(len(data_test), 2)
+        
+        x,y=data_train[0]
+        self.assertEqual(x[0].mean(), 1)
+        self.assertEqual(y.mean(), 101)
+        
+        x2,y2=data_test[0]
+        self.assertEqual(x2[0].mean(), 9)
+        self.assertEqual(y2.mean(), 109)
 
 class TestOther_Bugs(unittest.TestCase):
     def setUp(self):

@@ -1,5 +1,8 @@
 import os
 import warnings
+import numpy as np
+import math
+from copy import deepcopy
 
 from ..readers.utils import infer_reader
 from .utils import reduce_to_list, apply_transforms
@@ -78,6 +81,22 @@ class Dataset:
         self.outputs = outputs
         self.transforms = transforms
 
+    def split(self, p, shuffle=False):
+        n_vals = len(self.inputs)
+        indices = np.arange(n_vals)
+        train_indices = indices[:math.ceil(n_vals*p)]
+        test_indices = indices[math.ceil(n_vals*p):]
+        
+        ds_train = deepcopy(self)
+        ds_train.inputs.select(train_indices)
+        ds_train.outputs.select(train_indices)
+        
+        ds_test = deepcopy(self)
+        ds_test.inputs.select(test_indices)
+        ds_test.outputs.select(test_indices)
+        
+        return ds_train, ds_test
+        
     def filter(self, expr):
         raise NotImplementedError('Not implemented')
     

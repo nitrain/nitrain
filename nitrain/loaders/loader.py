@@ -77,7 +77,9 @@ class Loader:
         image_batch_idx = 0
         while image_batch_idx < n_image_batches:
             
+            # TODO: implement shuffle here 
             data_indices = slice(image_batch_idx*images_per_batch, min((image_batch_idx+1)*images_per_batch, len(dataset)))
+            #data_indices = original_indices[data_indices] # this doesnt work
             x, y = dataset[data_indices]
            
             # apply transforms

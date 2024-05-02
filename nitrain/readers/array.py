@@ -22,7 +22,10 @@ class ArrayReader:
         """
         self.array = array
         self.label = label
-    
+
+    def select(self, idx):
+        self.values = [self.values[i] for i in idx]
+        
     def map_values(self, base_dir=None, base_file=None, base_label=None):
         array = self.array
         if array.ndim > 2:

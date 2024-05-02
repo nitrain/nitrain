@@ -99,6 +99,24 @@ class TestClass_DatasetLoader(unittest.TestCase):
         for i, (xbatch, ybatch) in enumerate(loader):
                 self.assertEqual(xbatch[0].mean(), i+1)
                 self.assertEqual(xbatch[1].mean(), i+1+100)
+                
+    def test_multiple_image_slice_after_split(self):
+        base_dir = nt.fetch_data('example-01')
+
+        dataset = nt.Dataset(inputs={'a': readers.PatternReader('*/img3d.nii.gz'),
+                                    'b': readers.PatternReader('*/img3d_100.nii.gz')},
+                            outputs=readers.PatternReader('*/img3d_seg.nii.gz'),
+                            base_dir=base_dir)
+        
+        ds_train, ds_test = dataset.split(0.8)
+        
+        loader = nt.Loader(ds_train,
+                           images_per_batch=1,
+                           sampler=samplers.SliceSampler(batch_size=50, axis=-1))
+
+        for i, (xbatch, ybatch) in enumerate(loader):
+                self.assertEqual(xbatch[0].mean(), i+1)
+                self.assertEqual(xbatch[1].mean(), i+1+100)
     
 if __name__ == '__main__':
     run_tests()
