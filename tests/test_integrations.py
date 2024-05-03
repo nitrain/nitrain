@@ -56,6 +56,7 @@ class TestClass_Keras(unittest.TestCase):
         
         # inference on test data
         predictor = nt.Predictor(model, 
+                                 task='segmentation',
                                  sampler=SliceSampler(batch_size=20, axis=-1))
         #y_pred = predictor.predict(data_test)
         
