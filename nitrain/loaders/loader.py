@@ -148,7 +148,7 @@ class Loader:
         # TODO: take into account batch_size from sampler ?
         # issue: requires loading at least one record from dataset
         # issue: nslices, for example, may not be the same for all images in dataset
-        return len(self.dataset) / self.images_per_batch
+        return math.ceil(len(self.dataset) / self.images_per_batch)
     
     def __repr__(self):
         s = 'Loader (batches={})\n'.format(self.__len__())
