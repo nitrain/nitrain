@@ -28,7 +28,7 @@ class TestClass_LocalTrainer(unittest.TestCase):
     def tearDown(self):
         pass
     
-    def test_trainer(self):
+    def test_regression_keras(self):
         trainer = nt.Trainer(self.model, task='regression')
         trainer.fit(self.loader, epochs=2)
         

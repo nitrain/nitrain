@@ -2,13 +2,14 @@ import math
 import numpy as np
 import warnings
 import ntimage as nti
+from copy import deepcopy
 
 from .. import samplers
 from ..datasets.utils import reduce_to_list, apply_transforms
 
 class Loader:
     
-    def __init__(self, 
+    def __init__(self,
                  dataset, 
                  images_per_batch, 
                  transforms=None,
@@ -39,6 +40,11 @@ class Loader:
         if sampler is None:
             sampler = samplers.BaseSampler(batch_size=images_per_batch)
         self.sampler = sampler
+        
+    def copy(self, dataset=None):
+        new_loader = deepcopy(self)
+        new_loader.dataset = dataset
+        return new_loader
         
     def to_keras(self, output_signature=None):
         import tensorflow as tf
@@ -124,43 +130,28 @@ class Loader:
             # sample the batch
             sampled_batch = self.sampler(x, y)
             
-            # a normal sampler will just return the entire (shuffled, if specified) batch once
-            # a slice sampler will return shuffled slices with batch size = sampler.images_per_batch
             for x_batch, y_batch in sampled_batch:
-                
-                if self.expand_dims is not None:
-                    if isinstance(x_batch[0], list):
-                        x_batch_return = []
-                        for i in range(len(x_batch[0])):
-                            tmp_x_batch = np.array([np.expand_dims(xx[i].numpy(), self.expand_dims) for xx in x_batch])
-                            x_batch_return.append(tmp_x_batch)
-                        x_batch = x_batch_return
-                    else:
-                        x_batch = np.array([np.expand_dims(xx.numpy(), self.expand_dims) for xx in x_batch])
-                    if nti.is_image(y[0]):
-                        y_batch = np.array([np.expand_dims(yy.numpy(), self.expand_dims) for yy in y_batch])
+                if isinstance(x_batch[0], list):
+                    x_batch_return = []
+                    for i in range(len(x_batch[0])):
+                        tmp_x_batch = np.array([np.expand_dims(xx[i].numpy(), self.expand_dims) if self.expand_dims else xx.numpy() for xx in x_batch])
+                        x_batch_return.append(tmp_x_batch)
+                    x_batch = x_batch_return
                 else:
-                    if isinstance(x_batch[0], list):
-                        x_batch_return = []
-                        for i in range(len(x_batch[0])):
-                            tmp_x_batch = np.array([xx[i].numpy() for xx in x_batch])
-                            x_batch_return.append(tmp_x_batch)
-                        x_batch = x_batch_return
-                    else:
-                        x_batch = np.array([xx.numpy() for xx in x_batch])
-                    if nti.is_image(y[0]):
-                        y_batch = np.array([yy.numpy() for yy in y_batch])
+                    x_batch = np.array([np.expand_dims(xx.numpy(), self.expand_dims) if self.expand_dims else xx.numpy() for xx in x_batch])
+                if nti.is_image(y[0]):
+                    y_batch = np.array([np.expand_dims(yy.numpy(), self.expand_dims) if self.expand_dims else yy.numpy() for yy in y_batch])
                 
                 yield x_batch, y_batch
                 
     def __len__(self):
-        """
-        This is not correct
-        """
-        return math.ceil((len(self.dataset) / self.images_per_batch) * self.sampler.batch_size)
+        # TODO: take into account batch_size from sampler ?
+        # issue: requires loading at least one record from dataset
+        # issue: nslices, for example, may not be the same for all images in dataset
+        return len(self.dataset) / self.images_per_batch
     
     def __repr__(self):
-        s = 'Loader (batches={})\n'.format(len(self))
+        s = 'Loader (batches={})\n'.format(self.__len__())
         
         s = s +\
             '   {}\n'.format(repr(self.dataset))+\

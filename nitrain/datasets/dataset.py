@@ -142,9 +142,6 @@ class Dataset:
     def __len__(self):
         return len(self.inputs)
     
-    def __str__(self):
-        raise NotImplementedError('Not implemented')
-    
     def __repr__(self):
         s = 'Dataset (n={})\n'.format(len(self))
         

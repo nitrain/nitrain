@@ -38,6 +38,9 @@ class TestClass_DatasetLoader(unittest.TestCase):
         loader = nt.Loader(self.dataset_2d, images_per_batch=4)
         x_batch, y_batch = next(iter(loader))
         self.assertEqual(x_batch.shape, (4, 256, 256, 1))
+        
+        # test repr
+        rep = loader.__repr__()
     
     def test_to_keras(self):
         loader = nt.Loader(self.dataset_2d, images_per_batch=4)

@@ -31,7 +31,7 @@ class SliceSampler:
         if self.shuffle:
             indices = random.sample(range(len(self.y)), len(self.y))
             self.x = [self.x[i] for i in indices]
-            if 'NTImage' in str(type(self.y[0])):
+            if nti.is_image(self.y[0]):
                 self.y = [self.y[i] for i in indices]
             else:
                 self.y = self.y[indices]
@@ -49,12 +49,13 @@ class SliceSampler:
             raise StopIteration
     
     def __repr__(self):
-        return f'''samplers.SliceSampler(axis={self.axis}, batch_size={self.batch_size}, shuffle={self.shuffle})'''
+        return f'''SliceSampler(axis={self.axis}, batch_size={self.batch_size}, shuffle={self.shuffle})'''
 
 
 
 def create_slices(inputs, outputs, axis):
     # TODO: let slice sampler be applied selectively via dictionary
+    # right now, all images in the inputs / outputs will be sliced
     new_inputs = []
     new_outputs = []
     for tmp_input, tmp_output in zip(inputs, outputs):
