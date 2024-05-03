@@ -9,7 +9,7 @@ class SliceSampler:
     """
     Sampler that returns batches of 2D slices from 3D images.
     """
-    def __init__(self, batch_size, axis=0, shuffle=False):
+    def __init__(self, batch_size=24, axis=-1, shuffle=False):
         self.batch_size = batch_size
         self.axis = axis
         self.shuffle = shuffle

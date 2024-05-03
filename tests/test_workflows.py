@@ -20,7 +20,7 @@ class TestClass_Keras(unittest.TestCase):
     def tearDown(self):
         pass
     
-    def test_classification(self):
+    def test_segmentation(self):
         base_dir = nt.fetch_data('example-01')
 
         dataset = nt.Dataset(inputs=PatternReader('*/img3d.nii.gz'),
@@ -57,9 +57,8 @@ class TestClass_Keras(unittest.TestCase):
         # inference on test data
         predictor = nt.Predictor(model, 
                                  task='segmentation',
-                                 sampler=SliceSampler(batch_size=20, axis=-1))
-        #y_pred = predictor.predict(data_test)
-        
+                                 sampler=SliceSampler(axis=-1))
+        y_pred = predictor.predict(data_test)
         
         
 if __name__ == '__main__':
