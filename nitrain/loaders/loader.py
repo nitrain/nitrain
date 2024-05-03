@@ -48,28 +48,6 @@ class Loader:
         
     def to_keras(self, output_signature=None):
         import tensorflow as tf
-        
-        def batch_generator():
-            my_iter = iter(self)
-            for x_batch, y_batch in my_iter:
-                if isinstance(x_batch, list):
-                    if isinstance(y_batch, list):
-                        if nti.is_image(y_batch[0]):
-                            for i in range(len(x_batch[0])):
-                                yield tuple([xb[i] for xb in x_batch]), tuple([yb[i] for yb in y_batch])
-                        else:
-                            for i in range(len(x_batch[0])):
-                                yield tuple([xb[i] for xb in x_batch]), y_batch[i]
-                    else:
-                        if nti.is_image(x_batch[0]):
-                            for i in range(len(x_batch[0])):
-                                yield tuple([xb[i] for xb in x_batch]), y_batch[i]
-                        else:
-                            for i in range(len(x_batch[0])):
-                                yield x_batch[i], y_batch[i]
-                else:
-                    for i in range(len(x_batch)):
-                        yield x_batch[i], y_batch[i]
  
         # generate a training batch to infer the output signature
         if output_signature is None:
@@ -87,7 +65,7 @@ class Loader:
                 y_spec = tf.type_spec_from_value(y_batch[0])
         
         generator = tf.data.Dataset.from_generator(
-            lambda: batch_generator(),
+            lambda: record_generator(self),
             output_signature=(x_spec, y_spec)
         ).batch(self.sampler.batch_size)
         
@@ -159,3 +137,25 @@ class Loader:
         return s
     
 
+def record_generator(loader):
+    """
+    This function takes a batch and returns individual records from it.
+    
+    It is necessary for tf.keras generators
+    """
+    my_iter = iter(loader)
+    for x_batch, y_batch in my_iter:
+        if isinstance(x_batch, list) and isinstance(x_batch[0], np.ndarray):
+            if isinstance(y_batch, list) and isinstance(y_batch[0], np.ndarray):
+                for i in range(len(x_batch[0])):
+                    yield tuple([xb[i] for xb in x_batch]), tuple([yb[i] for yb in y_batch])
+            else:
+                for i in range(len(x_batch[0])):
+                    yield tuple([xb[i] for xb in x_batch]), y_batch[i]
+        else:
+            if isinstance(y_batch, list) and isinstance(y_batch[0], np.ndarray):
+                for i in range(len(x_batch)):
+                    yield x_batch[i], tuple([yb[i] for yb in y_batch])
+            else:
+                for i in range(len(x_batch)):
+                    yield x_batch[i], y_batch[i]

@@ -12,6 +12,7 @@ import nitrain as nt
 from nitrain import samplers, readers, transforms as tx
 from nitrain.readers import PatternReader
 from nitrain.samplers import SliceSampler
+from nitrain.loaders.loader import record_generator
 
 class TestClass_DatasetLoader(unittest.TestCase):
     def setUp(self):
@@ -48,6 +49,9 @@ class TestClass_DatasetLoader(unittest.TestCase):
         x_batch, y_batch = next(iter(keras_loader))
         self.assertEqual(x_batch.shape, (4, 256, 256, 1))
         
+        gen = record_generator(loader)
+        xb,yb = next(iter(gen))
+        
     def test_keras_multi(self):
         img2d = nti.load(nti.example_data('r16'))
         x = [img2d for _ in range(10)]
@@ -64,6 +68,9 @@ class TestClass_DatasetLoader(unittest.TestCase):
         self.assertEqual(xb[1].shape, (4,256,256,1))
         self.assertEqual(yb.shape, (4))
         
+        gen = record_generator(loader)
+        xb,yb = next(iter(gen))
+        
     def test_3d(self):
         loader = nt.Loader(self.dataset_3d, images_per_batch=4)
         
@@ -79,7 +86,13 @@ class TestClass_DatasetLoader(unittest.TestCase):
                            expand_dims=None)
         
         x_batch, y_batch = next(iter(loader))
+        
+        loader2 = loader.to_keras()
+        x_batch, y_batch = next(iter(loader2))
         self.assertTrue(x_batch.shape == (4, 182, 218, 182))
+        
+        gen = record_generator(loader)
+        xb,yb = next(iter(gen))
     
     def test_image_to_image(self):
         img = nti.load(nti.example_data('r16'))
@@ -88,8 +101,18 @@ class TestClass_DatasetLoader(unittest.TestCase):
         loader = nt.Loader(dataset, images_per_batch=4)
 
         x_batch, y_batch = next(iter(loader))
+        
         self.assertTrue(x_batch.shape == (4, 256, 256, 1))
         self.assertTrue(y_batch.shape == (4, 256, 256, 1))
+        
+        loader2 = loader.to_keras()
+        x_batch, y_batch = next(iter(loader2))
+        
+        self.assertTrue(x_batch.shape == (4, 256, 256, 1))
+        self.assertTrue(y_batch.shape == (4, 256, 256, 1))
+        
+        gen = record_generator(loader)
+        xb,yb = next(iter(gen))
 
     def test_multi_image_to_image(self):
         img = nti.load(nti.example_data('r16'))
@@ -103,6 +126,16 @@ class TestClass_DatasetLoader(unittest.TestCase):
         self.assertTrue(x_batch[0].shape == (4, 256, 256, 1))
         self.assertTrue(x_batch[1].shape == (4, 256, 256, 1))
         self.assertTrue(y_batch.shape == (4, 256, 256, 1))
+        
+        loader2 = loader.to_keras()
+        x_batch, y_batch = next(iter(loader2))
+        self.assertTrue(len(x_batch) == 2)
+        self.assertTrue(x_batch[0].shape == (4, 256, 256, 1))
+        self.assertTrue(x_batch[1].shape == (4, 256, 256, 1))
+        self.assertTrue(y_batch.shape == (4, 256, 256, 1))
+        
+        gen = record_generator(loader)
+        xb,yb = next(iter(gen))
     
     def test_image_to_image_with_slice_sampler(self):
         img = nti.load(nti.example_data('mni'))
@@ -112,6 +145,12 @@ class TestClass_DatasetLoader(unittest.TestCase):
                            images_per_batch=4,
                            sampler=samplers.SliceSampler(batch_size=12))
 
+        x_batch, y_batch = next(iter(loader))
+        self.assertTrue(x_batch.shape == (12, 218, 182, 1))
+        self.assertTrue(y_batch.shape == (12, 218, 182, 1))
+        
+        loader2 = loader.to_keras()
+        x_batch, y_batch = next(iter(loader2))
         x_batch, y_batch = next(iter(loader))
         self.assertTrue(x_batch.shape == (12, 218, 182, 1))
         self.assertTrue(y_batch.shape == (12, 218, 182, 1))

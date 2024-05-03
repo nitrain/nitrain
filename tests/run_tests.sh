@@ -40,6 +40,11 @@ $PYCMD test_trainers.py $@
 echo "Testing transforms"
 $PYCMD test_transforms.py $@
 
+echo "Testing workflows"
+$PYCMD test_workflows.py $@
+
+echo "Testing bugs"
+$PYCMD test_bugs.py $@
 
 if [[ $COVERAGE -eq 1 ]]; then
     coverage combine
