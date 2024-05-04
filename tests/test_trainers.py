@@ -40,6 +40,8 @@ class TestClass_LocalTrainer(unittest.TestCase):
         trainer.save(tmpfile.name)
         tmpfile.close()
         
+        trainer.__repr__()
+        
         
 if __name__ == '__main__':
     run_tests()
