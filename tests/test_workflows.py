@@ -13,14 +13,14 @@ from nitrain import transforms as tx
 from nitrain.readers import PatternReader
 from nitrain.samplers import SliceSampler
 
-class TestClass_Keras(unittest.TestCase):
+class TestClass_OneInput_OneOutput(unittest.TestCase):
     def setUp(self):
         pass
 
     def tearDown(self):
         pass
     
-    def test_segmentation(self):
+    def test_binary_segmentation(self):
         base_dir = nt.fetch_data('example-01')
 
         dataset = nt.Dataset(inputs=PatternReader('*/img3d.nii.gz'),
@@ -59,7 +59,59 @@ class TestClass_Keras(unittest.TestCase):
                                  task='segmentation',
                                  sampler=SliceSampler(axis=-1))
         y_pred = predictor.predict(data_test)
+    
+    def test_multiclass_segmentation(self):
+        base_dir = nt.fetch_data('example-01')
+
+        dataset = nt.Dataset(inputs=PatternReader('*/img3d.nii.gz'),
+                            outputs=PatternReader('*/img3d_multiseg.nii.gz'),
+                            transforms={
+                                    ('inputs','outputs'): tx.Resample((40,40,40)),
+                                    'outputs': tx.LabelsToChannels()
+                            },
+                            base_dir=base_dir)
+
+        x,y = dataset[0]
         
+        data_train, data_test = dataset.split(0.8)
+
+        loader = nt.Loader(data_train,
+                        images_per_batch=4,
+                        shuffle=True,
+                        sampler=SliceSampler(batch_size=20, axis=-1))
+
+        arch_fn = nt.fetch_architecture('unet', dim=2)
+        model = arch_fn(x.shape[:-1]+(1,),
+                        number_of_outputs=2,
+                        number_of_layers=4,
+                        number_of_filters_at_base_layer=16,
+                        mode='classification')
+
+        # train
+        trainer = nt.Trainer(model, task='segmentation')
+        trainer.fit(loader, epochs=2)
+        
+        # evaluate on test data
+        test_loader = loader.copy(data_test)
+        trainer.evaluate(test_loader)
+        
+        # inference on test data
+        predictor = nt.Predictor(model, 
+                                 task='segmentation',
+                                 sampler=SliceSampler(axis=-1))
+        y_pred = predictor.predict(data_test)
+    
+    def test_image_regression(self):
+        pass
+    
+    def test_scalar_regression(self):
+        pass
+    
+    def test_binary_scalar_classification(self):
+        pass
+    
+    def test_multiclass_scalar_classification(self):
+        pass
         
 if __name__ == '__main__':
     run_tests()

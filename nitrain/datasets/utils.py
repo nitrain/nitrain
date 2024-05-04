@@ -64,6 +64,12 @@ def fetch_data(name, path=None, overwrite=False):
             img3d = nti.ones((30,40,50))
             img3d_seg = nti.zeros_like(img3d).astype('uint8')
             img3d_seg[10:20,10:30,10:40] = 1
+            
+            img3d_multiseg = nti.zeros_like(img3d).astype('uint8')
+            img3d_multiseg[:20,:20,:20] = 1
+            img3d_multiseg[20:30,20:30,20:30] = 2
+            img3d_multiseg[30:,30:,30:]=0
+            
             img3d_large = nti.ones((60,80,100))
             for i in range(10):
                 sub_dir = os.path.join(save_dir, f'sub_{i}')
@@ -73,6 +79,7 @@ def fetch_data(name, path=None, overwrite=False):
                 nti.save(img3d_large + i, os.path.join(sub_dir, 'img3d_large.nii.gz'))
                 nti.save(img3d + i + 100, os.path.join(sub_dir, 'img3d_100.nii.gz'))
                 nti.save(img3d_seg, os.path.join(sub_dir, 'img3d_seg.nii.gz'))
+                nti.save(img3d_multiseg, os.path.join(sub_dir, 'img3d_multiseg.nii.gz'))
                 nti.save(img3d + i + 1000, os.path.join(sub_dir, 'img3d_1000.nii.gz'))
             
             # write csv file
