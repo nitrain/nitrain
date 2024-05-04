@@ -13,46 +13,19 @@ class OcclusionExplainer:
     the change in predicted result will also be available in this case).
     """
     
-    def __init__(self, model):
+    def __init__(self, model, sampler=None):
         """
         Initialize an occlusion explainer from a fitted model.
-        
-        Arguments
-        ---------
-        model : a fitted model
-            The model to use when running the explainer. 
-        
-        Examples
-        --------
-        >>> model = models.fetch_pretrained('nick/t1-brain-age')
-        >>> image = nt.load(nt.example_data('mni'))
-        >>> trainer = LocalTrainer(model)
-        >>> trainer.fit(loader)
-        >>> explainer = explainers.OcclusionExplainer(trainer.model)
-        >>> explainer.fit(image)
-        >>> nt.plot(image, overlay=explainer.result_image)
         """
         self.model = model
+        self.sampler = sampler
         
         # generated once fit() method is called
         self.result_image = None
         
-    def fit(self, inputs, outputs=None):
+    def fit(self, dataset):
         """
         Run occlusion explainer on a dataset loader, a single image, or
         a list of images.
-        
-        Arguments
-        ---------
-        inputs : a nitrain loader, ants image, or list of ants images
-            These are the images you want to run the explainer on. If you
-            provide multiple images, an explained image averaged across
-            all inputs will be available.
-        
-        outputs : numpy array, image, or list of images (optional)
-            This is the ground truth labels for the inputs. If you supply
-            ground truth labels then the explainer will use the change in
-            model performance to determine importance rather than only change
-            in magnitude of raw model prediction.
         """
-        pass
+        return 1

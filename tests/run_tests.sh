@@ -40,6 +40,9 @@ $PYCMD test_trainers.py $@
 echo "Testing transforms"
 $PYCMD test_transforms.py $@
 
+echo "Testing explainers"
+$PYCMD test_explainers.py $@
+
 echo "Testing workflows"
 $PYCMD test_workflows.py $@
 
