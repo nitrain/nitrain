@@ -56,8 +56,9 @@ class Predictor:
                 y_pred = np.rollaxis(y_pred, 0, self.sampler.axis) 
             
             # process prediction according to task
-            if self.task == 'segmentation':
-                y_pred = np.round(y_pred).astype('uint8')
+            if y_pred.ndim > 1:
+                if self.task == 'segmentation' or self.task == 'classification':
+                    y_pred = np.round(y_pred).astype('uint8')
                 y_pred = nti.from_numpy(y_pred)
                 
             y_pred_list.append(y_pred)
