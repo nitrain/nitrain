@@ -111,10 +111,7 @@ class ColumnReader:
     def __getitem__(self, idx):
         value = self.values[idx]
         if self.is_image:
-            try:
-                value = nti.load(value)
-            except:
-                raise ValueError(f'This image type (.{value.split(".")[-1]}) cannot be read or the file does not exist.')
+            value = nti.load(value)
         return {self.label: value}
 
     def __len__(self):

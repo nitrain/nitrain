@@ -120,8 +120,6 @@ class PatternReader:
                 self.label = 'pattern'
                 
     def __getitem__(self, idx):
-        if not self.values:
-            raise Exception('You must call `map_values()` before indexing a reader.')
         return {self.label: nti.load(self.values[idx])}
     
     def __len__(self):

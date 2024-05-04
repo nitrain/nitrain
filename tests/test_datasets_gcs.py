@@ -35,6 +35,18 @@ class TestClass_GoogleCloudDataset(unittest.TestCase):
         )
         
         self.assertTrue(len(d.inputs.values) > 0)
+        
+    def test_gcs_basic_base(self):
+        d = nt.GoogleCloudDataset(
+            inputs=readers.PatternReader('sub-*/anat/*_T1w.nii.gz',
+                                         base_dir='datasets/nick-2/ds004711'),
+            outputs=readers.ColumnReader('age',
+                                         base_file='datasets/nick-2/ds004711/participants.tsv'),
+            bucket='ants-dev',
+            credentials = self.credentials.name
+        )
+        
+        self.assertTrue(len(d.inputs.values) > 0)
 
     def test_gcs_compose(self):
         d = nt.GoogleCloudDataset(

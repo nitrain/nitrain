@@ -382,6 +382,52 @@ class TestOther_Bugs(unittest.TestCase):
         self.assertEqual(x[0][1].dtype, 'float32')
         self.assertEqual(x[1][0].dtype, 'uint8')
         self.assertEqual(x[1][1].dtype, 'float32')
+    
+    def test_no_base(self):
+        base_dir = nt.fetch_data('example-01')
         
+        
+        dataset = nt.Dataset(inputs=readers.PatternReader('*/img3d.nii.gz',
+                                                          base_dir=base_dir),
+                            outputs=readers.PatternReader('*/img3d_seg.nii.gz',
+                                                          base_dir=base_dir))
+        
+        x, y = dataset[0]
+        self.assertEqual(x.shape, (30,40,50))
+
+    def test_ids(self):
+        base_dir = nt.fetch_data('example-01')
+        
+        dataset = nt.Dataset(inputs=readers.PatternReader('{id}/img3d.nii.gz'),
+                            outputs=readers.PatternReader('{id}/img3d_seg.nii.gz'),
+                            base_dir=base_dir)
+        
+        x, y = dataset[0]
+        self.assertEqual(x.shape, (30,40,50))
+            
+    def test_exclude(self):
+        base_dir = nt.fetch_data('example-01')
+        
+        dataset = nt.Dataset(inputs=readers.PatternReader('*/img3d.nii.gz',
+                                                          exclude='sub_5/*'),
+                            outputs=readers.PatternReader('*/img3d_seg.nii.gz',
+                                                          exclude='sub_5/*'),
+                            base_dir=base_dir)
+        
+        self.assertEqual(dataset.inputs.values, 9)
+        
+    def test_non_existent_files(self):
+        base_dir = nt.fetch_data('example-01')
+            
+        with self.assertRaises(Exception):
+            dataset = nt.Dataset(inputs=readers.PatternReader('*/img3d232.nii.gz'),
+                                outputs=readers.PatternReader('*/img323d_seg.nii.gz'),
+                                base_dir=base_dir)
+            
+        with self.assertRaises(Exception):
+            dataset = nt.Dataset(inputs=readers.PatternReader('*/img3d.nii.gz'),
+                                outputs=readers.ColumnReader('age', 'nonexist.csv'),
+                                base_dir=base_dir)
+            
 if __name__ == '__main__':
     run_tests()
