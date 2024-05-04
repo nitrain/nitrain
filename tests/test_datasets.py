@@ -414,7 +414,7 @@ class TestOther_Bugs(unittest.TestCase):
                                                           exclude='sub_5/*'),
                             base_dir=base_dir)
         
-        self.assertEqual(dataset.inputs.values, 9)
+        self.assertEqual(len(dataset.inputs.values), 9)
         
     def test_non_existent_files(self):
         base_dir = nt.fetch_data('example-01')
