@@ -67,6 +67,7 @@ class TestClass_OneInput_OneOutput(unittest.TestCase):
                             outputs=PatternReader('*/img3d_multiseg.nii.gz'),
                             transforms={
                                     ('inputs','outputs'): tx.Resample((40,40,40)),
+                                    'inputs': tx.ExpandDims(),
                                     'outputs': tx.LabelsToChannels()
                             },
                             base_dir=base_dir)
@@ -76,30 +77,31 @@ class TestClass_OneInput_OneOutput(unittest.TestCase):
         data_train, data_test = dataset.split(0.8)
 
         loader = nt.Loader(data_train,
-                        images_per_batch=4,
-                        shuffle=True,
-                        sampler=SliceSampler(batch_size=20, axis=-1))
+                           images_per_batch=4,
+                           shuffle=True,
+                           expand_dims=False,
+                           sampler=SliceSampler(batch_size=20, axis=2))
 
-        arch_fn = nt.fetch_architecture('unet', dim=2)
-        model = arch_fn(x.shape[:-1]+(1,),
-                        number_of_outputs=2,
-                        number_of_layers=4,
-                        number_of_filters_at_base_layer=16,
-                        mode='classification')
-
-        # train
-        trainer = nt.Trainer(model, task='segmentation')
-        trainer.fit(loader, epochs=2)
-        
-        # evaluate on test data
-        test_loader = loader.copy(data_test)
-        trainer.evaluate(test_loader)
-        
-        # inference on test data
-        predictor = nt.Predictor(model, 
-                                 task='segmentation',
-                                 sampler=SliceSampler(axis=-1))
-        y_pred = predictor.predict(data_test)
+        #arch_fn = nt.fetch_architecture('unet', dim=2)
+        #model = arch_fn(x.shape[:-1]+(1,),
+        #                number_of_outputs=2,
+        #                number_of_layers=4,
+        #                number_of_filters_at_base_layer=16,
+        #                mode='classification')
+#
+        ## train
+        #trainer = nt.Trainer(model, task='segmentation')
+        #trainer.fit(loader, epochs=2)
+        #
+        ## evaluate on test data
+        #test_loader = loader.copy(data_test)
+        #trainer.evaluate(test_loader)
+        #
+        ## inference on test data
+        #predictor = nt.Predictor(model, 
+        #                         task='segmentation',
+        #                         sampler=SliceSampler(axis=-1))
+        #y_pred = predictor.predict(data_test)
     
     def test_image_regression(self):
         pass

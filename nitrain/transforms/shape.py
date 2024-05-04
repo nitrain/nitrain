@@ -1,12 +1,20 @@
 from .base import BaseTransform
 
 __all__ = [
+    'ExpandDims',
     'Reorient',
     'Rollaxis',
     'Repeat',
     'Swapaxes'
 ]
 
+class ExpandDims(BaseTransform):
+    def __init__(self, axis=-1):
+        self.axis = axis
+        
+    def __call__(self, *images):
+        images = [image.expand_dims(self.axis) for image in images]
+        return images if len(images) > 1 else images[0]
 
 class Reorient(BaseTransform):
     def __init__(self, orientation):

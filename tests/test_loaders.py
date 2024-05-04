@@ -220,6 +220,33 @@ class TestClass_DatasetLoader(unittest.TestCase):
         self.assertEqual(xb[0].shape, (20,48,48,1))
         self.assertEqual(xb[1].shape, (20,48,48,1))
         self.assertEqual(yb.shape, (20,30,40,1))
+        
+    def test_multiclass_segmentation_no_expand_dims(self):
+        base_dir = nt.fetch_data('example-01')
+
+        dataset = nt.Dataset(inputs=PatternReader('*/img3d.nii.gz'),
+                            outputs=PatternReader('*/img3d_multiseg.nii.gz'),
+                            transforms={
+                                    ('inputs','outputs'): tx.Resample((40,40,40)),
+                                    'inputs': tx.ExpandDims(),
+                                    'outputs': tx.LabelsToChannels()
+                            },
+                            base_dir=base_dir)
+
+        x,y = dataset[0]
+        
+        data_train, data_test = dataset.split(0.8)
+
+        loader = nt.Loader(data_train,
+                           images_per_batch=4,
+                           shuffle=True,
+                           expand_dims=False,
+                           sampler=SliceSampler(batch_size=20, axis=2))
+        
+        xb, yb = next(iter(loader))
+        
+        self.assertEqual(xb.shape, (20,40,40,1))
+        self.assertEqual(yb.shape, (20,40,40,2))
 
     
 if __name__ == '__main__':
