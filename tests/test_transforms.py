@@ -301,6 +301,27 @@ class TestClass_SpatialTransforms(unittest.TestCase):
         img2d_tx = my_tx(img2d)
            
         img3d_tx = my_tx(img3d)
+    
+class TestErrors(unittest.TestCase):
+    
+    def setUp(self):
+        pass
+    
+    def tearDown(self):
+        pass
+    
+    def test_base_transform(self):
+        from nitrain.transforms import BaseTransform
+        tx = BaseTransform()
+        
+        with self.assertRaises(NotImplementedError):
+            tx.fit()
+            
+        with self.assertRaises(NotImplementedError):
+            tx.__call__()
+
+        with self.assertRaises(NotImplementedError):
+            tx.__repr__()
         
 if __name__ == '__main__':
     run_tests()
