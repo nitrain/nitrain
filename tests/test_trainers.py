@@ -41,6 +41,13 @@ class TestClass_LocalTrainer(unittest.TestCase):
         tmpfile.close()
         
         trainer.__repr__()
+    
+    def test_exceptions(self):
+        with self.assertRaises(Exception):
+            trainer = nt.Trainer(123, task='regression')
+            
+        with self.assertRaises(Exception):
+            trainer = nt.Trainer(self.model, task='wrongtask')
         
         
 if __name__ == '__main__':
