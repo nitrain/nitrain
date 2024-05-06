@@ -24,6 +24,7 @@ echo "Testing datasets"
 $PYCMD test_datasets.py $@
 $PYCMD test_datasets_gcs.py $@
 $PYCMD test_datasets_utils.py $@
+$PYCMD test_datasets_infer.py $@
 
 echo "Testing loaders"
 $PYCMD test_loaders.py $@
@@ -31,8 +32,12 @@ $PYCMD test_loaders.py $@
 echo "Testing models"
 $PYCMD test_models.py $@
 
+echo "Testing readers"
+$PYCMD test_readers.py $@
+
 echo "Testing samplers"
 $PYCMD test_samplers.py $@
+$PYCMD test_samplers_slice.py $@
 
 echo "Testing trainers"
 $PYCMD test_trainers.py $@

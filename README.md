@@ -16,11 +16,11 @@ Here is a canonical example of using nitrain to a semantic segmentation model. N
 
 ```python
 import nitrain as nt
-from nitrain.readers import PatternReader, ColumnReader
+from nitrain.readers import ImageReader, ColumnReader
 
 # create dataset from folder of images + participants file
-dataset = nt.Dataset(inputs=PatternReader('sub-*/anat/*_T1w.nii.gz'),
-                     outputs=PatternReader('sub-*/anat/*_aparc+aseg.nii.gz'),
+dataset = nt.Dataset(inputs=ImageReader('sub-*/anat/*_T1w.nii.gz'),
+                     outputs=ImageReader('sub-*/anat/*_aparc+aseg.nii.gz'),
                      transforms={
                          'inputs': tx.NormalizeIntensity(0,1),
                          ('inputs', 'outputs'): tx.Resize((64,64,64))

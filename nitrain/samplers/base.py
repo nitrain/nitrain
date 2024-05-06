@@ -1,6 +1,7 @@
 import numpy as np
 import random
 
+import ntimage as nti
 
 class BaseSampler:
     """
@@ -15,8 +16,8 @@ class BaseSampler:
         self.shuffle = shuffle
     
     def __call__(self, x, y):
-        self.x = x
-        self.y = y
+        self.x = rearrange_values(x)
+        self.y = rearrange_values(y)
         return self
 
     def __iter__(self):
@@ -30,16 +31,12 @@ class BaseSampler:
         if self.idx < 1:
             self.idx += 1
             x = self.x
-            y = self.y
-                
-            if self.shuffle:
-                indices = random.sample(range(len(y)), len(y))
-                x = [x[i] for i in indices]
-                if 'NTImage' in str(type(y[0])):
-                    y = [y[i] for i in indices]
-                else:
-                    y = y[indices]
-            
+            y = self.y            
             return x, y
         else:
             raise StopIteration
+        
+def rearrange_values(x):
+    if isinstance(x[0], list):
+        return [rearrange_values([x[i][j] for i in range(len(x))]) for j in range(len(x[0]))]
+    return x

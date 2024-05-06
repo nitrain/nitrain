@@ -10,7 +10,7 @@ import numpy.testing as nptest
 import ntimage as nti
 import nitrain as nt
 from nitrain import samplers, readers, transforms as tx
-from nitrain.readers import PatternReader
+from nitrain.readers import ImageReader
 from nitrain.samplers import SliceSampler
 from nitrain.loaders.loader import record_generator
 
@@ -36,9 +36,28 @@ class TestClass_DatasetLoader(unittest.TestCase):
         pass
     
     def test_2d(self):
-        loader = nt.Loader(self.dataset_2d, images_per_batch=4)
-        x_batch, y_batch = next(iter(loader))
-        self.assertEqual(x_batch.shape, (4, 256, 256, 1))
+        import ntimage as nti
+        import nitrain as nt
+        from nitrain import samplers, readers, transforms as tx
+        from nitrain.readers import ImageReader
+        from nitrain.samplers import SliceSampler
+        from nitrain.loaders.loader import record_generator
+        img2d = nti.load(nti.example_data('r16'))
+        img3d = nti.load(nti.example_data('mni'))
+        
+        x = [img2d for _ in range(10)]
+        y = list(range(10))
+        
+        dataset_2d = nt.Dataset(x, y)
+        loader = nt.Loader(dataset_2d, images_per_batch=4)
+        xb, yb = next(iter(loader))
+        self.assertEqual(xb.shape, (4, 256, 256, 1))
+        self.assertEqual(yb.shape, (4,))
+        
+        loader = nt.Loader(dataset_2d, images_per_batch=4, expand_dims=False)
+        xb, yb = next(iter(loader))
+        self.assertEqual(xb.shape, (4, 256, 256))
+        self.assertEqual(yb.shape, (4,))
         
         # test repr
         rep = loader.__repr__()
@@ -115,17 +134,19 @@ class TestClass_DatasetLoader(unittest.TestCase):
         xb,yb = next(iter(gen))
 
     def test_multi_image_to_image(self):
-        img = nti.load(nti.example_data('r16'))
+        import ntimage as nti
+        import nitrain as nt
+        img = nti.zeros_like(nti.example('r16'))
         dataset = nt.Dataset([[img for _ in range(10)], 
                               [img for _ in range(10)]],
                              [img for _ in range(10)])
         loader = nt.Loader(dataset, images_per_batch=4)
 
-        x_batch, y_batch = next(iter(loader))
-        self.assertTrue(len(x_batch) == 2)
-        self.assertTrue(x_batch[0].shape == (4, 256, 256, 1))
-        self.assertTrue(x_batch[1].shape == (4, 256, 256, 1))
-        self.assertTrue(y_batch.shape == (4, 256, 256, 1))
+        xb, yb = next(iter(loader))
+        self.assertTrue(len(xb) == 2)
+        self.assertTrue(xb[0].shape == (4, 256, 256, 1))
+        self.assertTrue(xb[1].shape == (4, 256, 256, 1))
+        self.assertTrue(yb.shape == (4, 256, 256, 1))
         
         loader2 = loader.to_keras()
         x_batch, y_batch = next(iter(loader2))
@@ -157,9 +178,9 @@ class TestClass_DatasetLoader(unittest.TestCase):
     def test_multiple_image_slice(self):
         base_dir = nt.fetch_data('example-01')
 
-        dataset = nt.Dataset(inputs={'a': readers.PatternReader('*/img3d.nii.gz'),
-                                    'b': readers.PatternReader('*/img3d_100.nii.gz')},
-                            outputs=readers.PatternReader('*/img3d_seg.nii.gz'),
+        dataset = nt.Dataset(inputs={'a': readers.ImageReader('*/img3d.nii.gz'),
+                                    'b': readers.ImageReader('*/img3d_100.nii.gz')},
+                            outputs=readers.ImageReader('*/img3d_seg.nii.gz'),
                             base_dir=base_dir)
 
         loader = nt.Loader(dataset,
@@ -173,9 +194,9 @@ class TestClass_DatasetLoader(unittest.TestCase):
     def test_multiple_image_slice_after_split(self):
         base_dir = nt.fetch_data('example-01')
 
-        dataset = nt.Dataset(inputs={'a': readers.PatternReader('*/img3d.nii.gz'),
-                                    'b': readers.PatternReader('*/img3d_100.nii.gz')},
-                            outputs=readers.PatternReader('*/img3d_seg.nii.gz'),
+        dataset = nt.Dataset(inputs={'a': readers.ImageReader('*/img3d.nii.gz'),
+                                    'b': readers.ImageReader('*/img3d_100.nii.gz')},
+                            outputs=readers.ImageReader('*/img3d_seg.nii.gz'),
                             base_dir=base_dir)
         
         ds_train, ds_test = dataset.split(0.8)
@@ -189,11 +210,16 @@ class TestClass_DatasetLoader(unittest.TestCase):
                 self.assertEqual(xbatch[1].mean(), i+1+100)
                 
     def test_transforms(self):
+        import nitrain as nt
+        import ntimage as nti
+        from nitrain.readers import ImageReader
+        from nitrain.samplers import SliceSampler
+        from nitrain import transforms as tx
         base_dir = nt.fetch_data('example-01')
 
-        dataset = nt.Dataset(inputs=[PatternReader('*/img3d.nii.gz'),
-                                     PatternReader('*/img3d.nii.gz')],
-                            outputs=PatternReader('*/img3d_100.nii.gz'),
+        dataset = nt.Dataset(inputs=[ImageReader('*/img3d.nii.gz'),
+                                     ImageReader('*/img3d.nii.gz')],
+                            outputs=ImageReader('*/img3d_100.nii.gz'),
                             base_dir=base_dir)
 
         loader = nt.Loader(dataset,
@@ -203,7 +229,6 @@ class TestClass_DatasetLoader(unittest.TestCase):
                             },
                            sampler=SliceSampler(batch_size=20, axis=-1))
         xb,yb = next(iter(loader))
-        
         
         self.assertEqual(xb[0].shape, (20,48,48,1))
         self.assertEqual(xb[1].shape, (20,48,48,1))
@@ -224,12 +249,12 @@ class TestClass_DatasetLoader(unittest.TestCase):
     def test_multiclass_segmentation_no_expand_dims(self):
         base_dir = nt.fetch_data('example-01')
 
-        dataset = nt.Dataset(inputs=PatternReader('*/img3d.nii.gz'),
-                            outputs=PatternReader('*/img3d_multiseg.nii.gz'),
+        dataset = nt.Dataset(inputs=ImageReader('*/img3d.nii.gz'),
+                            outputs=ImageReader('*/img3d_multiseg.nii.gz'),
                             transforms={
                                     ('inputs','outputs'): tx.Resample((40,40,40)),
                                     'inputs': tx.ExpandDims(),
-                                    'outputs': tx.LabelsToChannels()
+                                    'outputs': tx.ExpandLabels()
                             },
                             base_dir=base_dir)
 

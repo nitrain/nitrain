@@ -4,7 +4,7 @@ import warnings
 import ntimage as nti
 from copy import deepcopy
 
-from .. import samplers
+from .. import samplers, transforms as tx
 from ..datasets.utils import reduce_to_list, apply_transforms
 
 class Loader:
@@ -85,40 +85,24 @@ class Loader:
             
             # TODO: implement shuffle here 
             data_indices = slice(image_batch_idx*images_per_batch, min((image_batch_idx+1)*images_per_batch, len(dataset)))
-            #data_indices = original_indices[data_indices] # this doesnt work
             x, y = dataset[data_indices, self.transforms is None]
-           
-            # apply transforms
+
             if self.transforms:
-                for i in range(len(x)):
-                    x_tmp = x[i]
-                    y_tmp = y[i]
-                    
-                    for tx_name, tx_value in self.transforms.items():
-                        x_tmp, y_tmp = apply_transforms(tx_name, tx_value, x_tmp, y_tmp)
-                            
-                    x_tmp = reduce_to_list(x_tmp)
-                    y_tmp = reduce_to_list(y_tmp)
-                    
-                    x[i] = x_tmp
-                    y[i] = y_tmp
-                
+                x, y = transform_records(x, y, self.transforms)
+
             image_batch_idx += 1
             
             # sample the batch
             sampled_batch = self.sampler(x, y)
             
             for x_batch, y_batch in sampled_batch:
-                if isinstance(x_batch[0], list):
-                    x_batch_return = []
-                    for i in range(len(x_batch[0])):
-                        tmp_x_batch = np.array([np.expand_dims(xx[i].numpy(), self.expand_dims) if self.expand_dims else xx.numpy() for xx in x_batch])
-                        x_batch_return.append(tmp_x_batch)
-                    x_batch = x_batch_return
-                else:
-                    x_batch = np.array([np.expand_dims(xx.numpy(), self.expand_dims) if self.expand_dims else xx.numpy() for xx in x_batch])
-                if nti.is_image(y[0]):
-                    y_batch = np.array([np.expand_dims(yy.numpy(), self.expand_dims) if self.expand_dims else yy.numpy() for yy in y_batch])
+
+                if self.expand_dims:
+                    x_batch = expand_image_dims(x_batch)
+                    y_batch = expand_image_dims(y_batch)
+                
+                x_batch = convert_to_numpy(x_batch)
+                y_batch = convert_to_numpy(y_batch)
                 
                 yield x_batch, y_batch
                 
@@ -135,8 +119,43 @@ class Loader:
             '   {}\n'.format(repr(self.dataset))+\
             '   {} : {}\n'.format('Transforms', len(self.transforms) if self.transforms else '{}')
         return s
-    
 
+
+def transform_records(x_list, y_list, transforms):
+    x_items = []
+    y_items = []
+    for x, y in zip(x_list, y_list):
+        for tx_name, tx_value in transforms.items():
+            x, y = apply_transforms(tx_name, tx_value, x, y)
+                                
+        x = reduce_to_list(x)
+        y = reduce_to_list(y)
+        
+        x_items.append(x)
+        y_items.append(y)
+    
+    return x_items, y_items
+    
+def convert_to_numpy(x):
+    """
+    img = nti.example('r16')
+    x = [[img,img,img], [img, img, img]]
+    x2 = convert_to_numpy(x)
+    """
+    if isinstance(x[0], list):
+        return [convert_to_numpy(xx) for xx in x]
+    if nti.is_image(x[0]):
+        return np.array([xx.numpy() for xx in x])
+    else:
+        return np.array(x)
+
+def expand_image_dims(x):
+    mytx = tx.ExpandDims()
+    if isinstance(x, list):
+        return [expand_image_dims(xx) for xx in x]
+    else:
+        return mytx(x) if nti.is_image(x) and not nti.has_channels(x) else x
+    
 def record_generator(loader):
     """
     This function takes a batch and returns individual records from it.

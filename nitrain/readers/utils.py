@@ -5,81 +5,53 @@ from fnmatch import fnmatch
 
 import pandas as pd
 import numpy as np
-import ntimage as nt
+import ntimage as nti
 
 from .. import readers
 
-def infer_reader(x, base_dir=None, label=None):
+
+
+def infer_reader(x):
     """
-    Infer reader from user-supplied values.
-    
-    A reader is a possible value to the `x` and `y` arguments of any nitrain dataset class. The
-    possible values include the following:
-    
-    - numpy array (ArrayReader)
-    - list of ntimages (ImageReader)
-    - dict containing glob patterns to read images from file (PatternReader)
-    - dict containing info to read columns from csv files (ColumnReader)
-    - dict containing info to read images from file in google cloud storage (GoogleCloudReader)
-    - dict containing info to read images from file hosted on nitrain.dev (PlatformReader)
-    - list with a combination of any of the above readers (ComposeReader)
-    
-    Note that when a reader is created, it is actually checked for validity -- i.e., that data
-    can be served from it. For example, creating a reader to read images from files that do not
-    exist will raise an exception.
-    
-    Examples
-    --------
-    >>> base_dir = os.path.expanduser('~/Desktop/openneuro/ds004711')
-    >>> array = np.random.normal(40,10,(10,50,50,50))
-    >>> x = infer_config(array)
-    >>> x = infer_config([nt.load(nt.example_data('r16')) for _ in range(10)])
-    >>> x = infer_config([{'pattern': '{id}/anat/*.nii.gz'}, {'pattern': '{id}/anat/*.nii.gz'}], base_dir) 
-    >>> x = infer_config({'pattern': '{id}/anat/*.nii.gz'}, base_dir) 
-    >>> x = infer_config({'pattern': '*/anat/*.nii.gz'}, base_dir)
-    >>> x = infer_config({'pattern': '**/*T1w*'}, base_dir) 
-    >>> x = infer_config({'file': 'participants.tsv', 'column': 'age', 'id': 'participant_id'}, base_dir) 
-    >>> x = infer_config({'file': 'participants.tsv', 'column': 't1', 'image': True}, base_dir) 
+    Infer reader from user-supplied values
     """
-    reader = None
     if isinstance(x, list):
-        # TODO: add tests to make sure this is correct for all scenarios
-        # list of ntimages
-        if nt.is_image(x[0]):
-            return readers.ImageReader(x)
-        # list of multiple (potentially mixed) readers
-        elif 'nitrain.readers' in str(type(x[0])):
-            reader_list = [infer_reader(reader, base_dir=base_dir) for reader in x]
-            return readers.ComposeReader(reader_list)
-        # list that is meant to be an array or multiple-images
-        elif isinstance(x[0], list):
-            if nt.is_image(x[0][0]):
-                reader_list = [infer_reader(xx) for xx in x]
-                #for i in range(len(x[0])):
-                    #reader_list.append(readers.ImageReader([xx[i] for xx in x]))
-                return readers.ComposeReader(reader_list)
-            elif 'nitrain.readers' in str(type(x[0][0])):
-                reader_list = [infer_reader(xx, base_dir=base_dir) for xx in x]
-                return readers.ComposeReader(reader_list)
-            else:
-                return readers.ArrayReader(np.array(x))
+        if nti.is_image(x[0]):
+            return readers.MemoryReader(x)
         elif np.isscalar(x[0]):
-            # list of scalars -> interpret as array
-            return readers.ArrayReader(np.array(x))
+            return readers.MemoryReader(x)
         else:
-            # something else?
-            reader_list = [infer_reader(reader, base_dir=base_dir) for reader in x]
-            return readers.ComposeReader(reader_list)
-        
+            return readers.ComposeReader([infer_reader(xx) for xx in x])
+            
     elif isinstance(x, dict):
-        return readers.ComposeReader(x)
+        new_readers = []
+        for key, value in x.items():
+            value = infer_reader(value)
+            value.label = key
+            new_readers.append(value)
+        if len(new_readers) > 1:
+            return readers.ComposeReader(new_readers)
+        else:
+            return new_readers[0]
         
     elif isinstance(x, np.ndarray):
-        return readers.ArrayReader(x)
-    elif 'nitrain.readers' in str(type(x)):
+        return readers.MemoryReader(x)
+    
+    elif is_reader(x):
         return x
     
-    if reader is None:
-        raise Exception(f'Could not infer a configuration from given value: {x}')
-    
-    return reader
+    raise Exception(f'Could not infer a configuration from given value: {x}')
+
+
+def flatten_readers(readers):
+    new_readers = {}
+    for key, value in readers.items():
+        value.label = key
+        if isinstance(value, dict):
+            new_readers.append(flatten_readers(value))
+        else:
+            new_readers.append(value)
+    return new_readers
+
+def is_reader(x):
+    return 'nitrain.readers' in str(type(x))

@@ -310,7 +310,7 @@ class TestLabels(unittest.TestCase):
     def tearDown(self):
         pass
     
-    def test_LabelsToChannels(self):
+    def test_ExpandLabels(self):
         img2d = nti.zeros((100,100))
         img2d[:20,:] = 1
         img2d[20:40,:] = 2
@@ -321,7 +321,7 @@ class TestLabels(unittest.TestCase):
         img3d[20:40,:,:] = 2
         img3d[40:60,:,:] = 3
         
-        my_tx = tx.LabelsToChannels()
+        my_tx = tx.ExpandLabels()
 
         img2d_tx = my_tx(img2d)
         img3d_tx = my_tx(img3d)

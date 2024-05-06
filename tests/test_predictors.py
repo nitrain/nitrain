@@ -10,7 +10,7 @@ import numpy.testing as nptest
 import ntimage as nti
 import nitrain as nt
 from nitrain import transforms as tx
-from nitrain.readers import PatternReader
+from nitrain.readers import ImageReader
 from nitrain.samplers import SliceSampler
 
 class TestClass_Predictor(unittest.TestCase):
@@ -23,8 +23,8 @@ class TestClass_Predictor(unittest.TestCase):
     def test_image_to_image_segmentation(self):
         base_dir = nt.fetch_data('example-01')
 
-        dataset = nt.Dataset(inputs=PatternReader('*/img3d.nii.gz'),
-                            outputs=PatternReader('*/img3d_seg.nii.gz'),
+        dataset = nt.Dataset(inputs=ImageReader('*/img3d.nii.gz'),
+                            outputs=ImageReader('*/img3d_seg.nii.gz'),
                             transforms={
                                     ('inputs','outputs'): tx.Resample((40,40,40))
                             },
@@ -46,8 +46,8 @@ class TestClass_Predictor(unittest.TestCase):
     def test_image_to_image_regression(self):
         base_dir = nt.fetch_data('example-01')
 
-        dataset = nt.Dataset(inputs=PatternReader('*/img3d.nii.gz'),
-                            outputs=PatternReader('*/img3d_100.nii.gz'),
+        dataset = nt.Dataset(inputs=ImageReader('*/img3d.nii.gz'),
+                            outputs=ImageReader('*/img3d_100.nii.gz'),
                             transforms={
                                     ('inputs','outputs'): tx.Resample((40,40,40))
                             },

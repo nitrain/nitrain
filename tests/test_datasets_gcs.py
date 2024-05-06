@@ -27,7 +27,7 @@ class TestClass_GoogleCloudDataset(unittest.TestCase):
     
     def test_gcs_basic(self):
         d = nt.GoogleCloudDataset(
-            inputs=readers.PatternReader('sub-*/anat/*_T1w.nii.gz'),
+            inputs=readers.ImageReader('sub-*/anat/*_T1w.nii.gz'),
             outputs=readers.ColumnReader('age', 'participants.tsv'),
             base_dir='datasets/nick-2/ds004711',
             bucket='ants-dev',
@@ -38,7 +38,7 @@ class TestClass_GoogleCloudDataset(unittest.TestCase):
         
     def test_gcs_basic_base(self):
         d = nt.GoogleCloudDataset(
-            inputs=readers.PatternReader('sub-*/anat/*_T1w.nii.gz',
+            inputs=readers.ImageReader('sub-*/anat/*_T1w.nii.gz',
                                          base_dir='datasets/nick-2/ds004711'),
             outputs=readers.ColumnReader('age',
                                          base_file='datasets/nick-2/ds004711/participants.tsv'),
@@ -50,8 +50,8 @@ class TestClass_GoogleCloudDataset(unittest.TestCase):
 
     def test_gcs_compose(self):
         d = nt.GoogleCloudDataset(
-            inputs=[readers.PatternReader('sub-*/anat/*_T1w.nii.gz'),
-                    readers.PatternReader('sub-*/anat/*_T1w.nii.gz')],
+            inputs=[readers.ImageReader('sub-*/anat/*_T1w.nii.gz'),
+                    readers.ImageReader('sub-*/anat/*_T1w.nii.gz')],
             outputs=readers.ColumnReader('age', 'participants.tsv'),
             base_dir='datasets/nick-2/ds004711',
             bucket='ants-dev',

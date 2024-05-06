@@ -18,13 +18,13 @@ class GoogleCloudDataset(Dataset):
         import nitrain as nt
         from nitrain import readers
         d = nt.GoogleCloudDataset(
-            inputs=readers.PatternReader('sub-*/anat/*_T1w.nii.gz'),
+            inputs=readers.ImageReader('sub-*/anat/*_T1w.nii.gz'),
             outputs=readers.ColumnReader('age', 'participants.tsv'),
             base_dir='datasets/nick-2/ds004711',
             bucket='ants-dev'
         )
         d2 = nt.Dataset(
-            inputs=readers.PatternReader('sub-*/anat/*_T1w.nii.gz'),
+            inputs=readers.ImageReader('sub-*/anat/*_T1w.nii.gz'),
             outputs=readers.ColumnReader('age','participants.tsv'),
             base_dir='~/Desktop/ds004711/'
         )

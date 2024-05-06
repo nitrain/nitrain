@@ -16,8 +16,19 @@ class SliceSampler:
     
     def __call__(self, x, y):
         # create slices of all images
-        self.x, self.y = create_slices(x, y, self.axis)
-        self.n_batches = math.ceil(len(self.x) / self.batch_size)
+        self.x = create_slices(x, self.axis)
+        self.y = create_slices(y, self.axis)
+        
+        xx = self.x[0]
+        if isinstance(xx, list):
+            while isinstance(xx, list):
+                batch_length = len(xx)
+                xx = xx[0]
+        else:
+            batch_length = len(self.x)
+
+        self.batch_length = batch_length
+        self.n_batches = math.ceil(batch_length / self.batch_size)
                 
         return self
 
@@ -37,10 +48,10 @@ class SliceSampler:
 
     def __next__(self):
         if self.idx < self.n_batches:
-            data_indices = slice(self.idx*self.batch_size, min((self.idx+1)*self.batch_size, len(self.x)))
+            data_indices = slice(self.idx*self.batch_size, min((self.idx+1)*self.batch_size, self.batch_length))
             self.idx += 1
-            x = self.x[data_indices]
-            y = self.y[data_indices]
+            x = select_items(self.x, data_indices)
+            y = select_items(self.y, data_indices)
             return x, y
         else:
             raise StopIteration
@@ -48,29 +59,22 @@ class SliceSampler:
     def __repr__(self):
         return f'''SliceSampler(axis={self.axis}, batch_size={self.batch_size}, shuffle={self.shuffle})'''
 
+def select_items(x, idx):
+    if isinstance(x[0], list):
+        return [select_items(xx, idx) for xx in x]
+    else:
+        return x[idx]
 
-
-def create_slices(inputs, outputs, axis):
-    # TODO: let slice sampler be applied selectively via dictionary
-    # right now, all images in the inputs / outputs will be sliced
-    new_inputs = []
-    new_outputs = []
-    for tmp_input, tmp_output in zip(inputs, outputs):
-        if nti.is_image(tmp_input):
-            slices = tmp_input.shape[axis]
-        else:
-            if nti.is_image(tmp_input[0]):
-                slices = tmp_input[0].shape[axis]
-        
-        for i in range(slices):
-            if isinstance(tmp_input, list):
-                new_inputs.append([x.slice(i, axis) if nti.is_image(x) else x for x in tmp_input])
-            else:
-                new_inputs.append(tmp_input.slice(i, axis) if nti.is_image(tmp_input) else tmp_input)
-            
-            if isinstance(tmp_output, list):
-                new_outputs.append([x.slice(i, axis) if nti.is_image(x) else x for x in tmp_output])
-            else:
-                new_outputs.append(tmp_output.slice(i, axis) if nti.is_image(tmp_output) else tmp_output)
-            
-    return new_inputs, new_outputs
+def create_slices(x, axis):
+    def flatten_extend(matrix):
+        flat_list = []
+        for row in matrix:
+            flat_list.extend(row)
+        return flat_list
+    
+    if isinstance(x[0], list):
+        return [create_slices([x[i][j] for i in range(len(x))], axis) for j in range(len(x[0]))]
+    if nti.is_image(x[0]):
+        return flatten_extend([[xx.slice(i, axis) for i in range(xx.shape[axis])] for xx in x])
+    else:
+        return x

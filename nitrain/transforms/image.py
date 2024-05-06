@@ -16,20 +16,20 @@ class Astype(BaseTransform):
     import ntimage as nti
     import nitrain as nt
     from nitrain import transforms as tx
-    from nitrain.readers import ImageReader
+    from nitrain.readers import MemoryReader
     dataset = nt.Dataset(
-        inputs={'x':ImageReader([nti.example('mni') for _ in range(10)]),
-                'y':ImageReader([nti.example('mni') for _ in range(10)])},
-        outputs=ImageReader([nti.example('mni') for _ in range(10)]),
+        inputs={'x':MemoryReader([nti.example('mni') for _ in range(10)]),
+                'y':MemoryReader([nti.example('mni') for _ in range(10)])},
+        outputs=MemoryReader([nti.example('mni') for _ in range(10)]),
         transforms={
             'x': tx.Astype('uint8')
         }
     )
     x, y = dataset[0]
     dataset2 = nt.Dataset(
-        inputs=[ImageReader([nti.example('mni') for _ in range(10)]),
-                ImageReader([nti.example('mni') for _ in range(10)])],
-        outputs=ImageReader([nti.example('mni') for _ in range(10)]),
+        inputs=[MemoryReader([nti.example('mni') for _ in range(10)]),
+                MemoryReader([nti.example('mni') for _ in range(10)])],
+        outputs=MemoryReader([nti.example('mni') for _ in range(10)]),
         transforms={
             ('inputs','outputs'): [tx.Astype('uint8')]
         }

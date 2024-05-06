@@ -6,16 +6,9 @@ from fnmatch import fnmatch
 import pandas as pd
 import numpy as np
 
+
 class ComposeReader:
     def __init__(self, readers, label=None):
-        
-        if isinstance(readers, dict):
-            new_readers = []
-            for key, value in readers.items():
-                value.label = key
-                new_readers.append(value)
-            readers = new_readers
-                
         self.readers = readers
         self.label = label
         

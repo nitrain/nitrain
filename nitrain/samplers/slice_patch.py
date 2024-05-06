@@ -25,7 +25,8 @@ class SlicePatchSampler:
     
     def __call__(self, x, y):
         # create slices of all images
-        x, y = create_slices(x, y, self.axis)
+        x = create_slices(x, self.axis)
+        y = create_slices(y, self.axis)
         # then create patches from all those slices
         x, y = create_patches(x, y, self.patch_size, self.stride)
         

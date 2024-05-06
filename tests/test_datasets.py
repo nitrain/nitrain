@@ -53,9 +53,9 @@ class TestClass_Dataset(unittest.TestCase):
         
     def test_memory_dict_inputs(self):
         dataset = nt.Dataset(
-            inputs={'x':readers.ImageReader([nti.example('mni') for _ in range(10)]),
-                    'y':readers.ImageReader([nti.example('mni') for _ in range(10)])},
-            outputs=readers.ImageReader([nti.example('mni') for _ in range(10)])
+            inputs={'x':readers.MemoryReader([nti.example('mni') for _ in range(10)]),
+                    'y':readers.MemoryReader([nti.example('mni') for _ in range(10)])},
+            outputs=readers.MemoryReader([nti.example('mni') for _ in range(10)])
         )
         x, y = dataset[0]
         self.assertEqual(len(x), 2)
@@ -66,9 +66,9 @@ class TestClass_Dataset(unittest.TestCase):
     
     def test_memory_dict_inputs_with_transform(self):
         dataset = nt.Dataset(
-            inputs={'x':readers.ImageReader([nti.example('mni') for _ in range(10)]),
-                    'y':readers.ImageReader([nti.example('mni') for _ in range(10)])},
-            outputs=readers.ImageReader([nti.example('mni') for _ in range(10)]),
+            inputs={'x':readers.MemoryReader([nti.example('mni') for _ in range(10)]),
+                    'y':readers.MemoryReader([nti.example('mni') for _ in range(10)])},
+            outputs=readers.MemoryReader([nti.example('mni') for _ in range(10)]),
             transforms={
                 'y': [tx.Astype('uint8')]
             }
@@ -98,8 +98,8 @@ class TestClass_Dataset(unittest.TestCase):
         
     def test_memory_double_inputs(self):
         dataset = nt.Dataset(
-            inputs = [readers.ImageReader([nti.ones((128,128))*i for i in range(10)]),
-                      readers.ImageReader([nti.ones((128,128))*i*2 for i in range(10)])],
+            inputs = [readers.MemoryReader([nti.ones((128,128))*i for i in range(10)]),
+                      readers.MemoryReader([nti.ones((128,128))*i*2 for i in range(10)])],
             outputs = [i for i in range(10)]
         )
         self.assertEqual(len(dataset), 10)
@@ -230,7 +230,7 @@ class TestClass_FolderDataset(unittest.TestCase):
     def test_2d(self):
         tmp_dir = self.tmp_dir
         dataset = nt.Dataset(
-            inputs=readers.PatternReader('*/img2d.nii.gz'),
+            inputs=readers.ImageReader('*/img2d.nii.gz'),
             outputs=readers.ColumnReader('age'),
             base_dir=tmp_dir,
             base_file=os.path.join(tmp_dir, 'participants.csv')   
@@ -254,7 +254,7 @@ class TestClass_FolderDataset(unittest.TestCase):
     def test_2d_split(self):
         tmp_dir = self.tmp_dir
         dataset = nt.Dataset(
-            inputs=readers.PatternReader('*/img2d.nii.gz'),
+            inputs=readers.ImageReader('*/img2d.nii.gz'),
             outputs=readers.ColumnReader('age'),
             base_dir=tmp_dir,
             base_file=os.path.join(tmp_dir, 'participants.csv')   
@@ -269,8 +269,8 @@ class TestClass_FolderDataset(unittest.TestCase):
     def test_double_image_input(self):
         tmp_dir = self.tmp_dir
         dataset = nt.Dataset(
-            inputs=[readers.PatternReader('*/img2d.nii.gz'),
-                    readers.PatternReader('*/img3d.nii.gz')],
+            inputs=[readers.ImageReader('*/img2d.nii.gz'),
+                    readers.ImageReader('*/img3d.nii.gz')],
             outputs=readers.ColumnReader('age'),
             base_dir=tmp_dir,
             base_file=os.path.join(tmp_dir, 'participants.csv')   
@@ -291,8 +291,8 @@ class TestClass_FolderDataset(unittest.TestCase):
     def test_2d_image_to_3d_image(self):
         tmp_dir = self.tmp_dir
         dataset = nt.Dataset(
-            inputs=readers.PatternReader('*/img2d.nii.gz'),
-            outputs=readers.PatternReader('*/img3d.nii.gz'),
+            inputs=readers.ImageReader('*/img2d.nii.gz'),
+            outputs=readers.ImageReader('*/img3d.nii.gz'),
             base_dir=tmp_dir
         )
         self.assertEqual(len(dataset), 5)
@@ -316,9 +316,9 @@ class TestFunction_split(unittest.TestCase):
     def test_pattern_compose(self):
         base_dir = nt.fetch_data('example-01')
 
-        dataset = nt.Dataset(inputs=[readers.PatternReader('*/img3d.nii.gz'),
-                                     readers.PatternReader('*/img3d.nii.gz')],
-                            outputs=readers.PatternReader('*/img3d_100.nii.gz'),
+        dataset = nt.Dataset(inputs=[readers.ImageReader('*/img3d.nii.gz'),
+                                     readers.ImageReader('*/img3d.nii.gz')],
+                            outputs=readers.ImageReader('*/img3d_100.nii.gz'),
                             base_dir=base_dir)
 
         data_train, data_test = dataset.split(0.8)
@@ -343,9 +343,9 @@ class TestOther_Bugs(unittest.TestCase):
     
     def test_multi_input_dict_transform(self):
         dataset = nt.Dataset(
-            inputs={'x':readers.ImageReader([nti.example('mni') for _ in range(10)]),
-                    'y':readers.ImageReader([nti.example('mni') for _ in range(10)])},
-            outputs=readers.ImageReader([nti.example('mni') for _ in range(10)]),
+            inputs={'x':readers.MemoryReader([nti.example('mni') for _ in range(10)]),
+                    'y':readers.MemoryReader([nti.example('mni') for _ in range(10)])},
+            outputs=readers.MemoryReader([nti.example('mni') for _ in range(10)]),
             transforms={
                 'x': [tx.Astype('uint8')]
             }
@@ -364,9 +364,9 @@ class TestOther_Bugs(unittest.TestCase):
         
     def test_multi_input_dict_transform_no_list(self):
         dataset = nt.Dataset(
-            inputs={'x':readers.ImageReader([nti.example('mni') for _ in range(10)]),
-                    'y':readers.ImageReader([nti.example('mni') for _ in range(10)])},
-            outputs=readers.ImageReader([nti.example('mni') for _ in range(10)]),
+            inputs={'x':readers.MemoryReader([nti.example('mni') for _ in range(10)]),
+                    'y':readers.MemoryReader([nti.example('mni') for _ in range(10)])},
+            outputs=readers.MemoryReader([nti.example('mni') for _ in range(10)]),
             transforms={
                 'x': tx.Astype('uint8')
             }
@@ -387,9 +387,9 @@ class TestOther_Bugs(unittest.TestCase):
         base_dir = nt.fetch_data('example-01')
         
         
-        dataset = nt.Dataset(inputs=readers.PatternReader('*/img3d.nii.gz',
+        dataset = nt.Dataset(inputs=readers.ImageReader('*/img3d.nii.gz',
                                                           base_dir=base_dir),
-                            outputs=readers.PatternReader('*/img3d_seg.nii.gz',
+                            outputs=readers.ImageReader('*/img3d_seg.nii.gz',
                                                           base_dir=base_dir))
         
         x, y = dataset[0]
@@ -398,8 +398,8 @@ class TestOther_Bugs(unittest.TestCase):
     def test_ids(self):
         base_dir = nt.fetch_data('example-01')
         
-        dataset = nt.Dataset(inputs=readers.PatternReader('{id}/img3d.nii.gz'),
-                            outputs=readers.PatternReader('{id}/img3d_seg.nii.gz'),
+        dataset = nt.Dataset(inputs=readers.ImageReader('{id}/img3d.nii.gz'),
+                            outputs=readers.ImageReader('{id}/img3d_seg.nii.gz'),
                             base_dir=base_dir)
         
         x, y = dataset[0]
@@ -408,9 +408,9 @@ class TestOther_Bugs(unittest.TestCase):
     def test_exclude(self):
         base_dir = nt.fetch_data('example-01')
         
-        dataset = nt.Dataset(inputs=readers.PatternReader('*/img3d.nii.gz',
+        dataset = nt.Dataset(inputs=readers.ImageReader('*/img3d.nii.gz',
                                                           exclude='sub_5/*'),
-                            outputs=readers.PatternReader('*/img3d_seg.nii.gz',
+                            outputs=readers.ImageReader('*/img3d_seg.nii.gz',
                                                           exclude='sub_5/*'),
                             base_dir=base_dir)
         
@@ -420,12 +420,12 @@ class TestOther_Bugs(unittest.TestCase):
         base_dir = nt.fetch_data('example-01')
             
         with self.assertRaises(Exception):
-            dataset = nt.Dataset(inputs=readers.PatternReader('*/img3d232.nii.gz'),
-                                outputs=readers.PatternReader('*/img323d_seg.nii.gz'),
+            dataset = nt.Dataset(inputs=readers.ImageReader('*/img3d232.nii.gz'),
+                                outputs=readers.ImageReader('*/img323d_seg.nii.gz'),
                                 base_dir=base_dir)
             
         with self.assertRaises(Exception):
-            dataset = nt.Dataset(inputs=readers.PatternReader('*/img3d.nii.gz'),
+            dataset = nt.Dataset(inputs=readers.ImageReader('*/img3d.nii.gz'),
                                 outputs=readers.ColumnReader('age', 'nonexist.csv'),
                                 base_dir=base_dir)
             
