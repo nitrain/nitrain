@@ -78,12 +78,12 @@ class TestClass_OneInput_OneOutput(unittest.TestCase):
 
         x,y = dataset[0]
         
-       # data_train, data_test = dataset.split(0.8)
+        data_train, data_test = dataset.split(0.8)
 
-        #loader = nt.Loader(dataset,
-        #                   images_per_batch=4)
-        #
-        #xb, yb = next(iter(loader))
+        loader = nt.Loader(data_train,
+                           images_per_batch=4)
+        
+        xb, yb = next(iter(loader))
 #
         #arch_fn = nt.fetch_architecture('unet', dim=2)
         #model = arch_fn(x.shape[:-1]+(1,),

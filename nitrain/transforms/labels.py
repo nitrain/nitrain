@@ -17,7 +17,7 @@ class ExpandLabels(BaseTransform):
     It is also possible to keep the original values in the channels 
     instead of making all values equal to 1.
     """
-    def __init__(self, keep_values=False, as_channels=False):
+    def __init__(self, keep_values=False, as_channels=True):
         self.keep_values = keep_values
         self.as_channels = as_channels
     
