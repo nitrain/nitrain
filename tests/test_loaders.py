@@ -254,7 +254,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
                             transforms={
                                     ('inputs','outputs'): tx.Resample((40,40,40)),
                                     'inputs': tx.ExpandDims(),
-                                    'outputs': tx.ExpandLabels()
+                                    'outputs': tx.LabelsToChannels()
                             },
                             base_dir=base_dir)
 
