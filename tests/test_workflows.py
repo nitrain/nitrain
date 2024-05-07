@@ -72,7 +72,7 @@ class TestClass_OneInput_OneOutput(unittest.TestCase):
                             outputs=ImageReader('*/img3d_multiseg.nii.gz'),
                             transforms={
                                     ('inputs','outputs'): tx.Resample((40,40,40)),
-                                    'outputs': tx.ExpandLabels()
+                                    'outputs': tx.LabelsToChannels()
                             },
                             base_dir=base_dir)
 
@@ -81,6 +81,7 @@ class TestClass_OneInput_OneOutput(unittest.TestCase):
         data_train, data_test = dataset.split(0.8)
 
         loader = nt.Loader(data_train,
+                           sampler=SliceSampler(batch_size=20, axis=-1),
                            images_per_batch=4)
         
         xb, yb = next(iter(loader))

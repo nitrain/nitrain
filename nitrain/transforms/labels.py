@@ -1,10 +1,10 @@
 from .base import BaseTransform
 
 __all__ = [
-    'ExpandLabels'
+    'LabelsToChannels'
 ]
 
-class ExpandLabels(BaseTransform):
+class LabelsToChannels(BaseTransform):
     """
     Create a channel dimension for each separate value in a
     segmentation image.
@@ -17,10 +17,9 @@ class ExpandLabels(BaseTransform):
     It is also possible to keep the original values in the channels 
     instead of making all values equal to 1.
     """
-    def __init__(self, keep_values=False, as_channels=True):
+    def __init__(self, keep_values=False):
         self.keep_values = keep_values
-        self.as_channels = as_channels
     
     def __call__(self, *images):
-        images = [image.expand_labels(self.keep_values, self.as_channels) for image in images]
+        images = [image.labels_to_channels(self.keep_values) for image in images]
         return images if len(images) > 1 else images[0]
