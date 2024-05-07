@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nitrain"
-version = "0.3.0"
+version = "0.3.1"
 description = "Train medical imaging AI models locally or in the cloud with any framework"
 authors = ["ncullen93 <nicholas.cullen@med.lu.se>"]
 license = "MIT"
@@ -10,7 +10,7 @@ readme = "README.md"
 python = "^3.9"
 pydot = "^2.0.0"
 parse = "^1.20.1"
-nitrain-image = "^0.1.1"
+nitrain-image = "^0.2.0"
 tqdm = "^4.66.2"
 
 [build-system]
