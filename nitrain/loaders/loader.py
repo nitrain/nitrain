@@ -42,8 +42,15 @@ class Loader:
         self.sampler = sampler
         
     def copy(self, dataset=None):
-        new_loader = deepcopy(self)
-        new_loader.dataset = dataset
+        
+        new_loader = Loader(
+            dataset = deepcopy(self.dataset),
+            images_per_batch = self.images_per_batch,
+            expand_dims = self.expand_dims,
+            transforms = self.transforms,
+            shuffle = self.shuffle,
+            sampler = self.sampler
+        )
         return new_loader
         
     def to_keras(self, output_signature=None):

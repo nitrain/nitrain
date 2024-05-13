@@ -85,27 +85,27 @@ class TestClass_OneInput_OneOutput(unittest.TestCase):
                            images_per_batch=4)
         
         xb, yb = next(iter(loader))
-#
-        #arch_fn = nt.fetch_architecture('unet', dim=2)
-        #model = arch_fn(x.shape[:-1]+(1,),
-        #                number_of_outputs=2,
-        #                number_of_layers=4,
-        #                number_of_filters_at_base_layer=16,
-        #                mode='classification')
-#
+
+        arch_fn = nt.fetch_architecture('unet', dim=2)
+        model = arch_fn(x.shape[:-1]+(1,),
+                        number_of_outputs=2,
+                        number_of_layers=4,
+                        number_of_filters_at_base_layer=16,
+                        mode='classification')
+
         ## train
-        #trainer = nt.Trainer(model, task='segmentation')
-        #trainer.fit(loader, epochs=2)
-        #
-        ## evaluate on test data
-        #test_loader = loader.copy(data_test)
-        #trainer.evaluate(test_loader)
-        #
-        ## inference on test data
-        #predictor = nt.Predictor(model, 
-        #                         task='segmentation',
-        #                         sampler=SliceSampler(axis=-1))
-        #y_pred = predictor.predict(data_test)
+        trainer = nt.Trainer(model, task='segmentation')
+        trainer.fit(loader, epochs=2)
+        
+        # evaluate on test data
+        test_loader = loader.copy(data_test)
+        trainer.evaluate(test_loader)
+        
+        # inference on test data
+        predictor = nt.Predictor(model, 
+                                 task='segmentation',
+                                 sampler=SliceSampler(axis=-1))
+        y_pred = predictor.predict(data_test)
     
     def test_image_regression(self):
         pass
