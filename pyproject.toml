@@ -7,7 +7,7 @@ license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-ants = "^0.5.3"
+antspyx = "^0.5.3"
 python = "^3.9"
 pydot = "^2.0.0"
 parse = "^1.20.1"
