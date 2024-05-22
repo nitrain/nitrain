@@ -6,7 +6,7 @@ import shutil
 import pandas as pd
 
 import numpy as np
-import ntimage as nti
+import ants
 import nitrain as nt
 from nitrain import readers, transforms as tx
         

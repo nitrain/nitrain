@@ -7,7 +7,7 @@ from tempfile import mktemp
 import numpy as np
 import numpy.testing as nptest
 
-import ntimage as nti
+import ants
 import nitrain as nt
 from nitrain import samplers, transforms as tx
 
@@ -15,7 +15,7 @@ from nitrain import samplers, transforms as tx
 
 class TestClass_BaseSampler(unittest.TestCase):
     def setUp(self):
-        img = nti.load(nti.example_data('mni'))
+        img = ants.image_read(ants.get_data('mni'))
         x = [img for _ in range(5)]
         y = list(range(5))
         self.dataset = nt.Dataset(x, y)
@@ -37,7 +37,7 @@ class TestClass_BaseSampler(unittest.TestCase):
 
 class TestClass_PatchSampler(unittest.TestCase):
     def setUp(self):
-        img = nti.load(nti.example_data('r16')).resample((4,4), use_spacing=True)
+        img = ants.image_read(ants.get_data('r16')).resample((4,4), use_spacing=True)
         x = [img for _ in range(5)]
         y = list(range(5))
         self.dataset = nt.Dataset(x, y)
@@ -71,8 +71,8 @@ class TestClass_SlicePatchSampler(unittest.TestCase):
     def test_standard(self):
         import nitrain as nt
         from nitrain import samplers
-        import ntimage as nti
-        img = nti.load(nti.example_data('mni')).resample((4,4,4), use_spacing=True)
+        import ants
+        img = ants.image_read(ants.get_data('mni')).resample((4,4,4), use_spacing=True)
         x = [img for _ in range(5)]
         y = list(range(5))
         dataset = nt.Dataset(x, y)
@@ -101,7 +101,7 @@ class TestClass_SliceSampler(unittest.TestCase):
         pass
     
     def test_standard(self):
-        img = nti.load(nti.example_data('mni'))
+        img = ants.image_read(ants.get_data('mni'))
         x = [img for _ in range(5)]
         y = list(range(5))
         dataset = nt.Dataset(x, y)
@@ -121,7 +121,7 @@ class TestClass_SliceSampler(unittest.TestCase):
 
 class TestClass_BlockSampler(unittest.TestCase):
     def setUp(self):
-        img = nti.load(nti.example_data('mni'))
+        img = ants.image_read(ants.get_data('mni'))
         x = [img for _ in range(5)]
         y = list(range(5))
         self.dataset = nt.Dataset(x, y)

@@ -7,7 +7,7 @@ import tempfile
 import numpy as np
 import numpy.testing as nptest
 
-import ntimage as nti
+import ants
 import nitrain as nt
 from nitrain import transforms as tx
 from nitrain.readers import ImageReader

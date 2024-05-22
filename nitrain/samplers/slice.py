@@ -2,7 +2,7 @@ import numpy as np
 import random
 import math
 
-import ntimage as nti
+import ants
 
     
 class SliceSampler:
@@ -74,7 +74,7 @@ def create_slices(x, axis):
     
     if isinstance(x[0], list):
         return [create_slices([x[i][j] for i in range(len(x))], axis) for j in range(len(x[0]))]
-    if nti.is_image(x[0]):
+    if ants.is_image(x[0]):
         return flatten_extend([[xx.slice(i, axis) for i in range(xx.shape[axis])] for xx in x])
     else:
         return x

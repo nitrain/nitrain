@@ -5,7 +5,7 @@ from fnmatch import fnmatch
 
 import pandas as pd
 import numpy as np
-import ntimage as nti
+import ants
 
 from .. import readers
 
@@ -16,7 +16,7 @@ def infer_reader(x):
     Infer reader from user-supplied values
     """
     if isinstance(x, list):
-        if nti.is_image(x[0]):
+        if ants.is_image(x[0]):
             return readers.MemoryReader(x)
         elif np.isscalar(x[0]):
             return readers.MemoryReader(x)

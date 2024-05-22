@@ -7,7 +7,7 @@ import tempfile
 import numpy as np
 import numpy.testing as nptest
 
-import ntimage as nti
+import ants
 import nitrain as nt
 from nitrain import transforms as tx
 
@@ -21,9 +21,9 @@ class TestFunction_infer_reader_lists(unittest.TestCase):
         pass
     
     def test_nested_memory_lists(self):
-        import ntimage as nti
+        import ants
         from nitrain.readers.utils import infer_reader
-        imgs = [nti.example('r16') for _ in range(5)]
+        imgs = [ants.image_read(ants.get_data('r16')) for _ in range(5)]
         
         reader = infer_reader(imgs)
         self.assertTrue('MemoryReader' in str(type(reader)))
@@ -56,7 +56,7 @@ class TestFunction_infer_reader_lists(unittest.TestCase):
         self.assertTrue('MemoryReader' in str(type(reader.readers[1].readers[1])))
 
     def test_nested_flat_arrays(self):
-        import ntimage as nti
+        import ants
         from nitrain.readers.utils import infer_reader
         arr = np.zeros((20,))
         
@@ -91,7 +91,7 @@ class TestFunction_infer_reader_lists(unittest.TestCase):
         self.assertTrue('MemoryReader' in str(type(reader.readers[1].readers[1])))
         
     def test_nested_2d_arrays(self):
-        import ntimage as nti
+        import ants
         from nitrain.readers.utils import infer_reader
         arr = np.zeros((20,20))
         
@@ -127,10 +127,10 @@ class TestFunction_infer_reader_lists(unittest.TestCase):
 
 
     def test_nested_mixed(self):
-        import ntimage as nti
+        import ants
         from nitrain.readers.utils import infer_reader
         arr = np.zeros((20,))
-        imgs = [nti.example('r16') for _ in range(5)]
+        imgs = [ants.image_read(ants.get_data('r16')) for _ in range(5)]
         
         reader = infer_reader(arr)
         self.assertTrue('MemoryReader' in str(type(reader)))
@@ -163,7 +163,7 @@ class TestFunction_infer_reader_lists(unittest.TestCase):
         self.assertTrue('MemoryReader' in str(type(reader.readers[1].readers[1])))
 
     def test_nested_lists(self):
-        import ntimage as nti
+        import ants
         from nitrain.readers.utils import infer_reader
         arr = [0,1,2,3,4]
         
@@ -209,9 +209,9 @@ class TestFunction_infer_reader_dicts(unittest.TestCase):
         pass
     
     def test_nested_memory_lists(self):
-        import ntimage as nti
+        import ants
         from nitrain.readers.utils import infer_reader
-        imgs = [nti.example('r16') for _ in range(5)]
+        imgs = [ants.image_read(ants.get_data('r16')) for _ in range(5)]
         
         reader = infer_reader({'x':imgs})
         self.assertTrue('MemoryReader' in str(type(reader)))
@@ -250,7 +250,7 @@ class TestFunction_infer_reader_dicts(unittest.TestCase):
         self.assertTrue('MemoryReader' in str(type(reader.readers[1].readers[1])))
 
     def test_nested_flat_arrays(self):
-        import ntimage as nti
+        import ants
         from nitrain.readers.utils import infer_reader
         arr = np.zeros((20,))
         
@@ -285,7 +285,7 @@ class TestFunction_infer_reader_dicts(unittest.TestCase):
         self.assertTrue('MemoryReader' in str(type(reader.readers[1].readers[1])))
         
     def test_nested_2d_arrays(self):
-        import ntimage as nti
+        import ants
         from nitrain.readers.utils import infer_reader
         arr = np.zeros((20,20))
         
@@ -321,10 +321,10 @@ class TestFunction_infer_reader_dicts(unittest.TestCase):
 
 
     def test_nested_mixed(self):
-        import ntimage as nti
+        import ants
         from nitrain.readers.utils import infer_reader
         arr = np.zeros((20,))
-        imgs = [nti.example('r16') for _ in range(5)]
+        imgs = [ants.image_read(ants.get_data('r16')) for _ in range(5)]
         
         reader = infer_reader(arr)
         self.assertTrue('MemoryReader' in str(type(reader)))
@@ -357,7 +357,7 @@ class TestFunction_infer_reader_dicts(unittest.TestCase):
         self.assertTrue('MemoryReader' in str(type(reader.readers[1].readers[1])))
 
     def test_nested_lists(self):
-        import ntimage as nti
+        import ants
         from nitrain.readers.utils import infer_reader
         arr = [0,1,2,3,4]
         

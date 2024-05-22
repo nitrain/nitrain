@@ -18,8 +18,8 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v5
 
-      - name: Install nitrain-image
-        run: python -m pip install git+https://github.com/nitrain/nitrain-image.git
+      - name: Install antspy
+        run: python -m pip install git+https://github.com/antx/antspy.git
 
       - name: Install package
         run: python -m pip install .

@@ -68,7 +68,7 @@ python -m pip install git+github.com/nitrain/nitrain.git
 
 ### Dependencies
 
-The [nitrain-image](https://www.github.com/nitrain/nitrain-image) package is a key dependency that allows you to efficiently read and transform medical images using the great ITK framework. Additionally, you can use keras (tf.keras or keras3), tensorflow, pytorch, or jax as backend for creating your models.
+The [antspy](https://www.github.com/antsx/antspy) package is a key dependency that allows you to efficiently read, operate on, and visualize medical images. Additionally, you can use keras (tf.keras or keras3), tensorflow, pytorch, or jax as backend for creating your models.
 
 <br />
 
@@ -170,11 +170,11 @@ my_tx = tx.CustomTransform(lambda x: x * 2)
 If you want to explore what a transform does, you can take a sample of it over any number of trials on the same image and then plot the results:
 
 ```python
-import ntimage as nt
+import ants
 import numpy as np
 from nitrain import transforms as tx
 
-img = nt.load(nt.example_data('r16'))
+img = ants.image_read(ants.get_data('r16'))
 
 my_tx = tx.RandomSmoothing(0, 2)
 imgs = my_tx.sample(img, n=12)

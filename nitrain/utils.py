@@ -1,6 +1,6 @@
 
 import os
-import ntimage as nti
+import ants
 import numpy as np
 
 def get_nitrain_dir():

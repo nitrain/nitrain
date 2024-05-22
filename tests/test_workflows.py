@@ -7,7 +7,7 @@ import tempfile
 import numpy as np
 import numpy.testing as nptest
 
-import ntimage as nti
+import ants
 import nitrain as nt
 from nitrain import transforms as tx
 from nitrain.readers import ImageReader
@@ -61,7 +61,7 @@ class TestClass_OneInput_OneOutput(unittest.TestCase):
         y_pred = predictor.predict(data_test)
     
     def test_multiclass_segmentation(self):
-        import ntimage as nti
+        import ants
         import nitrain as nt
         from nitrain import transforms as tx
         from nitrain.readers import ImageReader

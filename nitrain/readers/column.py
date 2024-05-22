@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-import ntimage as nti
+import ants
 
 from tempfile import NamedTemporaryFile
 from google.cloud import storage
@@ -111,7 +111,7 @@ class ColumnReader:
     def __getitem__(self, idx):
         value = self.values[idx]
         if self.is_image:
-            value = nti.load(value)
+            value = ants.image_read(value)
         return {self.label: value}
 
     def __len__(self):

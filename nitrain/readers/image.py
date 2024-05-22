@@ -8,12 +8,12 @@ from google.oauth2 import service_account
 
 import pandas as pd
 import numpy as np
-import ntimage as nti
+import ants
 
 class ImageReader:
     def __init__(self, pattern, base_dir=None, exclude=None, label=None):
         """
-        >>> import ntimage as nt
+        >>> import ants
         >>> from nitrain.readers import ImageReader
         >>> reader = ImageReader('volumes/*.nii')
         >>> reader.map_values(base_dir='~/Desktop/kaggle-liver-ct/')
@@ -120,7 +120,7 @@ class ImageReader:
                 self.label = 'pattern'
                 
     def __getitem__(self, idx):
-        return {self.label: nti.load(self.values[idx])}
+        return {self.label: ants.image_read(self.values[idx])}
     
     def __len__(self):
         return len(self.values)

@@ -7,7 +7,7 @@ from tempfile import mktemp
 import numpy as np
 import numpy.testing as nptest
 
-import ntimage as nti
+import ants
 import nitrain as nt
 from nitrain import samplers, transforms as tx
 
@@ -15,7 +15,7 @@ from nitrain.samplers.slice import create_slices
 
 class TestClass_BaseSampler(unittest.TestCase):
     def setUp(self):
-        img = nti.load(nti.example_data('mni'))
+        img = ants.image_read(ants.get_data('mni'))
         x = [img for _ in range(5)]
         y = list(range(5))
         self.dataset = nt.Dataset(x, y)
@@ -24,8 +24,8 @@ class TestClass_BaseSampler(unittest.TestCase):
         pass
     
     def test_create_slices(self):
-        img = nti.zeros((5,5,5))
-        img2 = nti.ones((10,10,5))
+        img = ants.from_numpy(np.zeros((5,5,5)))
+        img2 = ants.from_numpy(np.ones((10,10,5)))
         x = create_slices([img,img,img], -1)
         self.assertEqual(len(x), 15)
         self.assertEqual(x[0].shape, (5,5))
@@ -38,8 +38,8 @@ class TestClass_BaseSampler(unittest.TestCase):
         self.assertEqual(x[1][0].shape, (10,10))
         
     def test_nested_slices(self):
-        img = nti.zeros((5,5,5))
-        img2 = nti.ones((10,10,5))
+        img = ants.from_numpy(np.zeros((5,5,5)))
+        img2 = ants.from_numpy(np.ones((10,10,5)))
         x3 = create_slices([[[img,img2],[img2]],[[img,img2],[img2]],[[img,img2],[img2]]],-1)
         
         self.assertEqual(len(x3), 2)
@@ -50,11 +50,11 @@ class TestClass_BaseSampler(unittest.TestCase):
         self.assertEqual(len(x3[1][0]), 15)
         
     def test_loader_slices(self):
-        import ntimage as nti
+        import ants
         import nitrain as nt
         from nitrain.samplers import SliceSampler
-        imgs = [nti.ones((8,8,5)) for _ in range(5)]
-        imgs3 = [nti.ones((12,12,5))+2 for _ in range(5)]
+        imgs = [ants.from_numpy(np.ones((8,8,5))) for _ in range(5)]
+        imgs3 = [ants.from_numpy(np.ones((12,12,5)))+2 for _ in range(5)]
         ds = nt.Dataset(imgs, imgs3)
         loader = nt.Loader(ds, 
                            images_per_batch=4,
@@ -64,8 +64,8 @@ class TestClass_BaseSampler(unittest.TestCase):
         self.assertEqual(xb.shape, (15, 8, 8, 1))
         self.assertEqual(yb.shape, (15, 12, 12, 1))
         
-        imgs = [nti.ones((8,8,5))+i for i in range(5)]
-        imgs3 = [nti.ones((12,12,5))+2 for _ in range(5)]
+        imgs = [ants.from_numpy(np.ones((8,8,5)))+i for i in range(5)]
+        imgs3 = [ants.from_numpy(np.ones((12,12,5)))+2 for _ in range(5)]
         ds = nt.Dataset(imgs, imgs3)
         loader = nt.Loader(ds, 
                            images_per_batch=1,
@@ -79,12 +79,12 @@ class TestClass_BaseSampler(unittest.TestCase):
         
         
     def test_loader_multi_slices(self):
-        import ntimage as nti
+        import ants
         import nitrain as nt
         from nitrain.samplers import SliceSampler
-        imgs = [nti.ones((8,8,5)) for _ in range(5)]
-        imgs2 = [nti.ones((10,10,5))+1 for _ in range(5)]
-        imgs3 = [nti.ones((12,12,5))+2 for _ in range(5)]
+        imgs = [ants.from_numpy(np.ones((8,8,5))) for _ in range(5)]
+        imgs2 = [ants.from_numpy(np.ones((10,10,5)))+1 for _ in range(5)]
+        imgs3 = [ants.from_numpy(np.ones((12,12,5)))+2 for _ in range(5)]
         ds = nt.Dataset([imgs, imgs2], imgs3)
         
         loader = nt.Loader(ds, 

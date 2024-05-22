@@ -6,7 +6,7 @@ import shutil
 import pandas as pd
 
 import numpy as np
-import ntimage as nti
+import ants
 import nitrain as nt
 from nitrain import readers, transforms as tx
 
@@ -21,7 +21,7 @@ class TestClass_Dataset(unittest.TestCase):
     
     def test_memory(self):
         dataset = nt.Dataset(
-            inputs = [nti.ones((128,128))*i for i in range(10)],
+            inputs = [ants.from_numpy(np.ones((128,128)))*i for i in range(10)],
             outputs = [i for i in range(10)]
         )
         self.assertEqual(len(dataset), 10)
@@ -29,14 +29,14 @@ class TestClass_Dataset(unittest.TestCase):
         x, y = dataset[4]
         
         self.assertEqual(y, 4)
-        self.assertTrue(nti.is_image(x))
+        self.assertTrue(ants.is_image(x))
         self.assertEqual(x.mean(), 4)
         
         # test repr
         r = dataset.__repr__()
         
     def test_multiple_memory(self):
-        x = [nti.example('r16') for _ in range(10)]
+        x = [ants.image_read(ants.get_data('r16')) for _ in range(10)]
         y = list(range(10))
         dataset = nt.Dataset([x, x], y)
         xx, yy = dataset[0]
@@ -53,9 +53,9 @@ class TestClass_Dataset(unittest.TestCase):
         
     def test_memory_dict_inputs(self):
         dataset = nt.Dataset(
-            inputs={'x':readers.MemoryReader([nti.example('mni') for _ in range(10)]),
-                    'y':readers.MemoryReader([nti.example('mni') for _ in range(10)])},
-            outputs=readers.MemoryReader([nti.example('mni') for _ in range(10)])
+            inputs={'x':readers.MemoryReader([ants.image_read(ants.get_data('mni')) for _ in range(10)]),
+                    'y':readers.MemoryReader([ants.image_read(ants.get_data('mni')) for _ in range(10)])},
+            outputs=readers.MemoryReader([ants.image_read(ants.get_data('mni')) for _ in range(10)])
         )
         x, y = dataset[0]
         self.assertEqual(len(x), 2)
@@ -66,9 +66,9 @@ class TestClass_Dataset(unittest.TestCase):
     
     def test_memory_dict_inputs_with_transform(self):
         dataset = nt.Dataset(
-            inputs={'x':readers.MemoryReader([nti.example('mni') for _ in range(10)]),
-                    'y':readers.MemoryReader([nti.example('mni') for _ in range(10)])},
-            outputs=readers.MemoryReader([nti.example('mni') for _ in range(10)]),
+            inputs={'x':readers.MemoryReader([ants.image_read(ants.get_data('mni')) for _ in range(10)]),
+                    'y':readers.MemoryReader([ants.image_read(ants.get_data('mni')) for _ in range(10)])},
+            outputs=readers.MemoryReader([ants.image_read(ants.get_data('mni')) for _ in range(10)]),
             transforms={
                 'y': [tx.Astype('uint8')]
             }
@@ -82,7 +82,7 @@ class TestClass_Dataset(unittest.TestCase):
         
     def test_memory_array(self):
         dataset = nt.Dataset(
-            inputs = [nti.ones((128,128))*i for i in range(10)],
+            inputs = [ants.from_numpy(np.ones((128,128)))*i for i in range(10)],
             outputs = np.array([i for i in range(10)])
         )
         self.assertEqual(len(dataset), 10)
@@ -90,7 +90,7 @@ class TestClass_Dataset(unittest.TestCase):
         x, y = dataset[4]
         
         self.assertEqual(y, 4)
-        self.assertTrue(nti.is_image(x))
+        self.assertTrue(ants.is_image(x))
         self.assertEqual(x.mean(), 4)
         
         # test repr
@@ -98,8 +98,8 @@ class TestClass_Dataset(unittest.TestCase):
         
     def test_memory_double_inputs(self):
         dataset = nt.Dataset(
-            inputs = [readers.MemoryReader([nti.ones((128,128))*i for i in range(10)]),
-                      readers.MemoryReader([nti.ones((128,128))*i*2 for i in range(10)])],
+            inputs = [readers.MemoryReader([ants.from_numpy(np.ones((128,128)))*i for i in range(10)]),
+                      readers.MemoryReader([ants.from_numpy(np.ones((128,128)))*i*2 for i in range(10)])],
             outputs = [i for i in range(10)]
         )
         self.assertEqual(len(dataset), 10)
@@ -107,8 +107,8 @@ class TestClass_Dataset(unittest.TestCase):
         x, y = dataset[4]
         
         self.assertTrue(len(x), 2)
-        self.assertTrue(nti.is_image(x[0]))
-        self.assertTrue(nti.is_image(x[1]))
+        self.assertTrue(ants.is_image(x[0]))
+        self.assertTrue(ants.is_image(x[1]))
         self.assertEqual(x[0].mean(), 4)
         self.assertEqual(x[1].mean(), 8)
         self.assertEqual(y, 4)
@@ -129,8 +129,8 @@ class TestClass_CSVDataset(unittest.TestCase):
     def setUp(self):
         # set up directory
         tmp_dir = mkdtemp()
-        img2d = nti.load(nti.example_data('r16'))
-        img3d = nti.load(nti.example_data('mni'))
+        img2d = ants.image_read(ants.get_data('r16'))
+        img3d = ants.image_read(ants.get_data('mni'))
         
         filenames_2d = []
         filenames_3d = []
@@ -139,11 +139,11 @@ class TestClass_CSVDataset(unittest.TestCase):
             os.mkdir(sub_dir)
             filepath_2d = os.path.join(sub_dir, 'img2d.nii.gz')
             filenames_2d.append(filepath_2d)
-            nti.save(img2d, filepath_2d)
+            ants.image_write(img2d, filepath_2d)
             
             filepath_3d = os.path.join(sub_dir, 'img3d.nii.gz')
             filenames_3d.append(filepath_3d)
-            nti.save(img3d, filepath_3d)
+            ants.image_write(img3d, filepath_3d)
         
         # write csv file
         ids = [f'sub_{i}' for i in range(5)]
@@ -174,7 +174,7 @@ class TestClass_CSVDataset(unittest.TestCase):
         
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
-        self.assertTrue(nti.is_image(x[0]))
+        self.assertTrue(ants.is_image(x[0]))
         self.assertEqual(y, [50, 51])
         
         # test repr
@@ -193,7 +193,7 @@ class TestClass_CSVDataset(unittest.TestCase):
         
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
-        self.assertTrue(nti.is_image(x[0]))
+        self.assertTrue(ants.is_image(x[0]))
         self.assertEqual(y, [50, 51])
 
     def test_missing_file(self):
@@ -208,13 +208,13 @@ class TestClass_FolderDataset(unittest.TestCase):
     def setUp(self):
         # set up directory
         tmp_dir = mkdtemp()
-        img2d = nti.load(nti.example_data('r16'))
-        img3d = nti.load(nti.example_data('mni'))
+        img2d = ants.image_read(ants.get_data('r16'))
+        img3d = ants.image_read(ants.get_data('mni'))
         for i in range(5):
             sub_dir = os.path.join(tmp_dir, f'sub_{i}')
             os.mkdir(sub_dir)
-            nti.save(img2d, os.path.join(sub_dir, 'img2d.nii.gz'))
-            nti.save(img3d, os.path.join(sub_dir, 'img3d.nii.gz'))
+            ants.image_write(img2d, os.path.join(sub_dir, 'img2d.nii.gz'))
+            ants.image_write(img3d, os.path.join(sub_dir, 'img3d.nii.gz'))
         
         # write csv file
         ids = [f'sub_{i}' for i in range(5)]
@@ -241,7 +241,7 @@ class TestClass_FolderDataset(unittest.TestCase):
         
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
-        self.assertTrue(nti.is_image(x[0]))
+        self.assertTrue(ants.is_image(x[0]))
         self.assertEqual(y, [50, 51])
         
         # test split
@@ -284,8 +284,8 @@ class TestClass_FolderDataset(unittest.TestCase):
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
         self.assertTrue(len(x[0]) == 2)
-        self.assertTrue(nti.is_image(x[0][0]))
-        self.assertTrue(nti.is_image(x[0][1]))
+        self.assertTrue(ants.is_image(x[0][0]))
+        self.assertTrue(ants.is_image(x[0][1]))
         self.assertEqual(y, [50, 51])
 
     def test_2d_image_to_3d_image(self):
@@ -302,7 +302,7 @@ class TestClass_FolderDataset(unittest.TestCase):
         x, y = dataset[:2]
         self.assertTrue(len(x) == 2)
         self.assertTrue(len(y) == 2)
-        self.assertTrue(nti.is_image(x[0]))
+        self.assertTrue(ants.is_image(x[0]))
         self.assertEqual(x[0].dimension, 2)
         self.assertEqual(y[0].dimension, 3)
 
@@ -343,9 +343,9 @@ class TestOther_Bugs(unittest.TestCase):
     
     def test_multi_input_dict_transform(self):
         dataset = nt.Dataset(
-            inputs={'x':readers.MemoryReader([nti.example('mni') for _ in range(10)]),
-                    'y':readers.MemoryReader([nti.example('mni') for _ in range(10)])},
-            outputs=readers.MemoryReader([nti.example('mni') for _ in range(10)]),
+            inputs={'x':readers.MemoryReader([ants.image_read(ants.get_data('mni')) for _ in range(10)]),
+                    'y':readers.MemoryReader([ants.image_read(ants.get_data('mni')) for _ in range(10)])},
+            outputs=readers.MemoryReader([ants.image_read(ants.get_data('mni')) for _ in range(10)]),
             transforms={
                 'x': [tx.Astype('uint8')]
             }
@@ -364,9 +364,9 @@ class TestOther_Bugs(unittest.TestCase):
         
     def test_multi_input_dict_transform_no_list(self):
         dataset = nt.Dataset(
-            inputs={'x':readers.MemoryReader([nti.example('mni') for _ in range(10)]),
-                    'y':readers.MemoryReader([nti.example('mni') for _ in range(10)])},
-            outputs=readers.MemoryReader([nti.example('mni') for _ in range(10)]),
+            inputs={'x':readers.MemoryReader([ants.image_read(ants.get_data('mni')) for _ in range(10)]),
+                    'y':readers.MemoryReader([ants.image_read(ants.get_data('mni')) for _ in range(10)])},
+            outputs=readers.MemoryReader([ants.image_read(ants.get_data('mni')) for _ in range(10)]),
             transforms={
                 'x': tx.Astype('uint8')
             }

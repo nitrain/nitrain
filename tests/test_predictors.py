@@ -7,7 +7,7 @@ import tempfile
 import numpy as np
 import numpy.testing as nptest
 
-import ntimage as nti
+import ants
 import nitrain as nt
 from nitrain import transforms as tx
 from nitrain.readers import ImageReader
@@ -66,7 +66,7 @@ class TestClass_Predictor(unittest.TestCase):
                                  sampler=SliceSampler(axis=-1))
         y_pred = predictor.predict(dataset)
         
-        self.assertTrue(nti.is_image(y_pred[0]))
+        self.assertTrue(ants.is_image(y_pred[0]))
         self.assertEqual(y_pred[0].shape, (40,40,40))
         self.assertEqual(len(y_pred), len(dataset))
         

@@ -6,7 +6,7 @@ import shutil
 import pandas as pd
 
 import numpy as np
-import ntimage as nti
+import ants
 import nitrain as nt
 
 from main import run_tests
@@ -19,37 +19,37 @@ class TestClass_MemoryInferred(unittest.TestCase):
         pass
     
     def test_single_single(self):
-        imgs = [nti.example('r16') for _ in range(10)]
+        imgs = [ants.image_read(ants.get_data('r16')) for _ in range(10)]
         ds = nt.Dataset(imgs, imgs)
         x, y = ds[0]
         
-        self.assertTrue(nti.is_image(x))
-        self.assertTrue(nti.is_image(y))
+        self.assertTrue(ants.is_image(x))
+        self.assertTrue(ants.is_image(y))
         
         x, y = ds[:2]
         self.assertEqual(len(x), 2)
         self.assertEqual(len(y), 2)
-        self.assertTrue(nti.is_image(x[0]))
-        self.assertTrue(nti.is_image(y[0]))
+        self.assertTrue(ants.is_image(x[0]))
+        self.assertTrue(ants.is_image(y[0]))
         
     def test_multi_single(self):
-        imgs = [nti.zeros((10,10)) for _ in range(5)]
-        imgs2 = [nti.ones((10,10)) for _ in range(5)]
+        imgs = [ants.from_numpy(np.zeros((10,10))) for _ in range(5)]
+        imgs2 = [ants.from_numpy(np.ones((10,10))) for _ in range(5)]
         ds = nt.Dataset([imgs, imgs2], imgs)
         x, y = ds[0]
         
     def test_multi_multi(self):
-        imgs = [nti.zeros((10,10)) for _ in range(5)]
-        imgs2 = [nti.ones((10,10)) for _ in range(5)]
+        imgs = [ants.from_numpy(np.zeros((10,10))) for _ in range(5)]
+        imgs2 = [ants.from_numpy(np.ones((10,10))) for _ in range(5)]
         ds = nt.Dataset([imgs, imgs2], [imgs, imgs2])
         x, y = ds[0]
 
     def test_nested_single(self):
         import nitrain as nt
-        import ntimage as nti
-        imgs = [nti.zeros((10,10)) for _ in range(5)]
-        imgs2 = [nti.ones((10,10)) for _ in range(5)]
-        imgs3 = [nti.ones((10,10))+1 for _ in range(5)]
+        import ants
+        imgs = [ants.from_numpy(np.zeros((10,10))) for _ in range(5)]
+        imgs2 = [ants.from_numpy(np.ones((10,10))) for _ in range(5)]
+        imgs3 = [ants.from_numpy(np.ones((10,10)))+1 for _ in range(5)]
         ds = nt.Dataset([[imgs, imgs2], imgs3], imgs)
         x, y = ds[0]
         
@@ -62,9 +62,9 @@ class TestClass_MemoryInferred(unittest.TestCase):
         self.assertEqual(y.shape, (10,10))
         
     def test_nested_multi(self):
-        imgs = [nti.zeros((10,10)) for _ in range(5)]
-        imgs2 = [nti.ones((10,10)) for _ in range(5)]
-        imgs3 = [nti.ones((10,10))+1 for _ in range(5)]
+        imgs = [ants.from_numpy(np.zeros((10,10))) for _ in range(5)]
+        imgs2 = [ants.from_numpy(np.ones((10,10))) for _ in range(5)]
+        imgs3 = [ants.from_numpy(np.ones((10,10)))+1 for _ in range(5)]
         ds = nt.Dataset([[imgs, imgs2], imgs3], [imgs, imgs2])
         x, y = ds[0]
         
@@ -87,36 +87,36 @@ class TestClass_MemoryDictionaryInferred(unittest.TestCase):
         pass
     
     def test_single_single_dict(self):
-        imgs = [nti.example('r16') for _ in range(10)]
+        imgs = [ants.image_read(ants.get_data('r16')) for _ in range(10)]
         ds = nt.Dataset({'x': imgs}, 
                         {'y': imgs})
         x, y = ds[0]
         
-        self.assertTrue(nti.is_image(x))
-        self.assertTrue(nti.is_image(y))
+        self.assertTrue(ants.is_image(x))
+        self.assertTrue(ants.is_image(y))
         
         x, y = ds[:2]
         self.assertEqual(len(x), 2)
         self.assertEqual(len(y), 2)
-        self.assertTrue(nti.is_image(x[0]))
-        self.assertTrue(nti.is_image(y[0]))
+        self.assertTrue(ants.is_image(x[0]))
+        self.assertTrue(ants.is_image(y[0]))
         
     def test_multi_single_dict(self):
-        imgs = [nti.zeros((10,10)) for _ in range(5)]
-        imgs2 = [nti.ones((10,10)) for _ in range(5)]
+        imgs = [ants.from_numpy(np.zeros((10,10))) for _ in range(5)]
+        imgs2 = [ants.from_numpy(np.ones((10,10))) for _ in range(5)]
         ds = nt.Dataset({'x': imgs, 'y': imgs2}, {'z': imgs})
         x, y = ds[0]
         
     def test_multi_multi_dict(self):
-        imgs = [nti.zeros((10,10)) for _ in range(5)]
-        imgs2 = [nti.ones((10,10)) for _ in range(5)]
+        imgs = [ants.from_numpy(np.zeros((10,10))) for _ in range(5)]
+        imgs2 = [ants.from_numpy(np.ones((10,10))) for _ in range(5)]
         ds = nt.Dataset({'x': imgs, 'y': imgs2}, {'a': imgs, 'b': imgs2})
         x, y = ds[0]
 
     def test_nested_single_dict(self):
-        imgs = [nti.zeros((10,10)) for _ in range(5)]
-        imgs2 = [nti.ones((10,10)) for _ in range(5)]
-        imgs3 = [nti.ones((10,10))+1 for _ in range(5)]
+        imgs = [ants.from_numpy(np.zeros((10,10))) for _ in range(5)]
+        imgs2 = [ants.from_numpy(np.ones((10,10))) for _ in range(5)]
+        imgs3 = [ants.from_numpy(np.ones((10,10)))+1 for _ in range(5)]
         ds = nt.Dataset({'xy': {'x': imgs, 'y': imgs2}, 'z': imgs3}, {'a': imgs})
         x, y = ds[0]
         
@@ -129,9 +129,9 @@ class TestClass_MemoryDictionaryInferred(unittest.TestCase):
         self.assertEqual(y.shape, (10,10))
         
     def test_nested_multi_dict(self):
-        imgs = [nti.zeros((10,10)) for _ in range(5)]
-        imgs2 = [nti.ones((10,10)) for _ in range(5)]
-        imgs3 = [nti.ones((10,10))+1 for _ in range(5)]
+        imgs = [ants.from_numpy(np.zeros((10,10))) for _ in range(5)]
+        imgs2 = [ants.from_numpy(np.ones((10,10))) for _ in range(5)]
+        imgs3 = [ants.from_numpy(np.ones((10,10)))+1 for _ in range(5)]
         ds = nt.Dataset({'xy': {'x': imgs, 'y': imgs2}, 'z': imgs3}, 
                         {'a': imgs, 'b': imgs2})
         x, y = ds[0]

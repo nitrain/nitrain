@@ -7,7 +7,7 @@ from tempfile import mktemp
 import numpy as np
 import numpy.testing as nptest
 
-import ntimage as nti
+import ants
 import nitrain as nt
 from nitrain import samplers, readers, transforms as tx
 from nitrain.readers import ImageReader
@@ -16,8 +16,8 @@ from nitrain.loaders.loader import record_generator
 
 class TestClass_DatasetLoader(unittest.TestCase):
     def setUp(self):
-        img2d = nti.load(nti.example_data('r16'))
-        img3d = nti.load(nti.example_data('mni'))
+        img2d = ants.image_read(ants.get_data('r16'))
+        img3d = ants.image_read(ants.get_data('mni'))
         
         x = [img2d for _ in range(10)]
         y = list(range(10))
@@ -36,14 +36,14 @@ class TestClass_DatasetLoader(unittest.TestCase):
         pass
     
     def test_2d(self):
-        import ntimage as nti
+        import ants
         import nitrain as nt
         from nitrain import samplers, readers, transforms as tx
         from nitrain.readers import ImageReader
         from nitrain.samplers import SliceSampler
         from nitrain.loaders.loader import record_generator
-        img2d = nti.load(nti.example_data('r16'))
-        img3d = nti.load(nti.example_data('mni'))
+        img2d = ants.image_read(ants.get_data('r16'))
+        img3d = ants.image_read(ants.get_data('mni'))
         
         x = [img2d for _ in range(10)]
         y = list(range(10))
@@ -72,7 +72,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
         xb,yb = next(iter(gen))
         
     def test_keras_multi(self):
-        img2d = nti.load(nti.example_data('r16'))
+        img2d = ants.image_read(ants.get_data('r16'))
         x = [img2d for _ in range(10)]
         y = list(range(10))
 
@@ -114,7 +114,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
         xb,yb = next(iter(gen))
     
     def test_image_to_image(self):
-        img = nti.load(nti.example_data('r16'))
+        img = ants.image_read(ants.get_data('r16'))
         x = [img for _ in range(10)]
         dataset = nt.Dataset(x, x)
         loader = nt.Loader(dataset, images_per_batch=4)
@@ -134,9 +134,9 @@ class TestClass_DatasetLoader(unittest.TestCase):
         xb,yb = next(iter(gen))
 
     def test_multi_image_to_image(self):
-        import ntimage as nti
+        import ants
         import nitrain as nt
-        img = nti.zeros_like(nti.example('r16'))
+        img = ants.from_numpy(np.zeros((256,256)))
         dataset = nt.Dataset([[img for _ in range(10)], 
                               [img for _ in range(10)]],
                              [img for _ in range(10)])
@@ -159,7 +159,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
         xb,yb = next(iter(gen))
     
     def test_image_to_image_with_slice_sampler(self):
-        img = nti.load(nti.example_data('mni'))
+        img = ants.image_read(ants.get_data('mni'))
         x = [img for _ in range(10)]
         dataset = nt.Dataset(x, x)
         loader = nt.Loader(dataset, 
@@ -211,7 +211,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
                 
     def test_transforms(self):
         import nitrain as nt
-        import ntimage as nti
+        import ants
         from nitrain.readers import ImageReader
         from nitrain.samplers import SliceSampler
         from nitrain import transforms as tx
@@ -253,7 +253,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
                             outputs=ImageReader('*/img3d_multiseg.nii.gz'),
                             transforms={
                                     ('inputs','outputs'): tx.Resample((40,40,40)),
-                                    'inputs': tx.ExpandDims(),
+                                    'inputs': tx.AddChannel(),
                                     'outputs': tx.LabelsToChannels()
                             },
                             base_dir=base_dir)

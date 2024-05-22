@@ -5,7 +5,7 @@ from fnmatch import fnmatch
 
 import pandas as pd
 import numpy as np
-import ntimage as nti
+import ants
 
 class MemoryReader:
     def __init__(self, data, label=None):
@@ -17,7 +17,7 @@ class MemoryReader:
         self.values = data
         self.label = label
         
-        if nti.is_image(data[0]):
+        if ants.is_image(data[0]):
             self.as_image = True
         else:
             self.as_image = False

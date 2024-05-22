@@ -1,5 +1,5 @@
 import numpy as np
-import ntimage as nti
+import ants
 
 from ..loaders import Loader
 
@@ -59,7 +59,7 @@ class Predictor:
             if y_pred.ndim > 1:
                 if self.task == 'segmentation' or self.task == 'classification':
                     y_pred = np.round(y_pred).astype('uint8')
-                y_pred = nti.from_numpy(y_pred)
+                y_pred = ants.from_numpy(y_pred)
                 
             y_pred_list.append(y_pred)
 

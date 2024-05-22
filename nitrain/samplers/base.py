@@ -1,7 +1,7 @@
 import numpy as np
 import random
 
-import ntimage as nti
+import ants
 
 class BaseSampler:
     """

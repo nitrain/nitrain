@@ -1,51 +1,38 @@
+import ants
+
 from .base import BaseTransform
 
 __all__ = [
-    'ExpandDims',
-    'Reorient',
-    'Rollaxis',
-    'Repeat',
-    'Swapaxes'
+    'AddChannel',
+    'Reorient'
 ]
 
-class ExpandDims(BaseTransform):
-    def __init__(self, axis=-1):
-        self.axis = axis
+class AddChannel(BaseTransform):
+    def __init__(self):
+        """
+        import ants
+        from nitrain import transforms as tx
+        img = ants.image_read(ants.get_data('r16'))
+        mytx = tx.AddChannel()
+        img2 = mytx(img)
+        """
+        pass
         
     def __call__(self, *images):
-        images = [image.expand_dims(self.axis) for image in images]
+        images = [ants.merge_channels([image]) for image in images]
         return images if len(images) > 1 else images[0]
 
 class Reorient(BaseTransform):
     def __init__(self, orientation):
+        """
+        import ants
+        from nitrain import transforms as tx
+        img = ants.image_read(ants.get_data('mni'))
+        mytx = tx.Reorient('RAS')
+        img2 = mytx(img)
+        """
         self.orientation = orientation
         
     def __call__(self, *images):
-        images = [image.reorient(self.orientation) for image in images]
-        return images if len(images) > 1 else images[0]
-
-
-class Rollaxis(BaseTransform):
-    def __init__(self, axis, start=0):
-        self.axis = axis
-        self.start = start
-        
-    def __call__(self, *images):
-        images = [image.rollaxis(self.axis, self.start) for image in images]
-        return images if len(images) > 1 else images[0]
-    
-class Repeat(BaseTransform):
-    def __init__(self, n):
-        self.n = n
-    def __call__(self, *images):
-        images = [image.repeat(self.n) for image in images]
-        return images if len(images) > 1 else images[0]
-
-class Swapaxes(BaseTransform):
-    def __init__(self, axis1, axis2):
-        self.axis1 = axis1
-        self.axis2 = axis2
-        
-    def __call__(self, *images):
-        images = [image.swapaxes(self.axis1, self.axis2) for image in images]
+        images = [image.reorient_image2(self.orientation) for image in images]
         return images if len(images) > 1 else images[0]

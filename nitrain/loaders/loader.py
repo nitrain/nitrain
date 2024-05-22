@@ -1,7 +1,7 @@
 import math
 import numpy as np
 import warnings
-import ntimage as nti
+import ants
 from copy import deepcopy
 
 from .. import samplers, transforms as tx
@@ -66,7 +66,7 @@ class Loader:
                 x_spec = tuple([tf.type_spec_from_value(xb[0]) for xb in x_batch])
             else:
                 x_spec = tf.type_spec_from_value(x_batch[0])
-            if isinstance(y_batch, list) and nti.is_image(y_batch[0]):
+            if isinstance(y_batch, list) and ants.is_image(y_batch[0]):
                 y_spec = tuple([tf.type_spec_from_value(yb[0]) for yb in y_batch])
             else:
                 y_spec = tf.type_spec_from_value(y_batch[0])
@@ -145,23 +145,26 @@ def transform_records(x_list, y_list, transforms):
     
 def convert_to_numpy(x):
     """
-    img = nti.example('r16')
+    img = ants.image_read(ants.get_data('r16'))
     x = [[img,img,img], [img, img, img]]
     x2 = convert_to_numpy(x)
     """
     if isinstance(x[0], list):
         return [convert_to_numpy(xx) for xx in x]
-    if nti.is_image(x[0]):
+    if ants.is_image(x[0]):
         return np.array([xx.numpy() for xx in x])
     else:
         return np.array(x)
 
 def expand_image_dims(x):
-    mytx = tx.ExpandDims()
+    mytx = tx.AddChannel()
     if isinstance(x, list):
         return [expand_image_dims(xx) for xx in x]
     else:
-        return mytx(x) if nti.is_image(x) and not nti.has_channels(x) else x
+        if ants.is_image(x):
+            return mytx(x) if not x.has_components else x
+        else:
+            return x
     
 def record_generator(loader):
     """
