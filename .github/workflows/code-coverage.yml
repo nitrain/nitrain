@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-python@v5
 
       - name: Install antspy
-        run: python -m pip install git+https://github.com/antx/antspy.git
+        run: python -m pip install git+https://github.com/antsx/antspy.git
 
       - name: Install package
         run: python -m pip install .
