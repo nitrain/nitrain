@@ -10,7 +10,7 @@ __all__ = [
     'Shear',
     'Rotate',
     'Zoom',
-    'Flip',
+    'Reflect',
     'Translate'
 ]
 
@@ -184,26 +184,111 @@ class Rotate(BaseTransform):
             new_images.append(new_image)
         return new_images if len(new_images) > 1 else new_images[0]
 
-class Zoom(BaseTransform):
-    def __init__(self, scale):
-        self.scale = scale
+class Zoom(object):
+    def __init__(self, zoom, reference=None):
+        """
+        import ants
+        from nitrain import transforms as tx
+        img = ants.image_read(ants.get_data('r16'))
+        mytx = tx.Zoom((0.9, 0.9))
+        img2 = mytx(img)
         
-    def __call__(self, *images):
-        images = [image.zoom(self.scale) for image in images]
-        return images if len(images) > 1 else images[0]
+        img = ants.image_read(ants.get_data('mni'))
+        mytx = tx.Zoom((0.9, 0.9, 0.9))
+        img2 = mytx(img)
+        """
+        if not isinstance(zoom, (list, tuple)):
+            raise Exception("The zoom argument must be list or tuple.")
 
-class Flip(BaseTransform):
-    def __init__(self, axis):
+        self.zoom = zoom
+        self.reference = reference
+
+        self.tx = ants.new_ants_transform(
+            precision="float", dimension=len(zoom), transform_type="AffineTransform"
+        )
+        if self.reference is not None:
+            self.tx.set_fixed_parameters(self.reference.get_center_of_mass())
+
+    def __call__(self, *images):
+        zoom = self.zoom
+        
+        if len(zoom) == 2:
+            zoom_matrix = np.array([[1/zoom[0], 0, 0], 
+                                    [0, 1/zoom[1], 0]])
+        elif len(zoom) == 3:
+            zoom_matrix = np.array([[1/zoom[0], 0, 0, 0], 
+                                    [0, 1/zoom[1], 0, 0],
+                                    [0, 0, 1/zoom[2], 0]])
+            
+        self.tx.set_parameters(zoom_matrix)
+        
+        new_images = []
+        for image in images:
+            if not self.reference:
+                self.tx.set_fixed_parameters(image.get_center_of_mass())
+            new_image = self.tx.apply_to_image(image, self.reference)
+            new_images.append(new_image)
+        return new_images if len(new_images) > 1 else new_images[0]
+
+
+class Translate(object):
+    def __init__(self, translation, reference=None):
+        """
+        import ants
+        from nitrain import transforms as tx
+        img = ants.image_read(ants.get_data('r16'))
+        mytx = tx.Translate((10, 30))
+        img2 = mytx(img)
+        
+        img = ants.image_read(ants.get_data('mni'))
+        mytx = tx.Translate((30, 30,20))
+        img2 = mytx(img)
+        """
+        if not isinstance(translation, (list, tuple)):
+            raise Exception("The translation argument must be list or tuple.")
+
+        self.translation = translation
+        self.reference = reference
+
+        self.tx = ants.new_ants_transform(
+            precision="float", dimension=len(translation), transform_type="AffineTransform"
+        )
+        if self.reference is not None:
+            self.tx.set_fixed_parameters(self.reference.get_center_of_mass())
+
+    def __call__(self, *images):
+        translation = self.translation
+        
+        if len(translation) == 2:
+            translation_matrix = np.array([[1, 0, translation[0]], 
+                                    [0, 1, translation[1]]])
+        elif len(translation) == 3:
+            translation_matrix = np.array([[1, 0, 0, 0], 
+                                    [0, 1, 0, 0],
+                                    [0, 0, 1, 0]])
+            
+        self.tx.set_parameters(translation_matrix)
+        
+        new_images = []
+        for image in images:
+            if not self.reference:
+                self.tx.set_fixed_parameters(image.get_center_of_mass())
+            new_image = self.tx.apply_to_image(image, self.reference)
+            new_images.append(new_image)
+        return new_images if len(new_images) > 1 else new_images[0]
+    
+class Reflect(BaseTransform):
+    
+    def __init__(self, axis=0):
+        """
+        import ants
+        from nitrain import transforms as tx
+        img = ants.image_read(ants.get_data('r16'))
+        mytx = tx.Reflect()
+        img2 = mytx(img)
+        """
         self.axis = axis
         
     def __call__(self, *images):
-        images = [image.flip(self.axis) for image in images]
-        return images if len(images) > 1 else images[0]
-
-class Translate(BaseTransform):
-    def __init__(self, translation):
-        self.translation = translation
-        
-    def __call__(self, *images):
-        images = [image.translate(self.translation) for image in images]
+        images = [ants.reflect_image(image, self.axis) for image in images]
         return images if len(images) > 1 else images[0]

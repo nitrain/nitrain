@@ -296,7 +296,7 @@ class TestClass_SpatialTransforms(unittest.TestCase):
         mytx = tx.Rotate((0,10,0))
         img2 = mytx(img)
         
-        # with refernece
+        # with reference
         img = ants.image_read(ants.get_data('r16'))
         mytx = tx.Rotate(10, img)
         img2 = mytx(img)
@@ -305,51 +305,53 @@ class TestClass_SpatialTransforms(unittest.TestCase):
         mytx = tx.Rotate((0,10,0), img)
         img2 = mytx(img)
         
-    #def test_Zoom(self):
-    #    img2d = ants.image_read(ants.get_data('r16'))
-    #    img3d = ants.image_read(ants.get_data('mni'))
-    #    
-    #    my_tx = tx.Zoom(0.9)
-    #    
-    #    img2d_tx = my_tx(img2d)
-    #    img3d_tx = my_tx(img3d)
-#
-    #    my_tx = tx.Zoom(1.1)
-    #    
-    #    img2d_tx = my_tx(img2d)
-    #    img3d_tx = my_tx(img3d)
+    def test_Zoom(self):
+        img2d = ants.image_read(ants.get_data('r16'))
+        img3d = ants.image_read(ants.get_data('mni'))
         
-    #def test_Flip(self):
-    #    img2d = ants.image_read(ants.get_data('r16'))
-    #    img3d = ants.image_read(ants.get_data('mni'))
-    #    
-    #    my_tx = tx.Flip(0)
-    #    
-    #    img2d_tx = my_tx(img2d)
-    #    img3d_tx = my_tx(img3d)
-#
-    #    my_tx = tx.Flip(1)
-    #    
-    #    img2d_tx = my_tx(img2d)
-    #    img3d_tx = my_tx(img3d)
+        my_tx = tx.Zoom((0.9, 0.9))
+        img2d_tx = my_tx(img2d)
+        
+        my_tx = tx.Zoom((0.9, 0.9, 0.9))
+        img3d_tx = my_tx(img3d)
+        
+        my_tx = tx.Zoom((1.1, 1.1))
+        img2d_tx = my_tx(img2d)
+        
+        my_tx = tx.Zoom((1.1, 1.1, 1.1))
+        img3d_tx = my_tx(img3d)
+        
+        with self.assertRaises(Exception):
+            my_tx = tx.Zoom(1)
+        
+    def test_Reflect(self):
+        img = ants.image_read(ants.get_data('r16'))
+        mytx = tx.Reflect()
+        img2 = mytx(img)
+        
+        img = ants.image_read(ants.get_data('mni'))
+        mytx = tx.Reflect()
+        img2 = mytx(img)
 
-    #def test_Translate(self):
-    #    img2d = ants.image_read(ants.get_data('r16'))
-    #    img3d = ants.image_read(ants.get_data('mni'))
-    #    
-    #    my_tx = tx.Translate(10)
-#
-    #    img2d_tx = my_tx(img2d)
-    #    img3d_tx = my_tx(img3d)
-#
-    #    my_tx = tx.Translate((10,0))
-    #    img2d_tx = my_tx(img2d)
-    #    
-    #    my_tx = tx.Translate((10,0,0))
-    #    img2d_tx = my_tx(img2d)
-    #       
-    #    img3d_tx = my_tx(img3d)
+    def test_Translate(self):
+        img2d = ants.image_read(ants.get_data('r16'))
+        img3d = ants.image_read(ants.get_data('mni'))
+        
+        my_tx = tx.Translate((10, 10))
+        img2d_tx = my_tx(img2d)
+        
+        my_tx = tx.Translate((10, 10, 10))
+        img3d_tx = my_tx(img3d)
 
+        my_tx = tx.Translate((10, 0))
+        img2d_tx = my_tx(img2d)
+        
+        my_tx = tx.Translate((10, 0, 0))   
+        img3d_tx = my_tx(img3d)
+
+        with self.assertRaises(Exception):
+            my_tx = tx.Translate(1)
+            
 #class TestLabels(unittest.TestCase):
 #    
 #    def setUp(self):
