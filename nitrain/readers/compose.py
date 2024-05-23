@@ -13,9 +13,11 @@ class ComposeReader:
         self.label = label
         
     def select(self, idx):
-        for reader in self.readers:
-            reader.select(idx)
-        self.values = list(zip(*[reader.values for reader in self.readers]))
+        new_reader = ComposeReader(self.readers)
+        new_reader.values = self.values
+        new_reader.readers = [reader.select(idx) for reader in new_reader.readers]
+        new_reader.values = list(zip(*[reader.values for reader in new_reader.readers]))
+        return new_reader
         
     def map_gcs_values(self, base_dir=None, base_file=None, base_label=None, bucket=None, credentials=None):
         for idx, reader in enumerate(self.readers):

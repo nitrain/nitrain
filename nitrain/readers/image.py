@@ -28,7 +28,10 @@ class ImageReader:
         self.label = label
     
     def select(self, idx):
-        self.values = [self.values[i] for i in idx]
+        new_reader = ImageReader(self.pattern, self.base_dir, self.exclude, self.label)
+        new_reader.values = self.values
+        new_reader.values = [new_reader.values[i] for i in idx]
+        return new_reader
         
     def map_gcs_values(self, bucket, credentials=None, base_dir=None, base_file=None, base_label=None):
         if base_dir is None:

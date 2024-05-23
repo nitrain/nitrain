@@ -314,6 +314,8 @@ class TestFunction_split(unittest.TestCase):
         pass
 
     def test_pattern_compose(self):
+        import nitrain as nt
+        from nitrain import readers
         base_dir = nt.fetch_data('example-01')
 
         dataset = nt.Dataset(inputs=[readers.ImageReader('*/img3d.nii.gz'),

@@ -23,7 +23,10 @@ class MemoryReader:
             self.as_image = False
             
     def select(self, idx):
-        self.values = [self.values[i] for i in idx]
+        new_reader = MemoryReader(self.values, self.label)
+        new_reader.values = self.values
+        new_reader.values = [new_reader.values[i] for i in idx]
+        return new_reader
         
     def map_values(self, base_dir=None, base_file=None, base_label=None):
         if self.label is None:
