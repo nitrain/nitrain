@@ -190,6 +190,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
         for i, (xbatch, ybatch) in enumerate(loader):
                 self.assertEqual(xbatch[0].mean(), i+1)
                 self.assertEqual(xbatch[1].mean(), i+1+100)
+
                 
     def test_multiple_image_slice_after_split(self):
         base_dir = nt.fetch_data('example-01')
