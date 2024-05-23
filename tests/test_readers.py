@@ -199,8 +199,6 @@ class TestFunction_infer_reader_lists(unittest.TestCase):
 
 
 
-
-
 class TestFunction_infer_reader_dicts(unittest.TestCase):
     def setUp(self):
         pass

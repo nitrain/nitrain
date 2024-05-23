@@ -336,6 +336,74 @@ class TestFunction_split(unittest.TestCase):
         self.assertEqual(x2[0].mean(), 9)
         self.assertEqual(y2.mean(), 109)
 
+class TestReader_FolderNameReader(unittest.TestCase):
+    
+    def setUp(self):
+        pass
+    def tearDown(self):
+        pass
+    
+    def test_folder_name(self):
+        import nitrain as nt
+        from nitrain import readers
+        base_dir = nt.fetch_data('example-01')
+
+        dataset = nt.Dataset(inputs=readers.ImageReader('*/img3d.nii.gz'),
+                            outputs=readers.FolderNameReader('*/img3d_100.nii.gz'),
+                            base_dir=base_dir)
+
+        data_train, data_test = dataset.split(0.8)
+        
+        self.assertEqual(len(data_train), 8)
+        self.assertEqual(len(data_test), 2)
+        
+        x,y=data_train[3]
+        self.assertEqual(x.mean(), 4)
+        self.assertEqual(y, 'sub_3')
+        
+    def test_folder_name_formats(self):
+        import nitrain as nt
+        from nitrain import readers
+        base_dir = nt.fetch_data('example-01')
+
+        dataset = nt.Dataset(inputs=readers.ImageReader('*/img3d.nii.gz'),
+                            outputs=readers.FolderNameReader('*/img3d_100.nii.gz',
+                                                             format='integer'),
+                            base_dir=base_dir)
+        
+        x,y=dataset[3]
+        self.assertEqual(x.mean(), 4)
+        self.assertEqual(y, 3)
+        
+        dataset = nt.Dataset(inputs=readers.ImageReader('*/img3d.nii.gz'),
+                            outputs=readers.FolderNameReader('*/img3d_100.nii.gz',
+                                                             format='onehot'),
+                            base_dir=base_dir)
+        
+        x,y=dataset[3]
+        self.assertEqual(x.mean(), 4)
+        self.assertEqual(len(y), 10)
+        self.assertEqual(y[3], 1)
+        self.assertEqual(sum(y), 1)
+        
+    def test_folder_name_compose(self):
+        import nitrain as nt
+        from nitrain import readers
+        base_dir = nt.fetch_data('example-01')
+
+        dataset = nt.Dataset(inputs=readers.ImageReader('*/img3d.nii.gz'),
+                            outputs=[readers.FolderNameReader('*/img3d.nii.gz'),
+                                     readers.FolderNameReader('*/img3d.nii.gz')],
+                            base_dir=base_dir)
+
+        data_train, data_test = dataset.split(0.8)
+        
+        x,y=dataset[3]
+        self.assertEqual(x.mean(), 4)
+        self.assertEqual(y[0], 'sub_3')
+        self.assertEqual(y[1], 'sub_3')
+        
+
 class TestOther_Bugs(unittest.TestCase):
     def setUp(self):
         pass

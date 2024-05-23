@@ -63,12 +63,8 @@ class Dataset:
                           self._base_dir,
                           self._base_file)
         
-        #print(f'Before. {len(ds_test.inputs.values)}')
         ds_train.inputs = ds_train.inputs.select(train_indices)
         ds_train.outputs = ds_train.outputs.select(train_indices)
-        #
-        #
-        #print(f'After. {len(ds_test.inputs)}')
         ds_test.inputs = ds_test.inputs.select(test_indices)
         ds_test.outputs = ds_test.outputs.select(test_indices)
         
