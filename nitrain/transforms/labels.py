@@ -1,3 +1,5 @@
+import ants
+
 from .base import BaseTransform
 
 __all__ = [
@@ -21,5 +23,17 @@ class LabelsToChannels(BaseTransform):
         self.keep_values = keep_values
     
     def __call__(self, *images):
-        images = [image.labels_to_channels(self.keep_values) for image in images]
+        images = [labels_to_channels(image, self.keep_values) for image in images]
         return images if len(images) > 1 else images[0]
+    
+def labels_to_channels(image, keep_values=False):
+    unique_vals = image.unique()
+    tmp_imgs = []
+    for val in unique_vals:
+        if val != 0:
+            tmp_img = image * (image==val)
+            if not keep_values:
+                tmp_img[tmp_img!=0] = 1
+            tmp_imgs.append(tmp_img)
+    new_img = ants.merge_channels(tmp_imgs)
+    return new_img

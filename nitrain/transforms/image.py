@@ -67,12 +67,12 @@ class Crop(BaseTransform):
 
 class Resample(BaseTransform):
     
-    def __init__(self, resample_params, use_voxels=False, interp_type=1):
+    def __init__(self, resample_params, use_voxels=True, interp_type=1):
         """
         import ants
         from nitrain import transforms as tx
         img = ants.image_read(ants.get_data('r16'))
-        mytx = tx.Resample((2,2))
+        mytx = tx.Resample((48,48))
         img2 = mytx(img)
         """
         self.resample_params = resample_params

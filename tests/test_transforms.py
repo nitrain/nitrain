@@ -352,30 +352,30 @@ class TestClass_SpatialTransforms(unittest.TestCase):
         with self.assertRaises(Exception):
             my_tx = tx.Translate(1)
             
-#class TestLabels(unittest.TestCase):
-#    
-#    def setUp(self):
-#        pass
-#    
-#    def tearDown(self):
-#        pass
-#    
-#    def test_LabelsToChannels(self):
-#        img2d = ants.from_numpy(np.zeros((100,100)))
-#        img2d[:20,:] = 1
-#        img2d[20:40,:] = 2
-#        img2d[40:60,:] = 3
-#        
-#        img3d = ants.from_numpy(np.zeros((100,100,100)))
-#        img3d[:20,:,:] = 1
-#        img3d[20:40,:,:] = 2
-#        img3d[40:60,:,:] = 3
-#        
-#        my_tx = tx.LabelsToChannels()
-#
-#        img2d_tx = my_tx(img2d)
-#        img3d_tx = my_tx(img3d)
-#    
+class TestLabels(unittest.TestCase):
+    
+    def setUp(self):
+        pass
+    
+    def tearDown(self):
+        pass
+    
+    def test_LabelsToChannels(self):
+        img2d = ants.from_numpy(np.zeros((100,100)))
+        img2d[:20,:] = 1
+        img2d[20:40,:] = 2
+        img2d[40:60,:] = 3
+        
+        img3d = ants.from_numpy(np.zeros((100,100,100)))
+        img3d[:20,:,:] = 1
+        img3d[20:40,:,:] = 2
+        img3d[40:60,:,:] = 3
+        
+        my_tx = tx.LabelsToChannels()
+
+        img2d_tx = my_tx(img2d)
+        img3d_tx = my_tx(img3d)
+    
 class TestErrors(unittest.TestCase):
     
     def setUp(self):

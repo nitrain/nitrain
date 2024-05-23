@@ -9,4 +9,6 @@ from itertools import product
 from copy import deepcopy
 
 def run_tests():
-    unittest.main()
+    import faulthandler
+    faulthandler.enable()
+    unittest.main(verbosity=2)
