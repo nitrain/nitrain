@@ -8,7 +8,7 @@ __all__ = [
 ]
 
 class AddChannel(BaseTransform):
-    def __init__(self):
+    def __init__(self, axis=-1):
         """
         import ants
         from nitrain import transforms as tx
@@ -16,7 +16,7 @@ class AddChannel(BaseTransform):
         mytx = tx.AddChannel()
         img2 = mytx(img)
         """
-        pass
+        self.axis = axis
         
     def __call__(self, *images):
         images = [ants.merge_channels([image]) for image in images]

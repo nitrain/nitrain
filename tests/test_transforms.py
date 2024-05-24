@@ -324,13 +324,13 @@ class TestClass_SpatialTransforms(unittest.TestCase):
         with self.assertRaises(Exception):
             my_tx = tx.Zoom(1)
         
-    def test_Reflect(self):
+    def test_Flip(self):
         img = ants.image_read(ants.get_data('r16'))
-        mytx = tx.Reflect()
+        mytx = tx.Flip()
         img2 = mytx(img)
         
         img = ants.image_read(ants.get_data('mni'))
-        mytx = tx.Reflect()
+        mytx = tx.Flip()
         img2 = mytx(img)
 
     def test_Translate(self):

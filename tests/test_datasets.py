@@ -114,7 +114,7 @@ class TestClass_Dataset(unittest.TestCase):
         self.assertEqual(y, 4)
         
         # test split
-        ds_train, ds_test = dataset.split(0.8)
+        ds_train, ds_test = dataset.split(0.8, random=False)
         self.assertEqual(len(ds_train), 8)
         self.assertEqual(len(ds_test), 2)
         
@@ -245,7 +245,7 @@ class TestClass_FolderDataset(unittest.TestCase):
         self.assertEqual(y, [50, 51])
         
         # test split
-        ds_train, ds_test = dataset.split(0.8)
+        ds_train, ds_test = dataset.split(0.8, random=False)
         self.assertTrue(len(ds_train) > len(ds_test))
         
         # test repr
@@ -260,7 +260,7 @@ class TestClass_FolderDataset(unittest.TestCase):
             base_file=os.path.join(tmp_dir, 'participants.csv')   
         )
         
-        ds_train, ds_test = dataset.split(0.8)
+        ds_train, ds_test = dataset.split(0.8, random=False)
         self.assertTrue(len(ds_train) > len(ds_test))
         
         # test repr
@@ -323,7 +323,7 @@ class TestFunction_split(unittest.TestCase):
                             outputs=readers.ImageReader('*/img3d_100.nii.gz'),
                             base_dir=base_dir)
 
-        data_train, data_test = dataset.split(0.8)
+        data_train, data_test = dataset.split(0.8, random=False)
 
         self.assertEqual(len(data_train), 8)
         self.assertEqual(len(data_test), 2)
@@ -352,7 +352,7 @@ class TestReader_FolderNameReader(unittest.TestCase):
                             outputs=readers.FolderNameReader('*/img3d_100.nii.gz'),
                             base_dir=base_dir)
 
-        data_train, data_test = dataset.split(0.8)
+        data_train, data_test = dataset.split(0.8, random=False)
         
         self.assertEqual(len(data_train), 8)
         self.assertEqual(len(data_test), 2)
@@ -396,7 +396,7 @@ class TestReader_FolderNameReader(unittest.TestCase):
                                      readers.FolderNameReader('*/img3d.nii.gz')],
                             base_dir=base_dir)
 
-        data_train, data_test = dataset.split(0.8)
+        data_train, data_test = dataset.split(0.8, random=False)
         
         x,y=dataset[3]
         self.assertEqual(x.mean(), 4)

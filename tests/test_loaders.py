@@ -38,10 +38,6 @@ class TestClass_DatasetLoader(unittest.TestCase):
     def test_2d(self):
         import ants
         import nitrain as nt
-        from nitrain import samplers, readers, transforms as tx
-        from nitrain.readers import ImageReader
-        from nitrain.samplers import SliceSampler
-        from nitrain.loaders.loader import record_generator
         img2d = ants.image_read(ants.get_data('r16'))
         img3d = ants.image_read(ants.get_data('mni'))
         
@@ -54,7 +50,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
         self.assertEqual(xb.shape, (4, 256, 256, 1))
         self.assertEqual(yb.shape, (4,))
         
-        loader = nt.Loader(dataset_2d, images_per_batch=4, expand_dims=False)
+        loader = nt.Loader(dataset_2d, images_per_batch=4, channel_axis=None)
         xb, yb = next(iter(loader))
         self.assertEqual(xb.shape, (4, 256, 256))
         self.assertEqual(yb.shape, (4,))
@@ -102,7 +98,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
         
     def test_3d_no_expand(self):
         loader = nt.Loader(self.dataset_3d, images_per_batch=4,
-                           expand_dims=None)
+                           channel_axis=None)
         
         x_batch, y_batch = next(iter(loader))
         
@@ -200,7 +196,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
                             outputs=readers.ImageReader('*/img3d_seg.nii.gz'),
                             base_dir=base_dir)
         
-        ds_train, ds_test = dataset.split(0.8)
+        ds_train, ds_test = dataset.split(0.8, random=False)
         
         loader = nt.Loader(ds_train,
                            images_per_batch=1,
@@ -261,12 +257,12 @@ class TestClass_DatasetLoader(unittest.TestCase):
 
         x,y = dataset[0]
         
-        data_train, data_test = dataset.split(0.8)
+        data_train, data_test = dataset.split(0.8, random=False)
 
         loader = nt.Loader(data_train,
                            images_per_batch=4,
                            shuffle=True,
-                           expand_dims=False,
+                           channel_axis=None,
                            sampler=SliceSampler(batch_size=20, axis=2))
         
         xb, yb = next(iter(loader))

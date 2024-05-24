@@ -45,11 +45,46 @@ class Dataset:
         self.outputs = outputs
         self.transforms = transforms
 
-    def split(self, p, shuffle=False):
+    def split(self, p, random=True):
+        """
+        Split dataset into training, testing, and optionally validation.
+        
+        dataset.split(0.8)
+        dataset.split((0.8,0.2))
+        dataset.split((0.8,0.1,0.1))
+        """
+        if isinstance(p, float):
+            p = (p, 1-p, 0)
+        
+        if isinstance(p, (list, tuple)):
+            if len(p) == 2:
+                p = p + (0,)
+        
+        if sum(p) != 1:
+            raise Exception('The probabilities must sum to 1.')
+            
         n_vals = len(self)
         indices = np.arange(n_vals)
-        train_indices = indices[:math.ceil(n_vals*p)]
-        test_indices = indices[math.ceil(n_vals*p):]
+        
+        if random:
+            if p[2] > 0:
+                sampled_indices = np.random.choice([0,1,2], size=n_vals, p=p)
+                train_indices = indices[np.where(sampled_indices==0)[0]]
+                test_indices = indices[np.where(sampled_indices==1)[0]]
+                val_indices = indices[np.where(sampled_indices==2)[0]]
+            else:
+                sampled_indices = np.random.choice([0,1], size=n_vals, p=p[:-1])
+                train_indices = indices[np.where(sampled_indices==0)[0]]
+                test_indices = indices[np.where(sampled_indices==1)[0]]
+        else:
+            if p[2] > 0:
+                train_indices = indices[:math.ceil(n_vals*p[0])]
+                test_indices = indices[math.ceil(n_vals*p[0]):math.ceil(n_vals*(p[0]+p[1]))]
+                val_indices = indices[math.ceil(n_vals*(p[0]+p[1])):]
+            else:
+                train_indices = indices[:math.ceil(n_vals*p[0])]
+                test_indices = indices[math.ceil(n_vals*p[0]):]
+            
         
         ds_train = Dataset(self._inputs,
                            self._outputs,
@@ -62,13 +97,24 @@ class Dataset:
                           self.transforms,
                           self._base_dir,
                           self._base_file)
-        
+            
         ds_train.inputs = ds_train.inputs.select(train_indices)
         ds_train.outputs = ds_train.outputs.select(train_indices)
         ds_test.inputs = ds_test.inputs.select(test_indices)
         ds_test.outputs = ds_test.outputs.select(test_indices)
+
+        if p[2] > 0:
+            ds_val = Dataset(self._inputs,
+                             self._outputs,
+                             self.transforms,
+                             self._base_dir,
+                             self._base_file)
+            ds_val.inputs = ds_val.inputs.select(val_indices)
+            ds_val.outputs = ds_val.outputs.select(val_indices)
         
-        return ds_train, ds_test
+            return ds_train, ds_test, ds_val
+        else:
+            return ds_train, ds_test
         
     def filter(self, expr):
         raise NotImplementedError('Not implemented')

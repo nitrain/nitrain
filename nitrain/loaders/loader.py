@@ -2,7 +2,7 @@ import math
 import numpy as np
 import warnings
 import ants
-from copy import deepcopy
+from copy import deepcopy, copy
 
 from .. import samplers, transforms as tx
 from ..datasets.utils import reduce_to_list, apply_transforms
@@ -13,7 +13,7 @@ class Loader:
                  dataset, 
                  images_per_batch, 
                  transforms=None,
-                 expand_dims=-1,
+                 channel_axis=-1,
                  shuffle=False,
                  sampler=None):
         """
@@ -33,7 +33,7 @@ class Loader:
             
         self.dataset = dataset
         self.images_per_batch = images_per_batch
-        self.expand_dims = expand_dims
+        self.channel_axis = channel_axis
         self.transforms = transforms
         self.shuffle = shuffle
         
@@ -41,13 +41,12 @@ class Loader:
             sampler = samplers.BaseSampler(batch_size=images_per_batch)
         self.sampler = sampler
         
-    def copy(self, dataset=None):
-        
+    def copy(self, dataset=None, keep_transforms=True):
         new_loader = Loader(
-            dataset = deepcopy(self.dataset),
+            dataset = copy(self.dataset) if dataset is None else dataset,
             images_per_batch = self.images_per_batch,
-            expand_dims = self.expand_dims,
-            transforms = self.transforms,
+            channel_axis = self.channel_axis,
+            transforms = self.transforms if keep_transforms else None,
             shuffle = self.shuffle,
             sampler = self.sampler
         )
@@ -104,9 +103,9 @@ class Loader:
             
             for x_batch, y_batch in sampled_batch:
 
-                if self.expand_dims:
-                    x_batch = expand_image_dims(x_batch)
-                    y_batch = expand_image_dims(y_batch)
+                if self.channel_axis:
+                    x_batch = expand_image_dims(x_batch, self.channel_axis)
+                    y_batch = expand_image_dims(y_batch, self.channel_axis)
                 
                 x_batch = convert_to_numpy(x_batch)
                 y_batch = convert_to_numpy(y_batch)
@@ -156,10 +155,10 @@ def convert_to_numpy(x):
     else:
         return np.array(x)
 
-def expand_image_dims(x):
-    mytx = tx.AddChannel()
+def expand_image_dims(x, axis):
+    mytx = tx.AddChannel(axis)
     if isinstance(x, list):
-        return [expand_image_dims(xx) for xx in x]
+        return [expand_image_dims(xx, axis) for xx in x]
     else:
         if ants.is_image(x):
             return mytx(x) if not x.has_components else x

@@ -13,7 +13,7 @@ import nitrain as nt
 
 class TestClass_LocalTrainer(unittest.TestCase):
     def setUp(self):
-        img = ants.image_read(ants.get_data('r16')).resample((4,4), use_spacing=True)
+        img = ants.image_read(ants.get_data('r16')).resample_image((4,4))
         x = [img for _ in range(6)]
         y = list(range(6))
         dataset = nt.Dataset(x, y)

@@ -67,9 +67,10 @@ def create_patches(images, values, block_size, stride):
         z_indices = grid[2].flatten()
         
         for a, b, c in zip(x_indices, y_indices, z_indices):
-            cropped_image = image.crop([(a, a+block_size[0]),
-                                        (b, b+block_size[1]),
-                                        (c, c+block_size[2])])
+            cropped_image = image.crop_indices((a,b,c),
+                                               (a+block_size[0],
+                                                b+block_size[1],
+                                                c+block_size[2]))
             cropped_images.append(cropped_image)
             new_values.append(value)
                 

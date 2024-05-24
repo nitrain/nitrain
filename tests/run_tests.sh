@@ -44,6 +44,7 @@ $PYCMD test_trainers.py $@
 
 echo "Testing transforms"
 $PYCMD test_transforms.py $@
+$PYCMD test_transforms_random.py $@
 
 echo "Testing explainers"
 $PYCMD test_explainers.py $@

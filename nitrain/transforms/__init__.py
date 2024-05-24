@@ -9,4 +9,5 @@ from .labels import *
 from .math import *
 from .shape import *
 from .spatial import *
+from .spatial_random import *
 from .utility import *
