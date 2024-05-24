@@ -19,7 +19,7 @@ class AddChannel(BaseTransform):
         self.axis = axis
         
     def __call__(self, *images):
-        images = [ants.merge_channels([image]) for image in images]
+        images = [ants.merge_channels([image], axis=self.axis) for image in images]
         return images if len(images) > 1 else images[0]
 
 class Reorient(BaseTransform):

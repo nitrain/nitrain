@@ -168,7 +168,7 @@ class FolderNameReader:
                 self.label = 'folder_name'
                 
     def __getitem__(self, idx):
-        return {self.label: self.values[idx]}
+        return {self.label: np.array(self.values[idx])}
     
     def __len__(self):
         return len(self.values)

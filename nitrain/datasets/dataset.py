@@ -45,7 +45,7 @@ class Dataset:
         self.outputs = outputs
         self.transforms = transforms
 
-    def split(self, p, random=True):
+    def split(self, p, shuffle=False):
         """
         Split dataset into training, testing, and optionally validation.
         
@@ -66,7 +66,7 @@ class Dataset:
         n_vals = len(self)
         indices = np.arange(n_vals)
         
-        if random:
+        if shuffle:
             if p[2] > 0:
                 sampled_indices = np.random.choice([0,1,2], size=n_vals, p=p)
                 train_indices = indices[np.where(sampled_indices==0)[0]]

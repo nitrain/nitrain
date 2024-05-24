@@ -103,7 +103,7 @@ class Loader:
             
             for x_batch, y_batch in sampled_batch:
 
-                if self.channel_axis:
+                if self.channel_axis is not None:
                     x_batch = expand_image_dims(x_batch, self.channel_axis)
                     y_batch = expand_image_dims(y_batch, self.channel_axis)
                 
