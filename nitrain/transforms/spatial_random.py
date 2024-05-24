@@ -85,6 +85,9 @@ class RandomRotate(BaseTransform):
         min_rotation = self.min_rotation
         max_rotation = self.max_rotation
         
+        if random.uniform(0, 1) > self.p:
+            return images if len(images) > 1 else images[0]
+        
         if not isinstance(min_rotation, (tuple,list)):
             theta = math.pi / 180 * random.uniform(min_rotation, max_rotation)
             rotation_matrix = np.array([[np.cos(theta), -np.sin(theta), 0], 

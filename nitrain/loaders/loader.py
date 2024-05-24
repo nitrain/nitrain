@@ -41,12 +41,12 @@ class Loader:
             sampler = samplers.BaseSampler(batch_size=images_per_batch)
         self.sampler = sampler
         
-    def copy(self, dataset=None, keep_transforms=True):
+    def copy(self, dataset=None, drop_transforms=False):
         new_loader = Loader(
             dataset = copy(self.dataset) if dataset is None else dataset,
             images_per_batch = self.images_per_batch,
             channel_axis = self.channel_axis,
-            transforms = self.transforms if keep_transforms else None,
+            transforms = self.transforms if not drop_transforms else None,
             shuffle = self.shuffle,
             sampler = self.sampler
         )

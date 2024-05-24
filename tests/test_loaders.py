@@ -58,6 +58,23 @@ class TestClass_DatasetLoader(unittest.TestCase):
         # test repr
         rep = loader.__repr__()
     
+    def test_copy(self):
+        import ants
+        import nitrain as nt
+        img = ants.image_read(ants.get_data('r16'))
+        
+        x = [img for _ in range(100)]
+        y = list(range(100))
+        
+        dataset = nt.Dataset(x, y)
+        # test copy
+        ds_train, ds_test = dataset.split(0.8)
+        loader_train = nt.Loader(ds_train, images_per_batch=12)
+        loader_test = loader_train.copy(ds_test)
+        self.assertEqual(loader_test.images_per_batch, loader_train.images_per_batch)
+        
+        loader_test = loader_train.copy(ds_test, drop_transforms=True)
+    
     def test_to_keras(self):
         loader = nt.Loader(self.dataset_2d, images_per_batch=4)
         keras_loader = loader.to_keras()
