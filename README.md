@@ -1,4 +1,4 @@
-# Nitrain: the easiest way to train medical imaging AI models
+# Nitrain: a medical imaging-native AI framework
 
 [![Coverage Status](https://coveralls.io/repos/github/nitrain/nitrain/badge.svg?branch=main)](https://coveralls.io/github/nitrain/nitrain?branch=main)
 [![Build](https://github.com/nitrain/nitrain/actions/workflows/test.yml/badge.svg)](https://github.com/nitrain/nitrain/actions/workflows/test.yml)
