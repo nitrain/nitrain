@@ -20,7 +20,7 @@ class TestClass_LocalTrainer(unittest.TestCase):
         loader = nt.Loader(dataset, images_per_batch=4)
         arch_fn = nt.fetch_architecture('vgg', dim=2)
         model = arch_fn(input_image_size=(64,64,1), 
-                        number_of_classification_labels=1,
+                        number_of_outputs=1,
                         mode='regression')
         self.loader = loader
         self.model = model
