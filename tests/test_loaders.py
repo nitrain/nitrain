@@ -50,14 +50,28 @@ class TestClass_DatasetLoader(unittest.TestCase):
         self.assertEqual(xb.shape, (4, 256, 256, 1))
         self.assertEqual(yb.shape, (4,))
         
-        loader = nt.Loader(dataset_2d, images_per_batch=4, channel_axis=None)
+        loader = nt.Loader(dataset_2d, images_per_batch=4, channels_first=None)
         xb, yb = next(iter(loader))
         self.assertEqual(xb.shape, (4, 256, 256))
         self.assertEqual(yb.shape, (4,))
         
         # test repr
         rep = loader.__repr__()
-    
+
+    def test_2d_channels_first(self):
+        loader = nt.Loader(self.dataset_2d, images_per_batch=4,
+                           channels_first=True)
+        
+        x_batch, y_batch = next(iter(loader))
+        self.assertTrue(x_batch.shape == (4, 1, 256, 256))
+        
+        loader2 = loader.to_keras()
+        x_batch, y_batch = next(iter(loader2))
+        self.assertTrue(x_batch.shape == (4, 1, 256, 256))
+        
+        gen = record_generator(loader)
+        xb,yb = next(iter(gen))
+        
     def test_copy(self):
         import ants
         import nitrain as nt
@@ -112,10 +126,24 @@ class TestClass_DatasetLoader(unittest.TestCase):
         
         x_batch, y_batch = next(iter(loader))
         self.assertEqual(x_batch.shape,  (4, 182, 218, 182, 1))
+
+    def test_3d_channels_first(self):
+        loader = nt.Loader(self.dataset_3d, images_per_batch=4,
+                           channels_first=True)
         
+        x_batch, y_batch = next(iter(loader))
+        self.assertTrue(x_batch.shape == (4, 1, 182, 218, 182))
+        
+        loader2 = loader.to_keras()
+        x_batch, y_batch = next(iter(loader2))
+        self.assertTrue(x_batch.shape == (4, 1, 182, 218, 182))
+        
+        gen = record_generator(loader)
+        xb,yb = next(iter(gen))
+
     def test_3d_no_expand(self):
         loader = nt.Loader(self.dataset_3d, images_per_batch=4,
-                           channel_axis=None)
+                           channels_first=None)
         
         x_batch, y_batch = next(iter(loader))
         
@@ -279,7 +307,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
         loader = nt.Loader(data_train,
                            images_per_batch=4,
                            shuffle=True,
-                           channel_axis=None,
+                           channels_first=None,
                            sampler=SliceSampler(batch_size=20, axis=2))
         
         xb, yb = next(iter(loader))

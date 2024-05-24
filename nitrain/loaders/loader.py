@@ -13,7 +13,7 @@ class Loader:
                  dataset, 
                  images_per_batch, 
                  transforms=None,
-                 channel_axis=-1,
+                 channels_first=False,
                  shuffle=False,
                  sampler=None):
         """
@@ -33,7 +33,7 @@ class Loader:
             
         self.dataset = dataset
         self.images_per_batch = images_per_batch
-        self.channel_axis = channel_axis
+        self.channels_first = channels_first
         self.transforms = transforms
         self.shuffle = shuffle
         
@@ -45,7 +45,7 @@ class Loader:
         new_loader = Loader(
             dataset = copy(self.dataset) if dataset is None else dataset,
             images_per_batch = self.images_per_batch,
-            channel_axis = self.channel_axis,
+            channels_first = self.channels_first,
             transforms = self.transforms if not drop_transforms else None,
             shuffle = self.shuffle,
             sampler = self.sampler
@@ -103,9 +103,9 @@ class Loader:
             
             for x_batch, y_batch in sampled_batch:
 
-                if self.channel_axis is not None:
-                    x_batch = expand_image_dims(x_batch, self.channel_axis)
-                    y_batch = expand_image_dims(y_batch, self.channel_axis)
+                if self.channels_first is not None:
+                    x_batch = expand_image_dims(x_batch, self.channels_first)
+                    y_batch = expand_image_dims(y_batch, self.channels_first)
                 
                 x_batch = convert_to_numpy(x_batch)
                 y_batch = convert_to_numpy(y_batch)
@@ -155,10 +155,10 @@ def convert_to_numpy(x):
     else:
         return np.array(x)
 
-def expand_image_dims(x, axis):
-    mytx = tx.AddChannel(axis)
+def expand_image_dims(x, channels_first):
+    mytx = tx.AddChannel(channels_first)
     if isinstance(x, list):
-        return [expand_image_dims(xx, axis) for xx in x]
+        return [expand_image_dims(xx, channels_first) for xx in x]
     else:
         if ants.is_image(x):
             return mytx(x) if not x.has_components else x

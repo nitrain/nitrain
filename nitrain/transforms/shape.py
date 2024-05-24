@@ -8,7 +8,7 @@ __all__ = [
 ]
 
 class AddChannel(BaseTransform):
-    def __init__(self, axis=-1):
+    def __init__(self, channels_first=False):
         """
         import ants
         from nitrain import transforms as tx
@@ -16,10 +16,10 @@ class AddChannel(BaseTransform):
         mytx = tx.AddChannel()
         img2 = mytx(img)
         """
-        self.axis = axis
+        self.channels_first = channels_first
         
     def __call__(self, *images):
-        images = [ants.merge_channels([image], axis=self.axis) for image in images]
+        images = [ants.merge_channels([image], channels_first=self.channels_first) for image in images]
         return images if len(images) > 1 else images[0]
 
 class Reorient(BaseTransform):
