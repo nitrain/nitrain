@@ -34,7 +34,7 @@ class TestClass_Dataset(unittest.TestCase):
         
         # test repr
         r = dataset.__repr__()
-        
+
     def test_multiple_memory(self):
         x = [ants.image_read(ants.get_data('r16')) for _ in range(10)]
         y = list(range(10))
@@ -203,6 +203,21 @@ class TestClass_CSVDataset(unittest.TestCase):
                 inputs=readers.ColumnReader(column='filenames_3d', is_image=True),
                 outputs=readers.ColumnReader(column='age')
             )
+            
+    def test_split(self):
+        import ants
+        import numpy as np
+        ds = nt.Dataset(
+            inputs = [ants.from_numpy(np.ones((128,128)))*i for i in range(100)],
+            outputs = [i for i in range(100)]
+        )
+        
+        ds0,ds1,ds2 = ds.split((0.6,0.2,0.2))
+        ds0,ds1,ds2 = ds.split((0.6,0.2,0.2), random=False)
+        
+        with self.assertRaises(Exception):
+            ds0,ds1,ds2 = ds.split((0.6,0.2,0.5))
+        
 
 class TestClass_FolderDataset(unittest.TestCase):
     def setUp(self):

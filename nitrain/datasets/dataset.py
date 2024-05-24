@@ -115,12 +115,6 @@ class Dataset:
             return ds_train, ds_test, ds_val
         else:
             return ds_train, ds_test
-        
-    def filter(self, expr):
-        raise NotImplementedError('Not implemented')
-    
-    def prefetch(self):
-        raise NotImplementedError('Not implemented')
     
     def __getitem__(self, idx):
         reduce = True
