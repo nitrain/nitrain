@@ -309,20 +309,17 @@ class TestClass_SpatialTransforms(unittest.TestCase):
         img2d = ants.image_read(ants.get_data('r16'))
         img3d = ants.image_read(ants.get_data('mni'))
         
-        my_tx = tx.Zoom((0.9, 0.9))
+        my_tx = tx.Zoom(0.9)
         img2d_tx = my_tx(img2d)
         
-        my_tx = tx.Zoom((0.9, 0.9, 0.9))
+        my_tx = tx.Zoom(0.9)
         img3d_tx = my_tx(img3d)
         
-        my_tx = tx.Zoom((1.1, 1.1))
+        my_tx = tx.Zoom(1.1)
         img2d_tx = my_tx(img2d)
         
-        my_tx = tx.Zoom((1.1, 1.1, 1.1))
+        my_tx = tx.Zoom(1.1)
         img3d_tx = my_tx(img3d)
-        
-        with self.assertRaises(Exception):
-            my_tx = tx.Zoom(1)
         
     def test_Flip(self):
         img = ants.image_read(ants.get_data('r16'))

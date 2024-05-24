@@ -19,22 +19,22 @@ class TestClass_RandomSpatialTransforms(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_Shear(self):
+    def test_RandomShear(self):
         img = ants.image_read(ants.get_data('r16'))
-        mytx = tx.Shear((0,10))
+        mytx = tx.RandomShear((0,-10), (0,10))
         img2 = mytx(img)
         
         img = ants.image_read(ants.get_data('mni'))
-        mytx = tx.Shear((0,10,0))
+        mytx = tx.RandomShear((0,-10,0), (0,10,0))
         img2 = mytx(img)
         
         # with refernece
         img = ants.image_read(ants.get_data('r16'))
-        mytx = tx.Shear((0,10), img)
+        mytx = tx.RandomShear((0,-10), (0,10), img)
         img2 = mytx(img)
         
         img = ants.image_read(ants.get_data('mni'))
-        mytx = tx.Shear((0,10,0), img)
+        mytx = tx.RandomShear((0,-10,0), (0,10,0), img)
         img2 = mytx(img)
 
     def test_RandomRotate(self):
@@ -55,52 +55,46 @@ class TestClass_RandomSpatialTransforms(unittest.TestCase):
         mytx = tx.RandomRotate((0,10,0), (0,10,0), img)
         img2 = mytx(img)
         
-    def test_Zoom(self):
+    def test_RandomZoom(self):
         img2d = ants.image_read(ants.get_data('r16'))
         img3d = ants.image_read(ants.get_data('mni'))
         
-        my_tx = tx.Zoom((0.9, 0.9))
+        my_tx = tx.RandomZoom(0.9, 1.1)
         img2d_tx = my_tx(img2d)
         
-        my_tx = tx.Zoom((0.9, 0.9, 0.9))
+        my_tx = tx.RandomZoom(0.9, 1.1)
         img3d_tx = my_tx(img3d)
         
-        my_tx = tx.Zoom((1.1, 1.1))
+        my_tx = tx.RandomZoom(0.9, 1.1)
         img2d_tx = my_tx(img2d)
         
-        my_tx = tx.Zoom((1.1, 1.1, 1.1))
+        my_tx = tx.RandomZoom(0.9, 1.1)
         img3d_tx = my_tx(img3d)
         
-        with self.assertRaises(Exception):
-            my_tx = tx.Zoom(1)
-        
-    def test_Flip(self):
+    def test_RandomFlip(self):
         img = ants.image_read(ants.get_data('r16'))
-        mytx = tx.Flip()
+        mytx = tx.RandomFlip()
         img2 = mytx(img)
         
         img = ants.image_read(ants.get_data('mni'))
-        mytx = tx.Flip()
+        mytx = tx.RandomFlip()
         img2 = mytx(img)
 
-    def test_Translate(self):
+    def test_RandomTranslate(self):
         img2d = ants.image_read(ants.get_data('r16'))
         img3d = ants.image_read(ants.get_data('mni'))
         
-        my_tx = tx.Translate((10, 10))
+        my_tx = tx.RandomTranslate((-10,-10), (10,10))
         img2d_tx = my_tx(img2d)
         
-        my_tx = tx.Translate((10, 10, 10))
+        my_tx = tx.RandomTranslate((-10,-10,-10), (10,10,10))
         img3d_tx = my_tx(img3d)
 
-        my_tx = tx.Translate((10, 0))
+        my_tx = tx.RandomTranslate((0, -10), (10, 0))
         img2d_tx = my_tx(img2d)
         
-        my_tx = tx.Translate((10, 0, 0))   
+        my_tx = tx.RandomTranslate((0, -10, -10), (10, 0, 0))   
         img3d_tx = my_tx(img3d)
-
-        with self.assertRaises(Exception):
-            my_tx = tx.Translate(1)
             
 
 if __name__ == '__main__':
