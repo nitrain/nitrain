@@ -67,7 +67,7 @@ class RangeNormalize(BaseTransform):
         import ants
         from nitrain import transforms as tx
         img = ants.image_read(ants.get_data('r16'))
-        mytx = tx.RangeNormalize(0, 2)
+        mytx = tx.RangeNormalize(0, 1)
         img2 = mytx(img)
         """
         self.min = min
@@ -79,10 +79,13 @@ class RangeNormalize(BaseTransform):
             image = image.clone('float')
             minimum = image.min()
             maximum = image.max()
-            m = (self.max - self.min) / (maximum - minimum)
-            b = self.min - m * minimum
-            image = m * image + b
-            new_images.append(image)
+            if maximum - minimum == 0:
+                new_images.append(image)
+            else:
+                m = (self.max - self.min) / (maximum - minimum)
+                b = self.min - m * minimum
+                image = m * image + b
+                new_images.append(image)
         return new_images if len(new_images) > 1 else new_images[0]
     
 class Clip(BaseTransform):

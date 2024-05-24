@@ -241,7 +241,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
                             outputs=readers.ImageReader('*/img3d_seg.nii.gz'),
                             base_dir=base_dir)
         
-        ds_train, ds_test = dataset.split(0.8, shuffle=False)
+        ds_train, ds_test = dataset.split(0.8, random=False)
         
         loader = nt.Loader(ds_train,
                            images_per_batch=1,
@@ -302,7 +302,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
 
         x,y = dataset[0]
         
-        data_train, data_test = dataset.split(0.8, shuffle=False)
+        data_train, data_test = dataset.split(0.8, random=False)
 
         loader = nt.Loader(data_train,
                            images_per_batch=4,

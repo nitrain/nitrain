@@ -99,7 +99,7 @@ class FolderNameReader:
             self.values = [np.where(unique_values==v)[0][0] for v in values]
         elif self.format == 'onehot':
             self.values = [list(np.eye(len(unique_values),
-                                       dtype='uint32')[np.where(unique_values==v)[0][0]]) for v in values]
+                                       dtype='uint8')[np.where(unique_values==v)[0][0]]) for v in values]
         elif self.format == 'string':
             self.values = values
         else:
@@ -152,7 +152,7 @@ class FolderNameReader:
             self.values = [np.where(unique_values==v)[0][0] for v in values]
         elif self.format == 'onehot':
             self.values = [list(np.eye(len(unique_values),
-                                       dtype='uint32')[np.where(unique_values==v)[0][0]]) for v in values]
+                                       dtype='uint8')[np.where(unique_values==v)[0][0]]) for v in values]
         elif self.format == 'string':
             self.values = values
         else:
@@ -168,7 +168,10 @@ class FolderNameReader:
                 self.label = 'folder_name'
                 
     def __getitem__(self, idx):
-        return {self.label: np.array(self.values[idx])}
+        if self.format == 'onehot':
+            return {self.label: np.array(self.values[idx])}
+        else:
+            return {self.label: self.values[idx]}
     
     def __len__(self):
         return len(self.values)
