@@ -3,7 +3,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/nitrain/nitrain/badge.svg?branch=main)](https://coveralls.io/github/nitrain/nitrain?branch=main)
 [![Build](https://github.com/nitrain/nitrain/actions/workflows/test.yml/badge.svg)](https://github.com/nitrain/nitrain/actions/workflows/test.yml)
 
-Nitrain (formerly <i>torchsample</i>) is a framework-agnostic library for sampling and augmenting medical images, training models on medical imaging datasets, and visualizing results in a medical imaging context.
+Nitrain (formerly <i>torchsample</i>) is a framework-agnostic python library for sampling and augmenting medical images, training models on medical imaging datasets, and visualizing results in a medical imaging context.
 
 The nitrain library is unique in that it makes training models as simple as possible by providing reasonable defaults and a high-level of abstraction. It also supports multiple frameworks - torch, tensorflow, and keras - with a goal to add even more.
 
