@@ -47,6 +47,29 @@ class TestClass_GoogleCloudDataset(unittest.TestCase):
         )
         
         self.assertTrue(len(d.inputs.values) > 0)
+        
+    def test_gcs_folder_name_readre(self):
+        d = nt.GoogleCloudDataset(
+            inputs=readers.ImageReader('sub-*/anat/*_T1w.nii.gz'),
+            outputs=readers.FolderNameReader('sub-*/anat/*_T1w.nii.gz'),
+            bucket='ants-dev',
+            base_dir='datasets/nick-2/ds004711',
+            credentials = self.credentials.name
+        )
+        
+        self.assertTrue(len(d.inputs.values) > 0)
+        self.assertTrue(len(d.outputs.values) > 0)
+        self.assertEqual(d.outputs.values[0], 'sub-001')
+        
+        d = nt.GoogleCloudDataset(
+            inputs=readers.ImageReader('sub-*/anat/*_T1w.nii.gz'),
+            outputs=readers.FolderNameReader('sub-*/anat/*_T1w.nii.gz', format='integer'),
+            bucket='ants-dev',
+            base_dir='datasets/nick-2/ds004711',
+            credentials = self.credentials.name
+        )
+        
+        self.assertEqual(d.outputs.values[3], 3)
 
     def test_gcs_compose(self):
         d = nt.GoogleCloudDataset(
