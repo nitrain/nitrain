@@ -72,7 +72,7 @@ The [antspy](https://www.github.com/antsx/antspy) package is a key dependency th
 
 <br />
 
-## Learning resources
+## Resources
 
 The following links can be helpful in becoming more familiar with nitrain.
 
