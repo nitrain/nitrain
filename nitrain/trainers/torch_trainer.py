@@ -1,5 +1,5 @@
 import torch
-from .torch_utils import torch_trainer_fit, torch_trainer_evaluate
+from .torch_utils import torch_model_fit, torch_model_evaluate
 
 
 class TorchTrainer:
@@ -26,12 +26,12 @@ class TorchTrainer:
         self.kwargs = kwargs
         
     def fit(self, loader, epochs, validation=None, **kwargs):
-        return torch_trainer_fit(self.model, self.loss, self.optimizer, 
+        return torch_model_fit(self.model, self.loss, self.optimizer, 
                                  self.metrics, self.device, loader, 
                                  epochs, validation, **kwargs)
 
     def evaluate(self, loader):
-        return torch_trainer_evaluate(self.model, self.metrics, self.device, loader)
+        return torch_model_evaluate(self.model, self.metrics, self.device, loader)
     
     def predict(self, loader):
         pass

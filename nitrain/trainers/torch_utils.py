@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 
-def torch_trainer_fit(model, loss, optimizer, metrics, device, loader, epochs, validation, **kwargs):
+def torch_model_fit(model, loss, optimizer, metrics, device, loader, epochs, validation, **kwargs):
     """
     Fit a torch model on a loader
     """
@@ -40,7 +40,7 @@ def torch_trainer_fit(model, loss, optimizer, metrics, device, loader, epochs, v
         
         # validation
         if validation:
-            results = torch_trainer_evaluate(model, metrics, device, validation)
+            results = torch_model_evaluate(model, metrics, device, validation)
             result = results[0]
             acc_metric = results[1]
             metric_values.append((result, acc_metric))
@@ -58,11 +58,11 @@ def torch_trainer_fit(model, loss, optimizer, metrics, device, loader, epochs, v
     return metric_values
    
 
-def torch_trainer_predict():
+def torch_model_predict():
     pass
 
 
-def torch_trainer_evaluate(model, metrics, device, loader):
+def torch_model_evaluate(model, metrics, device, loader):
     metric_values = []
     model.eval()
     with torch.no_grad():
