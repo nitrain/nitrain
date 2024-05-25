@@ -41,6 +41,7 @@ $PYCMD test_samplers_slices.py $@
 
 echo "Testing trainers"
 $PYCMD test_trainers.py $@
+$PYCMD test_trainers_torch.py $@
 
 echo "Testing transforms"
 $PYCMD test_transforms.py $@

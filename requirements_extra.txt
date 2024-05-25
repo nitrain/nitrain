@@ -1,0 +1,8 @@
+tensorflow
+antspynet
+tf-keras
+torch
+monai
+google-cloud-storage
+google-auth
+datalad

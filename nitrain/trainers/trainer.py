@@ -1,29 +1,17 @@
 
-
-
 class Trainer:
     """
-    The LocalTrainer class provides high-level functionality to train
-    deep learning models on dataset loaders. It wraps the most popular
-    frameworks under a common interface.
-    
-    Examples
-    --------
-    >>> download = fetch_data('openneuro/ds004711')
-    >>> data = FolderDataset(download.path)
-    >>> loader = DatasetLoader(data, batch_size=32)
-    >>> model_fn = fetch_architecture('autoencoder')
-    >>> model = model_fn((120, 60, 30))
-    >>> trainer = LocalTrainer(model, task='regression')
-    >>> trainer.fit(loader, epochs=10)
+    The Trainer class provides a general high-level inference to train
+    models from multiple frameworks on nitrain data loaders.
     """
     
     def __init__(self, 
                  model,
-                 task,
+                 task=None,
                  optimizer=None,
                  loss=None,
-                 metrics=None):
+                 metrics=None,
+                 **kwargs):
         """
         Create a model trainer with sensible defaults or user-defined
         settings from a pytorch, keras, or tensorflow model.
@@ -52,8 +40,13 @@ class Trainer:
             else:
                 loss = 'binary_crossentropy' if loss is None else loss
             metrics = ['accuracy'] if metrics is None else metrics
+        elif task is None:
+            # TODO: ensure optimizer and loss is supplied
+            if optimizer is None and loss is None:
+                raise Exception('If task is None then optimizer and loss must be supplied.')
+            pass
         else:
-            raise ValueError('The only valid tasks are `regression` and `classification`.')
+            raise Exception('Valid tasks: `regression`, `segmentation`, `classification`.')
         
         self.task = task
         self.optimizer = optimizer
@@ -67,12 +60,18 @@ class Trainer:
             self.model.compile(optimizer=self.optimizer,
                                loss=self.loss,
                                metrics=self.metrics)
+            
+        self.kwargs = kwargs
         
-    def fit(self, loader, epochs, **kwargs):
+    def fit(self, loader, epochs, validation=None, **kwargs):
+        from .torch_utils import torch_model_fit
+        
         if self.framework == 'keras':
             if type(loader).__name__ == 'Loader':
                 loader = loader.to_keras()
             return self.model.fit(loader, epochs=epochs, **kwargs)
+        elif self.framework == 'torch':
+            return torch_model_fit(self, loader, epochs, validation, **kwargs)
 
     def evaluate(self, loader):
         if self.framework == 'keras':
@@ -99,7 +98,8 @@ class Trainer:
         s = s +\
             '     {:<10} : {}\n'.format('Framework', self.framework)+\
             '     {:<10} : {}\n'.format('Loss', self.loss)+\
-            '     {:<10} : {}\n'.format('Optimizer', self.optimizer)
+            '     {:<10} : {}\n'.format('Optimizer', self.optimizer)+\
+            '     {:<10} : {}\n'.format('Metrics', self.metrics)
         return s
 
 
@@ -109,6 +109,9 @@ def infer_framework(model):
         return 'keras'
     
     if 'torch' in model_type:
+        return 'torch'
+    
+    if 'monai' in model_type:
         return 'torch'
     
     raise ValueError('Could not infer framework from model')
