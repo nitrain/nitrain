@@ -6,7 +6,9 @@
 
 Nitrain (formerly <i>torchsample</i>) is a framework-agnostic library for sampling and augmenting medical images, training models on medical imaging datasets, and visualizing results in a medical imaging context.
 
-Full examples of training medical imaging AI models using nitrain can be found at the [tutorials](https://github.com/nitrain/tutorials) repo. If you are interested more generally in medical imaging AI, check out the book [Becoming a medical imaging AI expert with Python](https://book.nitrain.dev).
+The nitrain library is unique in that it makes training models as simple as possible by providing reasonable defaults and a high-level of abstraction. It also supports multiple frameworks - torch, tensorflow, and keras - with a goal to add even more.
+
+Full examples of training medical imaging AI models using nitrain can be found at the [tutorials](https://github.com/nitrain/tutorials) repository. If you are interested more generally in medical imaging AI, check out the book [Becoming a medical imaging AI expert with Python](https://book.nitrain.dev).
 
 <br />
 
@@ -68,7 +70,7 @@ python -m pip install git+github.com/nitrain/nitrain.git
 
 ### Dependencies
 
-The [antspy](https://www.github.com/antsx/antspy) package is a key dependency that allows you to efficiently read, operate on, and visualize medical images. Additionally, you can use keras (tf.keras or keras3), tensorflow, or pytorch as backend for creating your models.
+The [ants](https://www.github.com/antsx/antspy) python package is a key dependency that allows you to efficiently read, operate on, and visualize medical images. Additionally, you can use keras (tf.keras or keras3), tensorflow, or pytorch as backend for creating your models.
 
 <br />
 
@@ -76,8 +78,8 @@ The [antspy](https://www.github.com/antsx/antspy) package is a key dependency th
 
 The following links can be helpful in becoming more familiar with nitrain.
 
-- Introduction to nitrain [Link](https://github.com/nitrain/tutorials/tree/main/introduction)
-- Classification examples [Link](https://github.com/nitrain/tutorials/tree/main/classification)
+- Introduction tutorials [[Link](https://github.com/nitrain/tutorials/tree/main/introduction)]
+- Classification examples [[Link](https://github.com/nitrain/tutorials/tree/main/classification)]
 
 <br />
 
