@@ -13,7 +13,7 @@ Full examples of training medical imaging AI models using nitrain can be found a
 
 ## Quickstart
 
-Here is a canonical example of using nitrain to a semantic segmentation model. Notice how easy it is to map image files from a local folder and how straight-forward it is to sample batches of augmented, 2D slices from 3D images.
+Here is a canonical example of using nitrain to a semantic segmentation model. Notice how easy it is to map image files from a local folder and then sample batches of augmented, 2D slices from 3D images. There is also a large collection of model architectures and a convenient model trainer.
 
 ```python
 import nitrain as nt
@@ -45,8 +45,6 @@ model = arch_fn(input_image_size=(64,64,1),
 trainer = nt.Trainer(model, task='segmentation')
 trainer.fit(loader, epochs=100)
 ```
-
-If you want to learn a bit more about key components of nitrain then you can follow the 10-minute overview tutorial further below. Also, a large variety of self-contained notebooks showing how to perform common medical imaging AI tasks is available in the [tutorials](https://www.github.com/nitrain/tutorials) repo.
 
 <br />
 
