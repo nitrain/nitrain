@@ -51,7 +51,8 @@ class FolderNameReader:
         self.format = format
     
     def select(self, idx):
-        new_reader = FolderNameReader(self.pattern, self.base_dir, self.exclude, self.label, self.level)
+        new_reader = FolderNameReader(self.pattern, self.base_dir, self.exclude, self.label, self.level,
+                                      self.format)
         new_reader.values = self.values
         new_reader.values = [new_reader.values[i] for i in idx]
         return new_reader
