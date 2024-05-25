@@ -33,14 +33,14 @@ class TorchTrainer:
     def evaluate(self, loader):
         return torch_model_evaluate(self.model, self.metrics, self.device, loader)
     
-    def predict(self, loader):
-        pass
-    
-    def summary(self):
-        pass
-    
-    def save(self, path):
-        pass
+    #def predict(self, loader):
+    #    pass
+    #
+    #def summary(self):
+    #    pass
+    #
+    #def save(self, path):
+    #    pass
     
     def __repr__(self):
         s = 'TorchTrainer ({})\n'.format('Custom')

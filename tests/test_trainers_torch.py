@@ -113,6 +113,8 @@ class TestClass_LocalTrainer(unittest.TestCase):
                             metrics=[auc_metric, acc_metric],
                             device='cpu')
 
+        trainer.__repr__()
+        
         # fit model
         results = trainer.fit(train_loader, epochs=2, validation=val_loader)
 
