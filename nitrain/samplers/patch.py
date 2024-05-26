@@ -22,7 +22,6 @@ class PatchSampler(BaseSampler):
         self.shuffle = shuffle
     
     def __call__(self, x, y):
-        print(x)
         # create patches of all images
         self.x, self.y = create_patches(x, y, self.patch_size, self.stride)
         

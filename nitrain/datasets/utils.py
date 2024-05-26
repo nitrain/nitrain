@@ -108,23 +108,22 @@ def reduce_to_list(d, idx=0):
     result = []
     for k, v in d.items():
         if isinstance(v, dict):
-            tmp_results = [v2 for k2, v2 in v.items()]
-            result.append(tmp_results)
+            result.append(reduce_to_list(v))
         else:
             result.append(v)
-        
     return result if len(result) > 1 else result[0]
 
 def retrieve_values_from_dict(d, names):
     values = []
     for k, v in d.items():
         if isinstance(v, dict):
-            for k2, v2 in v.items():
-                if k2 in names:
-                    values.append(v2)
+            values.extend(retrieve_values_from_dict(v, names))
         if k in names:
-            values.append(v)
-    return values
+            if isinstance(v, dict):
+                values.extend(reduce_to_list(v))
+            else:
+                values.append(v)
+    return list(values)
 
 def overwrite_values_in_dict(d, names, new_values):
     for k, v in d.items():
@@ -137,9 +136,10 @@ def overwrite_values_in_dict(d, names, new_values):
                 d[k] = new_values[k]
     return d
     
-def apply_transforms(tx_name, tx_value, inputs, outputs, force=False):
+def apply_transforms(tx_name, tx_value, inputs, outputs):
     if not isinstance(tx_name, tuple):
         tx_name = (tx_name,)
+        
     if not isinstance(tx_value, list):
         if isinstance(tx_value, tuple):
             tx_value = list(tx_value)
@@ -149,59 +149,15 @@ def apply_transforms(tx_name, tx_value, inputs, outputs, force=False):
     # first, get all inputs and outputs that match tx_name
     needed_inputs = retrieve_values_from_dict(inputs, tx_name)
     needed_outputs = retrieve_values_from_dict(outputs, tx_name)
-    needed_values = needed_inputs + needed_outputs
+    needed_values = list(needed_inputs) + list(needed_outputs)
 
     # next, apply transforms to all matched inputs / outputs together
     for tx_fn in tx_value:
         needed_values = tx_fn(*needed_values)
-    
-    if not isinstance(needed_values, (tuple,list)):
-        needed_values = [needed_values]
+        if not isinstance(needed_values, (tuple,list)):
+            needed_values = [needed_values]
     
     # finally, overwrite the original inputs / outputs with transformed versions
     new_inputs = overwrite_values_in_dict(inputs, tx_name, {n:nv for n,nv in zip(tx_name, needed_values)})
     new_outputs = overwrite_values_in_dict(outputs, tx_name, {n:nv for n,nv in zip(tx_name, needed_values)})
     return new_inputs, new_outputs
-
-def apply_transforms_old(tx_name, tx_value, inputs, outputs, force=False):
-    """
-    NOTE: this doesnt work if you want to apply a random transform to an input and output.
-    
-    Apply transforms recursively based on match between transform name
-    and input label. If there is a match and the input is nested, then all
-    children of that input will receive the transform.
-    """
-    if not isinstance(tx_name, tuple):
-        tx_name = (tx_name,)
-    if not isinstance(tx_value, list):
-        if isinstance(tx_value, tuple):
-            tx_value = list(tx_value)
-        else:
-            tx_value = [tx_value]
-
-    if inputs:
-        for input_name, input_value in inputs.items():
-            if isinstance(input_value, dict):
-                if input_name in tx_name:
-                    apply_transforms(tx_name, tx_value, input_value, None, force=True)
-                else:
-                    apply_transforms(tx_name, tx_value, input_value, None, force=force)
-            else:
-                if (input_name in tx_name) | force:
-                    for tx_fn in tx_value:
-                        inputs[input_name] = tx_fn(inputs[input_name])
-
-    if outputs:
-        for output_name, output_value in outputs.items():
-            if isinstance(output_value, dict):
-                if output_name in tx_name:
-                    apply_transforms(tx_name, tx_value, None, output_value, force=True)
-                else:
-                    apply_transforms(tx_name, tx_value, None, output_value, force=force)
-            else:
-                if (output_name in tx_name) | force:
-                    for tx_fn in tx_value:
-                        outputs[output_name] = tx_fn(outputs[output_name])
-    
-    return inputs, outputs
-            

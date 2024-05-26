@@ -139,6 +139,7 @@ class Dataset:
                 for tx_name, tx_value in self.transforms.items():
                     x_raw, y_raw = apply_transforms(tx_name, tx_value, x_raw, y_raw)
             
+            # if not reduce, then a dictionary will be returned
             if reduce:
                 x_raw = reduce_to_list(x_raw)
                 y_raw = reduce_to_list(y_raw)

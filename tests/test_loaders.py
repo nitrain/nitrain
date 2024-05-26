@@ -264,10 +264,12 @@ class TestClass_DatasetLoader(unittest.TestCase):
                             outputs=ImageReader('*/img3d_100.nii.gz'),
                             base_dir=base_dir)
 
+        x, y = dataset[0]
+        
         loader = nt.Loader(dataset,
                            images_per_batch=2,
                            transforms={
-                               ('inputs', 'outputs'): tx.Resample((48,48,48))
+                               ('inputs-0', 'inputs-1', 'outputs'): tx.Resample((48,48,48))
                             },
                            sampler=SliceSampler(batch_size=20, axis=-1))
         xb,yb = next(iter(loader))
@@ -279,7 +281,7 @@ class TestClass_DatasetLoader(unittest.TestCase):
         loader = nt.Loader(dataset,
                            images_per_batch=2,
                            transforms={
-                               'inputs': tx.Resample((48,48,48))
+                               ('inputs-0','inputs-1'): tx.Resample((48,48,48))
                             },
                            sampler=SliceSampler(batch_size=20, axis=-1))
         xb,yb = next(iter(loader))

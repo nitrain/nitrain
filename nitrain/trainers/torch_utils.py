@@ -1,4 +1,3 @@
-import torch
 import numpy as np
 
 
@@ -6,6 +5,8 @@ def torch_model_fit(model, loss, optimizer, metrics, device, loader, epochs, val
     """
     Fit a torch model on a loader
     """
+    import torch
+    
     # start training loop
     best_metric = -1
     best_metric_epoch = -1
@@ -63,6 +64,7 @@ def torch_model_predict():
 
 
 def torch_model_evaluate(model, metrics, device, loader):
+    import torch
     metric_values = []
     model.eval()
     with torch.no_grad():

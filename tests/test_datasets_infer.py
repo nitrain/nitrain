@@ -47,6 +47,7 @@ class TestClass_MemoryInferred(unittest.TestCase):
     def test_nested_single(self):
         import nitrain as nt
         import ants
+        import numpy as np
         imgs = [ants.from_numpy(np.zeros((10,10))) for _ in range(5)]
         imgs2 = [ants.from_numpy(np.ones((10,10))) for _ in range(5)]
         imgs3 = [ants.from_numpy(np.ones((10,10)))+1 for _ in range(5)]

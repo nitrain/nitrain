@@ -53,8 +53,6 @@ class TestClass_LocalTrainer(unittest.TestCase):
 
         ## get example record
         x, y = dataset[0]
-        print(x)
-        print(y)
 
         # random split: 80% training, 10% validation, 10% testing
         train_ds, val_ds  = dataset.split((0.5, 0.5), random=True)
@@ -66,8 +64,8 @@ class TestClass_LocalTrainer(unittest.TestCase):
                                 shuffle=True,
                                 transforms={
                                     'inputs': [tx.RandomRotate(-15, 15, p=0.5),
-                                                tx.RandomFlip(axis=0),
-                                                tx.RandomZoom(0.9, 1.1, p=0.5)]
+                                               tx.RandomFlip(axis=0),
+                                               tx.RandomZoom(0.9, 1.1, p=0.5)]
                                 })
 
         # create loaders for test and validation data without the random transforms
