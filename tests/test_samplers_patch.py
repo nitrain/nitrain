@@ -31,16 +31,16 @@ class TestClass_BaseSampler(unittest.TestCase):
         import ants
         import numpy as np
         import nitrain as nt
-        from nitrain import readers, transforms as tx
+        from nitrain import readers, transforms as tx, samplers
         imgs = [ants.from_numpy(np.random.randn(128,128)+i) for i in range(10)]
-        segs = [ants.from_numpy(np.random.randn(128,128)+i).astype('uint32') for i in range(10)]
+        segs = [ants.from_numpy(np.random.randn(128,128)+i).clone('unsigned int') for i in range(10)]
 
         # create dataset
         dataset = nt.Dataset(readers.MemoryReader(imgs),
                              readers.MemoryReader(segs),
-                            transforms={
-                                'inputs': tx.RangeNormalize()
-                            })
+                             transforms={
+                                ('inputs', 'outputs'): tx.RandomRotate(-90, 90, p=0.1)
+                             })
 
         ## optional: read an example record
         x, y = dataset[0]
@@ -52,7 +52,7 @@ class TestClass_BaseSampler(unittest.TestCase):
                                                         stride=(2,2),
                                                         batch_size=4),
                         transforms={
-                            'inputs': tx.RandomRotate(-90, 90, p=0.5)
+                            ('inputs', 'outputs'): tx.RandomRotate(-90, 90, p=0.5)
                         })
 
         xb, yb = next(iter(loader))

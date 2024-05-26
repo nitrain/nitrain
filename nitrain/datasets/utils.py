@@ -106,11 +106,12 @@ def fetch_data(name, path=None, overwrite=False):
 
 def reduce_to_list(d, idx=0):
     result = []
-    for key, val in d.items():
-        if isinstance(val, dict):
-            result.extend([reduce_to_list(d[key], idx+1)])
+    for k, v in d.items():
+        if isinstance(v, dict):
+            tmp_results = [v2 for k2, v2 in v.items()]
+            result.append(tmp_results)
         else:
-            result.append(val)
+            result.append(v)
         
     return result if len(result) > 1 else result[0]
 
@@ -149,14 +150,14 @@ def apply_transforms(tx_name, tx_value, inputs, outputs, force=False):
     needed_inputs = retrieve_values_from_dict(inputs, tx_name)
     needed_outputs = retrieve_values_from_dict(outputs, tx_name)
     needed_values = needed_inputs + needed_outputs
-    
+
     # next, apply transforms to all matched inputs / outputs together
     for tx_fn in tx_value:
         needed_values = tx_fn(*needed_values)
     
-    if not isinstance(needed_values, list):
+    if not isinstance(needed_values, (tuple,list)):
         needed_values = [needed_values]
-        
+    
     # finally, overwrite the original inputs / outputs with transformed versions
     new_inputs = overwrite_values_in_dict(inputs, tx_name, {n:nv for n,nv in zip(tx_name, needed_values)})
     new_outputs = overwrite_values_in_dict(outputs, tx_name, {n:nv for n,nv in zip(tx_name, needed_values)})
