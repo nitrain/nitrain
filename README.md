@@ -73,6 +73,7 @@ The [ants](https://www.github.com/antsx/antspy) python package is a key dependen
 The following links can be helpful in becoming more familiar with nitrain.
 
 - Introduction tutorials [[Link](https://github.com/nitrain/tutorials/tree/main/introduction)]
+- Segmentation examples [[Link](https://github.com/nitrain/tutorials/tree/main/segmentation)]
 - Classification examples [[Link](https://github.com/nitrain/tutorials/tree/main/classification)]
 - ANTsPy repository [[Link](https://github.com/antsx/antspy)]
 
