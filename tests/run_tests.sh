@@ -38,6 +38,7 @@ $PYCMD test_readers.py $@
 echo "Testing samplers"
 $PYCMD test_samplers.py $@
 $PYCMD test_samplers_slices.py $@
+$PYCMD test_samplers_patch.py $@
 
 echo "Testing trainers"
 $PYCMD test_trainers.py $@

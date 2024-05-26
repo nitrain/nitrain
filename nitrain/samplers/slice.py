@@ -4,8 +4,9 @@ import math
 
 import ants
 
+from .base import BaseSampler
     
-class SliceSampler:
+class SliceSampler(BaseSampler):
     """
     Sampler that returns batches of 2D slices from 3D images.
     """
@@ -32,38 +33,9 @@ class SliceSampler:
                 
         return self
 
-    def __iter__(self):
-        """
-        Get a sampled batch
-        """
-        self.idx = 0
-        
-        # apply shuffling
-        if self.shuffle:
-            indices = random.sample(range(len(self.y)), len(self.y))
-            self.x = [self.x[i] for i in indices]
-            self.y = [self.y[i] for i in indices]
-            
-        return self
-
-    def __next__(self):
-        if self.idx < self.n_batches:
-            data_indices = slice(self.idx*self.batch_size, min((self.idx+1)*self.batch_size, self.batch_length))
-            self.idx += 1
-            x = select_items(self.x, data_indices)
-            y = select_items(self.y, data_indices)
-            return x, y
-        else:
-            raise StopIteration
-    
     def __repr__(self):
         return f'''SliceSampler(axis={self.axis}, batch_size={self.batch_size}, shuffle={self.shuffle})'''
 
-def select_items(x, idx):
-    if isinstance(x[0], list):
-        return [select_items(xx, idx) for xx in x]
-    else:
-        return x[idx]
 
 def create_slices(x, axis):
     def flatten_extend(matrix):

@@ -114,9 +114,58 @@ def reduce_to_list(d, idx=0):
         
     return result if len(result) > 1 else result[0]
 
+def retrieve_values_from_dict(d, names):
+    values = []
+    for k, v in d.items():
+        if isinstance(v, dict):
+            for k2, v2 in v.items():
+                if k2 in names:
+                    values.append(v2)
+        if k in names:
+            values.append(v)
+    return values
 
+def overwrite_values_in_dict(d, names, new_values):
+    for k, v in d.items():
+        if isinstance(v, dict):
+            for k2, v2 in v.items():
+                if k2 in names:
+                    d[k][k2] = new_values[k2]
+        else:
+            if k in names:
+                d[k] = new_values[k]
+    return d
+    
 def apply_transforms(tx_name, tx_value, inputs, outputs, force=False):
+    if not isinstance(tx_name, tuple):
+        tx_name = (tx_name,)
+    if not isinstance(tx_value, list):
+        if isinstance(tx_value, tuple):
+            tx_value = list(tx_value)
+        else:
+            tx_value = [tx_value]
+            
+    # first, get all inputs and outputs that match tx_name
+    needed_inputs = retrieve_values_from_dict(inputs, tx_name)
+    needed_outputs = retrieve_values_from_dict(outputs, tx_name)
+    needed_values = needed_inputs + needed_outputs
+    
+    # next, apply transforms to all matched inputs / outputs together
+    for tx_fn in tx_value:
+        needed_values = tx_fn(*needed_values)
+    
+    if not isinstance(needed_values, list):
+        needed_values = [needed_values]
+        
+    # finally, overwrite the original inputs / outputs with transformed versions
+    new_inputs = overwrite_values_in_dict(inputs, tx_name, {n:nv for n,nv in zip(tx_name, needed_values)})
+    new_outputs = overwrite_values_in_dict(outputs, tx_name, {n:nv for n,nv in zip(tx_name, needed_values)})
+    return new_inputs, new_outputs
+
+def apply_transforms_old(tx_name, tx_value, inputs, outputs, force=False):
     """
+    NOTE: this doesnt work if you want to apply a random transform to an input and output.
+    
     Apply transforms recursively based on match between transform name
     and input label. If there is a match and the input is nested, then all
     children of that input will receive the transform.

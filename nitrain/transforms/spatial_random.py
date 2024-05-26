@@ -71,14 +71,16 @@ class RandomRotate(BaseTransform):
             rotation = [random.uniform(min_r, max_r) for min_r, max_r in zip(self.min_rotation, self.max_rotation)]
         else:
             rotation = random.uniform(self.min_rotation, self.max_rotation)
-            
+        
         mytx = Rotate(rotation, self.reference)
         new_images = [mytx(image) for image in images]
         return new_images if len(new_images) > 1 else new_images[0]
+    
+    def __repr__(self):
+        return 'RandomRotation'
         
 
-
-class RandomZoom(object):
+class RandomZoom(BaseTransform):
     def __init__(self, min_zoom, max_zoom, reference=None, p=1):
         """
         import ants
