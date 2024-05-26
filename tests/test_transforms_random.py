@@ -11,6 +11,24 @@ import ants
 import math
 from nitrain import transforms as tx
 
+
+class TestClass_RandomImageTransforms(unittest.TestCase):
+    
+    def setUp(self):
+        pass
+    
+    def tearDown(self):
+        pass
+
+    def test_random_crop(self):
+        import ants
+        from nitrain import transforms as tx
+        img = ants.image_read(ants.get_data('r16'))
+        mytx = tx.RandomCrop((98,98))
+        img2 = mytx(img)
+        self.assertEqual(img2.shape, (98,98))
+        
+
 class TestClass_RandomSpatialTransforms(unittest.TestCase):
     
     def setUp(self):

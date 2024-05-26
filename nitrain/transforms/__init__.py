@@ -4,6 +4,7 @@ and they ALWAYS return an ntimage.
 """
 
 from .image import *
+from .image_random import *
 from .intensity import *
 from .labels import *
 from .math import *

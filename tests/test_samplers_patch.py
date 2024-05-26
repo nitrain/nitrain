@@ -60,20 +60,5 @@ class TestClass_BaseSampler(unittest.TestCase):
         self.assertEqual(xb.shape, (4,96,96,1))
         self.assertEqual(yb.shape, (4,96,96,1))
         
-        # random patches
-        loader = nt.Loader(dataset,
-                        images_per_batch=4,
-                        sampler=samplers.RandomPatchSampler(patch_size=(96,96),
-                                                            patches_per_image=4,
-                                                            batch_size=4),
-                        transforms={
-                            ('inputs', 'outputs'): tx.RandomRotate(-90, 90, p=0.5)
-                        })
-
-        xb, yb = next(iter(loader))
-
-        self.assertEqual(xb.shape, (4,96,96,1))
-        self.assertEqual(yb.shape, (4,96,96,1))
-        
 if __name__ == '__main__':
     run_tests()

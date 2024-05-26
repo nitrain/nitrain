@@ -1,7 +1,4 @@
-
-
 __version__ = "0.3.1"
-
 
 from .datasets import Dataset, GoogleCloudDataset, fetch_data
 from .explainers import OcclusionExplainer

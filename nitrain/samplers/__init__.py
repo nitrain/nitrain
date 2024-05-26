@@ -7,6 +7,6 @@ from images.
 
 from .base import BaseSampler
 from .block import BlockSampler
-from .patch import PatchSampler, RandomPatchSampler
+from .patch import PatchSampler
 from .slice import SliceSampler
 from .slice_patch import SlicePatchSampler
