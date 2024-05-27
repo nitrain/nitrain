@@ -75,6 +75,7 @@ The following links can be helpful in becoming more familiar with nitrain.
 - Introduction tutorials [[Link](https://github.com/nitrain/tutorials/tree/main/introduction)]
 - Segmentation examples [[Link](https://github.com/nitrain/tutorials/tree/main/segmentation)]
 - Classification examples [[Link](https://github.com/nitrain/tutorials/tree/main/classification)]
+- Registration examples [[Link](https://github.com/nitrain/tutorials/tree/main/registration)]
 - ANTsPy repository [[Link](https://github.com/antsx/antspy)]
 
 <br />
