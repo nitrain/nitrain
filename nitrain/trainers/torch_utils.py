@@ -42,25 +42,27 @@ def torch_model_fit(model, loss, optimizer, metrics, device, loader, epochs, val
         # validation
         if validation:
             results = torch_model_evaluate(model, metrics, device, validation)
-            result = results[0]
-            acc_metric = results[1]
-            metric_values.append((result, acc_metric))
-            if result > best_metric:
-                best_metric = result
-                best_metric_epoch = epoch + 1
-                #torch.save(model.state_dict(), os.path.join(root_dir, "best_metric_model.pth"))
-                print("saved new best metric model")
+            metric_values.append(results)
             print(
-                f"current epoch: {epoch + 1} current AUC: {result:.4f}"
-                f" current accuracy: {acc_metric:.4f}"
-                f" best AUC: {best_metric:.4f}"
-                f" at epoch: {best_metric_epoch}"
+                f"Current epoch: {epoch + 1};  "
+                f"Metrics: {[round(r,4) for r in results]}"
             )
     return metric_values
    
 
-def torch_model_predict():
-    pass
+def torch_model_predict(model, device, loader):
+    import torch
+    model.eval()
+    with torch.no_grad():
+        y_pred = torch.tensor([], device=device)
+        y = torch.tensor([], device=device)
+        for val_data in loader:
+            val_images, val_labels = (
+                torch.tensor(val_data[0]).to(device),
+                torch.tensor(val_data[1]).to(device),
+            )
+            y_pred = torch.cat([y_pred, model(val_images)], dim=0)
+    return y_pred
 
 
 def torch_model_evaluate(model, metrics, device, loader):
@@ -68,18 +70,19 @@ def torch_model_evaluate(model, metrics, device, loader):
     metric_values = []
     model.eval()
     with torch.no_grad():
-        y_pred = torch.tensor([], dtype=torch.float32, device=device)
-        y = torch.tensor([], dtype=torch.long, device=device)
+        # TODO: infer datatypes and support multi-inputs / outputs
+        y_pred = torch.tensor([], device=device)
+        y = torch.tensor([], device=device)
         for val_data in loader:
             val_images, val_labels = (
-                torch.Tensor(val_data[0]).to(device),
-                torch.Tensor(val_data[1]).long().to(device),
+                torch.tensor(val_data[0]).to(device),
+                torch.tensor(val_data[1]).to(device),
             )
             y_pred = torch.cat([y_pred, model(val_images)], dim=0)
             y = torch.cat([y, val_labels], dim=0)
 
-            for metric_fn in metrics:
-                result = metric_fn(y, y_pred)
-                metric_values.append(result)
-    
+        for metric_fn in metrics:
+            result = metric_fn(y, y_pred)
+            metric_values.append(result)
+        
     return metric_values
