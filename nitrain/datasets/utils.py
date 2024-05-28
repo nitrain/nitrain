@@ -151,6 +151,9 @@ def apply_transforms(tx_name, tx_value, inputs, outputs):
     needed_outputs = retrieve_values_from_dict(outputs, tx_name)
     needed_values = list(needed_inputs) + list(needed_outputs)
 
+    if len(needed_values) < len(tx_name):
+        raise Exception('Some names in your transform were not found. Check for typos in the key labels.')
+    
     # next, apply transforms to all matched inputs / outputs together
     for tx_fn in tx_value:
         needed_values = tx_fn(*needed_values)
