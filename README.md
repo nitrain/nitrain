@@ -7,7 +7,7 @@ Nitrain (formerly <i>torchsample</i>) is a framework-agnostic python library for
 
 The nitrain library is unique in that it makes training models as simple as possible by providing reasonable defaults and a high-level of abstraction. It also supports multiple frameworks - torch, tensorflow, and keras - with a goal to add even more.
 
-Full examples of training medical imaging AI models using nitrain can be found at the [Tutorials](https://github.com/nitrain/tutorials) page. If you are interested more generally in medical imaging AI, check out [Becoming a medical imaging AI expert with Python](https://book.nitrain.dev) (expected early 2025).
+Full examples of training medical imaging AI models using nitrain can be found at the [Tutorials](https://github.com/nitrain/tutorials) page. If you are interested more generally in medical imaging AI, check out [Practical medical imaging AI techniques with Python](https://book.nitrain.dev) (expected early 2025).
 
 <br />
 
