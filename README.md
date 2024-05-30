@@ -82,4 +82,6 @@ The following links can be helpful in becoming more familiar with nitrain.
 
 ## Contributing
 
-If you have a question, feature request, or bug report the best way to get help is by posting an issue on the GitHub page. I would be happy to welcome any new contributors or ideas to the project. If you want to add code, the best way to get started is by posting an issue or contacting me at nickcullen31@gmail.com.
+If you have a question or bug report the best way to get help is by posting an issue on the GitHub page. I would be happy to welcome any new contributors or ideas to the project. If you want to add code, the best way to get started is by posting an issue or contacting me at nickcullen31@gmail.com.
+
+You can support this work by starring the repository or posting a feature request in the issues tab. These actions help increase the project's impact and community reach.
