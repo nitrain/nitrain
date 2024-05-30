@@ -24,7 +24,6 @@ class LabelsToChannels(BaseTransform):
         self.channels_first = channels_first
     
     def __call__(self, *images):
-        #print(self.channels_first)
         images = [labels_to_channels(image, self.keep_values, self.channels_first) for image in images]
         return images if len(images) > 1 else images[0]
     
