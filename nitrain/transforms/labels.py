@@ -19,14 +19,16 @@ class LabelsToChannels(BaseTransform):
     It is also possible to keep the original values in the channels 
     instead of making all values equal to 1.
     """
-    def __init__(self, keep_values=False):
+    def __init__(self, keep_values=False, channels_first=False):
         self.keep_values = keep_values
+        self.channels_first = channels_first
     
     def __call__(self, *images):
-        images = [labels_to_channels(image, self.keep_values) for image in images]
+        #print(self.channels_first)
+        images = [labels_to_channels(image, self.keep_values, self.channels_first) for image in images]
         return images if len(images) > 1 else images[0]
     
-def labels_to_channels(image, keep_values=False):
+def labels_to_channels(image, keep_values, channels_first):
     unique_vals = image.unique()
     tmp_imgs = []
     for val in unique_vals:
@@ -35,5 +37,5 @@ def labels_to_channels(image, keep_values=False):
             if not keep_values:
                 tmp_img[tmp_img!=0] = 1
             tmp_imgs.append(tmp_img)
-    new_img = ants.merge_channels(tmp_imgs)
+    new_img = ants.merge_channels(tmp_imgs, channels_first=channels_first)
     return new_img
