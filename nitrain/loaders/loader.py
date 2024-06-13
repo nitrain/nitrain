@@ -8,7 +8,6 @@ from .. import samplers, transforms as tx
 from ..datasets.utils import reduce_to_list, apply_transforms
 
 class Loader:
-    
     def __init__(self,
                  dataset, 
                  images_per_batch, 

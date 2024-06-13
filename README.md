@@ -76,7 +76,8 @@ The following links can be helpful in becoming more familiar with nitrain.
 - Segmentation examples [[Link](https://github.com/nitrain/tutorials/tree/main/segmentation)]
 - Classification examples [[Link](https://github.com/nitrain/tutorials/tree/main/classification)]
 - Registration examples [[Link](https://github.com/nitrain/tutorials/tree/main/registration)]
-- ANTsPy repository [[Link](https://github.com/antsx/antspy)]
+
+You can also visit the [ANTsPy](https://github.com/antsx/antspy) repo to learn more about handling medical images and performing traditional medical imaging analysis.
 
 <br />
 
