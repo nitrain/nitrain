@@ -62,5 +62,4 @@ if [[ $COVERAGE -eq 1 ]]; then
     coverage xml
 fi
 
-
 popd
