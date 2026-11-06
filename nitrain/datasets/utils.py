@@ -39,6 +39,17 @@ def fetch_data(name, path=None, overwrite=False):
         import datalad.api as dl
         
         save_dir = os.path.join(path, name)
+        root = os.path.realpath(path)
+        destination = os.path.realpath(save_dir)
+        try:
+            contained = (
+                destination != root
+                and os.path.commonpath([root, destination]) == root
+            )
+        except ValueError:
+            contained = False
+        if not contained:
+            raise ValueError("Dataset name escapes the download directory")
         if not os.path.exists(save_dir):
             os.makedirs(save_dir, exist_ok=True)
             
